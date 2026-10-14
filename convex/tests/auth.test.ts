@@ -177,6 +177,18 @@ describe('convex auth', () => {
         });
 
         expect(isDefaultOrganization).toBe(true);
+
+        // Runs on every sign-in: later calls reuse the organization instead of creating another.
+        await expect(
+            t.mutation(internal.auth.ensureDefaultOrganizationForUser, { userId: user.docId })
+        ).resolves.toBe(organizationId);
+        const memberships = await t.run(ctx =>
+            ctx.db
+                .query('member')
+                .withIndex('userId', q => q.eq('userId', user.docId))
+                .collect()
+        );
+        expect(memberships).toHaveLength(1);
     });
 
     test('default organization starts with the default categories once', async () => {
@@ -273,7 +285,7 @@ describe('convex auth', () => {
         expect(isDefaultOrganization).toBe(false);
     });
 
-    test('getOrganizationsPage marks the metadata-owned organization as personal', async () => {
+    test('getOrganizations marks the metadata-owned organization as personal', async () => {
         const randomSuffix = Math.random().toString(36).substring(2, 15);
         const user = await createTestUser(t, {
             userId: `personal-org-list-user-${randomSuffix}`,
@@ -312,13 +324,11 @@ describe('convex auth', () => {
         });
 
         const organizations = await personalOrgIdentity.query(
-            api.organizations.getOrganizationsPage,
-            {
-                paginationOpts: { numItems: 10, cursor: null },
-            }
+            api.organizations.getOrganizations,
+            {}
         );
 
-        const personalOrganization = organizations.page.find(
+        const personalOrganization = organizations.find(
             organization => organization.id === personalOrganizationId
         );
 

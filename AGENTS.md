@@ -25,7 +25,8 @@ Use `pnpm` with Node `>=24.19.0`.
 - `pnpm convex:local` / `pnpm convex:local:no-docker`: prepare the local Convex deployment with
   Docker (default) or with the Convex CLI's own local backend; see `self-host.md`.
 - `pnpm format`: format supported files with Prettier.
-- `pnpm ci`: `checks:static`, `test:coverage`, `build`, and `test:e2e`.
+- `pnpm run ci`: `checks:static`, `test:coverage`, `build`, and `test:e2e` (plain `pnpm ci` is
+  pnpm's own clean install).
 
 ## Coding Style & Naming Conventions
 

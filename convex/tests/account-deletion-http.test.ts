@@ -150,6 +150,33 @@ describe('soft-delete Better Auth endpoint', () => {
         });
     });
 
+    test('refuses to delete the user who set up the platform', async () => {
+        const { user } = await createCredentialUser('globalAdmin');
+        await t.run(ctx =>
+            ctx.db.insert('platformSettings', {
+                platformName: 'Platform',
+                defaultLanguage: 'en',
+                registrationPolicy: 'open',
+                setupCompletedBy: user.docId,
+            })
+        );
+        const cookie = await signIn(user.email);
+
+        const response = await t.fetch(
+            '/api/auth/soft-delete-user',
+            jsonRequest({ password: PASSWORD }, cookie)
+        );
+
+        expect(response.status).toBe(403);
+        const retainedUser = await t.run(ctx => ctx.db.get('user', user.docId));
+        expect(retainedUser).not.toBeNull();
+        expect(retainedUser?.deletedAt).toBeUndefined();
+        await t.run(async ctx => {
+            const settings = await ctx.db.query('platformSettings').first();
+            if (settings) await ctx.db.delete('platformSettings', settings._id);
+        });
+    });
+
     test('rejects an incorrect password without mutating the account', async () => {
         const { user } = await createCredentialUser();
         const cookie = await signIn(user.email);
@@ -184,6 +211,7 @@ describe('soft-delete Better Auth endpoint', () => {
         expect(response.status).not.toBe(200);
         await t.run(async ctx => {
             const retainedUser = await ctx.db.get('user', user.docId);
+            expect(retainedUser).not.toBeNull();
             expect(retainedUser?.deletedAt).toBeUndefined();
         });
     });

@@ -3,7 +3,10 @@ import { randomUUID } from 'crypto';
 import { test, expect } from '../../fixtures/test-base';
 import { createOrganization, createTestUser } from '../../helpers/test-helpers';
 import { setupCollaboratorInOrganization } from '../../helpers/collaboration';
-import { waitForInvitationUrl } from '../../helpers/email-verification';
+import {
+    verifyEmailFromInvitationPage,
+    waitForInvitationUrl,
+} from '../../helpers/email-verification';
 
 async function openOrganizationDetail(page: Page, name: string): Promise<void> {
     await page.goto('/dashboard/organizations', { waitUntil: 'domcontentloaded' });
@@ -50,6 +53,12 @@ test.describe('Organization Invitations', () => {
                 await inviteByEmail(page, invitee.email);
 
                 await inviteePage.goto('/dashboard/invitations', { waitUntil: 'domcontentloaded' });
+                // Invitations stay hidden until the invitee proves they own the address.
+                await expect(
+                    inviteePage.getByTestId('invitation-verification-required')
+                ).toBeVisible({ timeout: 15000 });
+                await expect(inviteePage.getByTestId('invitations-list')).toHaveCount(0);
+                await verifyEmailFromInvitationPage(inviteePage, invitee.email);
                 const invitationsList = inviteePage.getByTestId('invitations-list');
                 await expect(invitationsList).toContainText(organization.name, {
                     timeout: 15000,

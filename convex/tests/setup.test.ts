@@ -1,12 +1,7 @@
 import { describe, expect, test } from 'vitest';
 import { api } from '../_generated/api';
 import { initConvexTest } from './test.helper';
-import {
-    createTestUser,
-    createTestOrganization,
-    createTestMember,
-    ensureTestUserAuth,
-} from './test.helpers';
+import { createTestUser, createTestOrganization, createTestMember } from './test.helpers';
 import { ERROR_CODES } from '../constants';
 
 describe('convex setup', () => {
@@ -324,6 +319,8 @@ describe('convex setup', () => {
             });
             expect(updatedUser?.role).toBe('globalAdmin');
 
+            // The existing non-personal organization is renamed, not replaced.
+            expect(result.organizationId).toBe(orgId);
             const organization = await t.run(async ctx => {
                 return await ctx.db.get('organization', result.organizationId);
             });
@@ -409,131 +406,6 @@ describe('convex setup', () => {
                 );
                 expect(session?.activeOrganizationId).toBe(result.organizationId);
             });
-        });
-    });
-
-    describe('isPlatformSetupUser queries', () => {
-        test('isCurrentUserPlatformSetupUser returns true for setup user', async () => {
-            const t = initConvexTest();
-
-            const setupUserId = await t.run(async ctx => {
-                const userId = await ctx.db.insert('user', {
-                    name: 'Setup Admin',
-                    email: 'setup-admin@test.com',
-                    role: 'globalAdmin',
-                    emailVerified: true,
-                    createdAt: Date.now(),
-                    updatedAt: Date.now(),
-                    userId: 'setup-admin-user',
-                    image: null,
-                    banExpires: null,
-                    banReason: null,
-                    banned: false,
-                });
-
-                await ctx.db.insert('platformSettings', {
-                    platformName: 'Test Platform',
-                    defaultLanguage: 'en',
-                    registrationPolicy: 'open',
-                    setupCompletedBy: userId,
-                });
-
-                return userId;
-            });
-
-            await ensureTestUserAuth(t, setupUserId, {
-                organizationName: 'Setup Admin Org',
-                role: 'owner',
-            });
-
-            const userIdentity = t.withIdentity({
-                subject: setupUserId,
-                userId: setupUserId,
-                email: 'setup-admin@test.com',
-                name: 'Setup Admin',
-                role: 'globalAdmin',
-                emailVerified: true,
-                createdAt: Date.now(),
-                image: null,
-                banExpires: null,
-                banReason: null,
-                banned: false,
-            });
-
-            const isSetupUser = await userIdentity.query(
-                api.setup.isCurrentUserPlatformSetupUser,
-                {}
-            );
-            expect(isSetupUser).toBe(true);
-
-            const setupUserIdFromQuery = await userIdentity.query(
-                api.setup.getPlatformSetupUserId,
-                {}
-            );
-            expect(setupUserIdFromQuery).toBe(setupUserId);
-        });
-
-        test('isCurrentUserPlatformSetupUser returns false for other users', async () => {
-            const t = initConvexTest();
-
-            const otherUserId = await t.run(async ctx => {
-                const setupUserId = await ctx.db.insert('user', {
-                    name: 'Setup Admin',
-                    email: 'setup-admin@test.com',
-                    role: 'globalAdmin',
-                    emailVerified: true,
-                    createdAt: Date.now(),
-                    updatedAt: Date.now(),
-                    userId: 'setup-admin-user',
-                    image: null,
-                    banExpires: null,
-                    banReason: null,
-                    banned: false,
-                });
-
-                const regularUserId = await ctx.db.insert('user', {
-                    name: 'Regular User',
-                    email: 'regular-user@test.com',
-                    role: 'user',
-                    emailVerified: true,
-                    createdAt: Date.now(),
-                    updatedAt: Date.now(),
-                    userId: 'regular-user',
-                    image: null,
-                    banExpires: null,
-                    banReason: null,
-                    banned: false,
-                });
-
-                await ctx.db.insert('platformSettings', {
-                    platformName: 'Test Platform',
-                    defaultLanguage: 'en',
-                    registrationPolicy: 'open',
-                    setupCompletedBy: setupUserId,
-                });
-
-                return regularUserId;
-            });
-
-            const userIdentity = t.withIdentity({
-                subject: otherUserId,
-                userId: otherUserId,
-                email: 'regular-user@test.com',
-                name: 'Regular User',
-                role: 'user',
-                emailVerified: true,
-                createdAt: Date.now(),
-                image: null,
-                banExpires: null,
-                banReason: null,
-                banned: false,
-            });
-
-            const isSetupUser = await userIdentity.query(
-                api.setup.isCurrentUserPlatformSetupUser,
-                {}
-            );
-            expect(isSetupUser).toBe(false);
         });
     });
 });

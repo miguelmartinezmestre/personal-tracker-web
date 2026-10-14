@@ -50,9 +50,6 @@ export async function setupCollaboratorInOrganization(
     await page.goto('/dashboard/invitations');
     await page.waitForURL(/\/dashboard\/invitations(?:\?|$)/, { timeout: 15000 });
 
-    await expect(
-        page.getByTestId('invitations-list').or(page.getByTestId('invitations-empty'))
-    ).toBeVisible({ timeout: 20000 });
     await verifyEmailFromInvitationPage(page, collaboratorUser.email);
 
     const acceptButton = page.getByTestId('invitation-accept-button').first();

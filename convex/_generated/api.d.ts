@@ -17,7 +17,6 @@ import type * as authSchema from "../authSchema.js";
 import type * as cascades from "../cascades.js";
 import type * as categories from "../categories.js";
 import type * as constants from "../constants.js";
-import type * as crons from "../crons.js";
 import type * as dashboard from "../dashboard.js";
 import type * as email from "../email.js";
 import type * as emailSmtp from "../emailSmtp.js";
@@ -53,7 +52,6 @@ declare const fullApi: ApiFromModules<{
   cascades: typeof cascades;
   categories: typeof categories;
   constants: typeof constants;
-  crons: typeof crons;
   dashboard: typeof dashboard;
   email: typeof email;
   emailSmtp: typeof emailSmtp;

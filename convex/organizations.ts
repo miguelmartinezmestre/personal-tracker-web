@@ -11,7 +11,6 @@ import {
     isActiveAccount,
     isOrganizationAdminRole,
     ORGANIZATION_ROLE,
-    paginateVisible,
     withInvalidCursorRetry,
     type OrganizationRole,
 } from './utils';
@@ -32,14 +31,6 @@ const organizationSummaryValidator = v.object({
     createdAt: v.number(),
     role: organizationRoleValidator,
     isPersonal: v.boolean(),
-});
-
-const activeMemberValidator = v.object({
-    id: v.id('member'),
-    organizationId: v.id('organization'),
-    userId: v.id('user'),
-    role: organizationRoleValidator,
-    createdAt: v.number(),
 });
 
 const organizationMemberValidator = v.object({
@@ -67,7 +58,7 @@ const userInvitationValidator = v.object({
     email: v.string(),
     role: v.string(),
     organizationId: v.id('organization'),
-    organization: v.optional(v.object({ name: v.string() })),
+    organization: v.object({ name: v.string() }),
     inviter: v.optional(v.object({ name: v.string() })),
 });
 
@@ -91,8 +82,6 @@ const currentSessionValidator = v.object({
     ),
 });
 
-const MIN_REFERENCE_TIMESTAMP = Date.UTC(2020, 0, 1);
-const MAX_REFERENCE_CLOCK_SKEW_MS = 24 * 60 * 60 * 1000;
 const organizationMetadataSchema = z.looseObject({ description: z.string().optional() });
 
 function normalizeOrganizationRole(role: string): OrganizationRole {
@@ -120,25 +109,13 @@ function getOrganizationDescription(metadata: string | null | undefined): string
     return parseOrganizationDescription(metadata) ?? '';
 }
 
-function assertValidReferenceTimestamp(now: number): void {
-    if (
-        !Number.isFinite(now) ||
-        now < MIN_REFERENCE_TIMESTAMP ||
-        Math.abs(now - Date.now()) > MAX_REFERENCE_CLOCK_SKEW_MS
-    ) {
-        throw new ConvexError(ERROR_CODES.VALIDATION_ERROR);
-    }
-}
-
 export const getPublicInvitationStatus = query({
     args: {
         invitationId: v.string(),
-        now: v.number(),
     },
     // The organization name is only shown to whoever holds a valid invitation link.
     returns: v.object({ isValid: v.boolean(), organizationName: v.optional(v.string()) }),
     handler: async (ctx, args) => {
-        assertValidReferenceTimestamp(args.now);
         const serverNow = Date.now();
         const invitationId = ctx.db.normalizeId('invitation', args.invitationId);
         if (!invitationId) {
@@ -207,38 +184,28 @@ export const getCurrentSession = query({
     },
 });
 
-export const getOrganizationsPage = queryWithRLS({
-    args: { paginationOpts: paginationOptsValidator },
-    returns: v.object({
-        ...paginationResultValidator(organizationSummaryValidator).fields,
-        needsContinuation: v.boolean(),
-    }),
-    handler: async (ctx, args) => {
-        const result = await paginateVisible({
-            scope: JSON.stringify(['organizations', ctx.userId]),
-            paginationOpts: args.paginationOpts,
-            fetchPage: paginationOpts =>
-                ctx.dbForIntegrityChecks
-                    .query('member')
-                    .withIndex('userId', q => q.eq('userId', ctx.userId))
-                    .order('desc')
-                    .paginate(paginationOpts),
-            get: async id => {
-                const normalized = ctx.db.normalizeId('member', id);
-                return normalized ? await ctx.dbForIntegrityChecks.get('member', normalized) : null;
-            },
-            accepts: async member =>
-                member.userId === ctx.userId &&
-                Boolean(await ctx.dbForIntegrityChecks.get('organization', member.organizationId)),
-        });
-        const page = await Promise.all(
-            result.page.map(async member => {
+// shortcut: users belong to a handful of organizations and invitations, so both lists are read
+// whole up to this cap; switch to index pagination if real accounts approach it.
+const USER_LIST_LIMIT = 200;
+
+export const getOrganizations = queryWithRLS({
+    args: {},
+    returns: v.array(organizationSummaryValidator),
+    handler: async ctx => {
+        const memberships = await ctx.dbForIntegrityChecks
+            .query('member')
+            .withIndex('userId', q => q.eq('userId', ctx.userId))
+            .order('desc')
+            .take(USER_LIST_LIMIT);
+        const organizations = await Promise.all(
+            memberships.map(async member => {
+                // An organization being deleted loses its row before its memberships.
                 const org = await ctx.dbForIntegrityChecks.get(
                     'organization',
                     member.organizationId
                 );
                 if (!org) {
-                    throw new ConvexError(ERROR_CODES.ORG_NOT_FOUND);
+                    return null;
                 }
                 return {
                     id: org._id,
@@ -255,7 +222,7 @@ export const getOrganizationsPage = queryWithRLS({
                 };
             })
         );
-        return { ...result, page };
+        return organizations.filter(organization => organization !== null);
     },
 });
 
@@ -302,88 +269,41 @@ export const getOrganizationByIdentifier = queryWithRLS({
     },
 });
 
-export const getUserInvitationsPage = queryWithRLS({
-    args: { now: v.number(), paginationOpts: paginationOptsValidator },
-    returns: v.object({
-        ...paginationResultValidator(userInvitationValidator).fields,
-        needsContinuation: v.boolean(),
-    }),
-    handler: async (ctx, args) => {
-        assertValidReferenceTimestamp(args.now);
-        const now = Date.now();
-        const result = await paginateVisible({
-            scope: JSON.stringify(['userInvitations', ctx.userId, ctx.email]),
-            paginationOpts: args.paginationOpts,
-            fetchPage: paginationOpts =>
-                ctx.dbForIntegrityChecks
-                    .query('invitation')
-                    .withIndex('by_email_status_expiresAt', q =>
-                        q.eq('email', ctx.email).eq('status', 'pending')
-                    )
-                    .order('desc')
-                    .paginate(paginationOpts),
-            get: async id => {
-                const normalized = ctx.db.normalizeId('invitation', id);
-                if (normalized) {
-                    return await ctx.dbForIntegrityChecks.get('invitation', normalized);
-                }
-                return null;
-            },
-            accepts: async invitation =>
-                invitation.email === ctx.email &&
-                invitation.status === 'pending' &&
-                invitation.expiresAt > now &&
-                Boolean(
-                    await ctx.dbForIntegrityChecks.get('organization', invitation.organizationId)
-                ),
-        });
+export const getUserInvitations = queryWithRLS({
+    args: {},
+    returns: v.array(userInvitationValidator),
+    handler: async ctx => {
+        const email = ctx.email;
+        if (!email) {
+            return [];
+        }
+        const invitations = await ctx.dbForIntegrityChecks
+            .query('invitation')
+            .withIndex('by_email_status_expiresAt', q =>
+                q.eq('email', email).eq('status', 'pending').gt('expiresAt', Date.now())
+            )
+            .order('desc')
+            .take(USER_LIST_LIMIT);
         const page = await Promise.all(
-            result.page.map(async invitation => {
+            invitations.map(async invitation => {
                 const [organization, inviter] = await Promise.all([
                     ctx.dbForIntegrityChecks.get('organization', invitation.organizationId),
                     ctx.dbForIntegrityChecks.get('user', invitation.inviterId),
                 ]);
+                if (!organization) {
+                    return null;
+                }
                 return {
                     id: invitation._id,
                     email: invitation.email,
                     role: invitation.role || 'member',
                     organizationId: invitation.organizationId,
-                    organization: organization ? { name: organization.name } : undefined,
+                    organization: { name: organization.name },
                     inviter: inviter ? { name: inviter.name } : undefined,
                 };
             })
         );
-        return { ...result, page };
-    },
-});
-
-export const getActiveMember = queryWithRLS({
-    args: {},
-    returns: v.union(activeMemberValidator, v.null()),
-    handler: async ctx => {
-        const organizationId = ctx.organizationId;
-        if (!organizationId) {
-            return null;
-        }
-
-        const member = await ctx.db
-            .query('member')
-            .withIndex('by_organizationId_and_userId', q =>
-                q.eq('organizationId', organizationId).eq('userId', ctx.userId)
-            )
-            .first();
-
-        if (!member) {
-            return null;
-        }
-
-        return {
-            id: member._id,
-            organizationId: member.organizationId,
-            userId: member.userId,
-            role: normalizeOrganizationRole(member.role),
-            createdAt: member.createdAt,
-        };
+        return page.filter(invitation => invitation !== null);
     },
 });
 

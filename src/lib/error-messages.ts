@@ -196,16 +196,9 @@ export function resolveErrorMessage(
 }
 
 export function getErrorLocale(): ErrorLocale {
+    // The root layout sets <html lang> from the same cookie-then-platform-default rule as the UI.
     if (!('document' in globalThis)) {
         return 'en';
     }
-    const match = document.cookie.match(/(?:^|;\s*)locale=(en|es)/);
-    if (!match) {
-        return 'en';
-    }
-    const locale = match[1];
-    if (locale === 'en' || locale === 'es') {
-        return locale;
-    }
-    return 'en';
+    return document.documentElement.lang === 'es' ? 'es' : 'en';
 }

@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { extractErrorCode } from './error-messages';
+import { extractErrorCode, getErrorLocale } from './error-messages';
 
 describe('extractErrorCode', () => {
     test('extracts a code through supported error wrapper fields', () => {
@@ -15,4 +15,12 @@ describe('extractErrorCode', () => {
         cyclicError.cause = cyclicError;
         expect(extractErrorCode(cyclicError)).toBeUndefined();
     });
+});
+
+test('error toasts follow the page language, not only the locale cookie', () => {
+    document.cookie = 'locale=; max-age=0';
+    document.documentElement.lang = 'es';
+    expect(getErrorLocale()).toBe('es');
+    document.documentElement.lang = 'en';
+    expect(getErrorLocale()).toBe('en');
 });

@@ -1,6 +1,5 @@
 'use client';
 
-import { useConvexPages } from '@/hooks/use-convex-pages';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { api } from '@/convex/_generated/api';
 import { authClient } from '@/features/auth/client';
@@ -13,19 +12,10 @@ import { DEFAULT_ORGANIZATION_SLUG_BASE } from '@/convex/personalOrganization';
 
 type UpdateOrganization = CreateOrganization & { id: string };
 
-export type Organization = FunctionReturnType<
-    typeof api.organizations.getOrganizationsPage
->['page'][number];
+export type Organization = FunctionReturnType<typeof api.organizations.getOrganizations>[number];
 
 export function useOrganizations() {
-    return useConvexPages<Organization>(
-        'organizations',
-        cursor =>
-            convexQuery(api.organizations.getOrganizationsPage, {
-                paginationOpts: { cursor, numItems: 50 },
-            }),
-        organization => organization.id
-    );
+    return useQuery(convexQuery(api.organizations.getOrganizations, {}));
 }
 
 export function useOrganizationByIdentifier(identifier: string) {

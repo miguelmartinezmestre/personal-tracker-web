@@ -3,7 +3,7 @@ import { getAuthUserId, type Triggers as BetterAuthTriggers } from 'kitcn/auth';
 import { requireMutationCtx, type GenericCtx } from './utils';
 import type schema from './schema';
 import type { DataModel, Id } from './_generated/dataModel';
-import { resolveActorUserId, sanitizeAuditMetadata, toAuditPrimitive } from './auditPrivacy';
+import { resolveActorUserId, toAuditPrimitive } from './auditPrivacy';
 import { z } from 'zod';
 
 type BetterAuthSchema = typeof schema;
@@ -17,7 +17,6 @@ const auditFieldSchema = z
     ])
     .optional()
     .catch(undefined);
-const auditRecordSchema = z.record(z.string(), auditPrimitiveSchema);
 const sessionAuditSourceSchema = z
     .object({
         _id: auditFieldSchema,
@@ -80,12 +79,6 @@ const sanitizeUser = (user: object): AuditRecord =>
 const sanitizeInvitation = (invitation: object): AuditRecord =>
     sanitizeAuditSource(invitationAuditSourceSchema, invitation);
 
-type AuthAuditMetadata = {
-    before?: Record<string, string | number | boolean | null>;
-    after?: Record<string, string | number | boolean | null>;
-    context?: string;
-};
-
 const insertAuthAuditLog = async (
     ctx: MutationCtx,
     args: {
@@ -94,11 +87,8 @@ const insertAuthAuditLog = async (
         resourceId?: string | null;
         userId: string;
         organizationId?: string | null;
-        metadata?: {
-            before?: Record<string, string | number | boolean | null>;
-            after?: Record<string, string | number | boolean | null>;
-            context?: string;
-        };
+        // Already reduced to allowlisted, redacted fields by the sanitize* helpers above.
+        metadata?: { before?: AuditRecord; after?: AuditRecord };
     }
 ) => {
     let organizationId: Id<'organization'> | null = null;
@@ -135,24 +125,11 @@ const insertAuthAuditLog = async (
     }
     const actorUserId = resolveActorUserId(normalizedUserId, normalizedActorUserId);
 
-    let metadata: AuthAuditMetadata | undefined;
-
-    if (args.metadata !== undefined) {
-        const metadataSource = sanitizeAuditMetadata(args.resourceType, args.metadata);
-        const normalizedMetadata: AuthAuditMetadata = {};
-        const before = auditRecordSchema.safeParse(metadataSource?.before);
-        if (before.success) {
-            normalizedMetadata.before = before.data;
-        }
-        const after = auditRecordSchema.safeParse(metadataSource?.after);
-        if (after.success) {
-            normalizedMetadata.after = after.data;
-        }
-        if (metadataSource?.context !== undefined) {
-            normalizedMetadata.context = metadataSource.context;
-        }
-        metadata = Object.keys(normalizedMetadata).length > 0 ? normalizedMetadata : undefined;
-    }
+    const { before, after } = args.metadata ?? {};
+    const metadata = {
+        ...(before && Object.keys(before).length > 0 ? { before } : {}),
+        ...(after && Object.keys(after).length > 0 ? { after } : {}),
+    };
 
     await ctx.db.insert('auditLogs', {
         userId: normalizedUserId,
@@ -161,7 +138,7 @@ const insertAuthAuditLog = async (
         action: args.action,
         resourceType: args.resourceType,
         resourceId: args.resourceId ?? undefined,
-        metadata,
+        metadata: Object.keys(metadata).length > 0 ? metadata : undefined,
         createdAt: Date.now(),
     });
 };

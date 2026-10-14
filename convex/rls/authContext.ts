@@ -7,7 +7,8 @@ import { ERROR_CODES } from '../constants';
 
 export type AuthContext = {
     userId: Id<'user'>;
-    email: string;
+    // Null until verified: invitations are matched by email, so an unverified address proves nothing.
+    email: string | null;
     organizationId: Id<'organization'> | null;
     role: string;
     memberRole: string | null;
@@ -48,11 +49,15 @@ export async function resolveAuthContext(ctx: QueryCtx | MutationCtx): Promise<A
     }
 
     const session = await getSession(ctx);
-    if (!session || session.expiresAt < Date.now() || !session.activeOrganizationId) {
+    if (!session || session.expiresAt < Date.now()) {
         throw new ConvexError(ERROR_CODES.AUTH_REQUIRED);
     }
 
-    const activeOrganizationId = ctx.db.normalizeId('organization', session.activeOrganizationId);
+    // Better Auth clears the active organization before a delete hook can refuse, and does not
+    // roll it back; a session without one is still signed in.
+    const activeOrganizationId = session.activeOrganizationId
+        ? ctx.db.normalizeId('organization', session.activeOrganizationId)
+        : null;
 
     const { role: memberRole, organizationId } = await resolveActiveMembership(
         ctx,
@@ -62,7 +67,7 @@ export async function resolveAuthContext(ctx: QueryCtx | MutationCtx): Promise<A
 
     return {
         userId: currentUser._id,
-        email: currentUser.email,
+        email: currentUser.emailVerified ? currentUser.email : null,
         organizationId,
         role: currentUser.role ?? 'user',
         memberRole,

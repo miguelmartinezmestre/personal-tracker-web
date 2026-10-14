@@ -1,6 +1,5 @@
 'use client';
 
-import { useConvexPages } from '@/hooks/use-convex-pages';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import type { Id } from '@/convex/_generated/dataModel';
 import { useRouter } from 'next/navigation';
@@ -15,9 +14,7 @@ import { throwIfAuthClientError } from '@/features/auth/auth-client-response';
 import { acceptInvitationAndActivateOrganization } from '@/features/organizations/lib/accept-invitation';
 import type { FunctionReturnType } from 'convex/server';
 
-type InvitationRaw = FunctionReturnType<
-    typeof api.organizations.getUserInvitationsPage
->['page'][number];
+type InvitationRaw = FunctionReturnType<typeof api.organizations.getUserInvitations>[number];
 
 export interface Invitation {
     id: InvitationRaw['id'];
@@ -29,25 +26,12 @@ export interface Invitation {
 }
 
 export function usePendingInvitations() {
-    const referenceNow = Date.now();
-    const result = useConvexPages<InvitationRaw>(
-        'userInvitations',
-        cursor =>
-            convexQuery(api.organizations.getUserInvitationsPage, {
-                now: referenceNow,
-                paginationOpts: { numItems: 50, cursor },
-            }),
-        invitation => invitation.id
-    );
+    const result = useQuery(convexQuery(api.organizations.getUserInvitations, {}));
     const { data } = result;
 
     let invitations: Invitation[] | undefined;
     if (data) {
         invitations = data.map(rawInvitation => {
-            let organization: Invitation['organization'];
-            if (rawInvitation.organization) {
-                organization = { name: rawInvitation.organization.name };
-            }
             let inviter: Invitation['inviter'];
             if (rawInvitation.inviter) {
                 inviter = { name: rawInvitation.inviter.name };
@@ -61,7 +45,7 @@ export function usePendingInvitations() {
                 email: rawInvitation.email,
                 role,
                 organizationId: rawInvitation.organizationId,
-                organization,
+                organization: rawInvitation.organization,
                 inviter,
             };
         });

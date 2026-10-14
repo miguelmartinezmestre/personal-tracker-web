@@ -203,21 +203,6 @@ export function OrganizationSwitcher({ initialActiveOrganizationId }: Organizati
         );
     }
 
-    let loadMoreItem = null;
-    if (organizationsQuery.hasMore) {
-        loadMoreItem = (
-            <DropdownMenuItem
-                disabled={organizationsQuery.isFetching}
-                closeOnClick={false}
-                onClick={() => {
-                    organizationsQuery.loadMore();
-                }}
-            >
-                {common('actions.loadMore')}
-            </DropdownMenuItem>
-        );
-    }
-
     return (
         <DropdownMenu>
             <DropdownMenuTrigger
@@ -262,7 +247,6 @@ export function OrganizationSwitcher({ initialActiveOrganizationId }: Organizati
                     />
                 </div>
                 {retryItem}
-                {loadMoreItem}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
                     onClick={() => router.push('/dashboard/organizations')}

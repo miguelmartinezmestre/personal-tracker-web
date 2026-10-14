@@ -78,4 +78,36 @@ describe('user deletion cascade', () => {
         expect(result.tombstone?.deletedAt).toBeDefined();
         expect(result.tombstone?.email).toContain('@deleted.invalid');
     });
+
+    test('promotes nobody when the organization keeps another owner', async () => {
+        const suffix = Math.random().toString(36).slice(2, 10);
+        const [deleted, olderMember, otherOwner] = await Promise.all(
+            ['deleted', 'older', 'other'].map(label =>
+                createTestUser(t, {
+                    userId: `${label}-${suffix}`,
+                    email: `${label}-${suffix}@example.com`,
+                    name: label,
+                })
+            )
+        );
+        const organizationId = await createTestOrganization(t, {
+            name: `Two owners ${suffix}`,
+            slug: `two-owners-${suffix}`,
+        });
+        await createTestMember(t, { organizationId, userId: deleted.docId, role: 'owner' });
+        // Joined before the second owner, so the oldest remaining member is not an owner.
+        const olderMembershipId = await createTestMember(t, {
+            organizationId,
+            userId: olderMember.docId,
+            role: 'member',
+        });
+        await createTestMember(t, { organizationId, userId: otherOwner.docId, role: 'owner' });
+
+        await t.mutation(internal.cascades.cascadeUserDeletionInternal, { userId: deleted.docId });
+        await t.finishAllScheduledFunctions(() => vi.runAllTimers());
+
+        expect(await t.run(ctx => ctx.db.get('member', olderMembershipId))).toMatchObject({
+            role: 'member',
+        });
+    });
 });

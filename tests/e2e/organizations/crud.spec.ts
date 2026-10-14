@@ -140,6 +140,8 @@ test.describe('Organizations CRUD', () => {
         await confirmButton.click();
 
         await expect(confirmDialog.first()).toBeHidden({ timeout: 10000 });
+        // The dialog closes even when the delete fails, so check the row is gone.
+        await expect(row).toHaveCount(0, { timeout: 10000 });
     });
 
     test('switch active organization', async ({ page }) => {
@@ -149,6 +151,31 @@ test.describe('Organizations CRUD', () => {
 
         await page.goto('/dashboard/home');
         await setActiveOrganization(page, newOrg.name);
+    });
+
+    test('the only owner cannot leave and stays on the organization', async ({ page }) => {
+        const organization = await createOrganization(page, {
+            name: `Sole Owner Org ${randomUUID().substring(0, 8)}`,
+        });
+        await page.goto('/dashboard/organizations');
+        await setActiveOrganization(page, organization.name);
+        const row = page
+            .getByTestId('organizations-table')
+            .locator('[data-testid="table-row"]')
+            .filter({ hasText: organization.name })
+            .first();
+        await row.getByTestId('organization-detail-link').click();
+
+        // Leaving first switches to the personal organization, then must switch back on failure.
+        await page.getByTestId('organization-leave').click();
+        await page.getByTestId('delete-confirm-button').click();
+
+        await expect(page.getByTestId('organization-switcher').first()).toContainText(
+            organization.name,
+            { timeout: 15000 }
+        );
+        await page.goto('/dashboard/organizations');
+        await expect(row).toBeVisible({ timeout: 15000 });
     });
 
     test('validate organization name required', { tag: ['@REQ-EQUIPOS-001'] }, async ({ page }) => {

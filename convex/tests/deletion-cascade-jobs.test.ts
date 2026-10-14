@@ -159,4 +159,44 @@ describe('organization deletion cascade', () => {
             })
         ).resolves.toEqual({ status: 'completed', phase: 'finalize' });
     });
+
+    test('gives the deleting user back an active organization after Better Auth clears it', async () => {
+        const suffix = Math.random().toString(36).slice(2, 10);
+        const actor = await createTestUser(t, {
+            userId: `actor-${suffix}`,
+            email: `actor-${suffix}@example.test`,
+            name: 'Actor',
+        });
+        const deletedId = await createTestOrganization(t, {
+            name: 'Deleted by actor',
+            slug: `deleted-by-actor-${suffix}`,
+        });
+        const fallbackId = await createTestOrganization(t, {
+            name: 'Kept',
+            slug: `kept-${suffix}`,
+        });
+        await createTestMember(t, {
+            organizationId: fallbackId,
+            userId: actor.docId,
+            role: 'owner',
+        });
+        // Better Auth sets the deleting session's active organization to null before deleting.
+        const actorSession = await createTestSession(t, {
+            userId: actor.docId,
+            activeOrganizationId: null,
+            expiresAt: Date.now() + 3600000,
+            token: `actor-session-${suffix}`,
+        });
+        await t.run(ctx => ctx.db.delete('organization', deletedId));
+
+        await t.mutation(internal.auth.recoverSessionsAfterOrganizationDeletion, {
+            organizationId: deletedId,
+            actorUserId: actor.docId,
+        });
+        await t.finishAllScheduledFunctions(() => vi.runAllTimers());
+
+        expect(
+            (await t.run(ctx => ctx.db.get('session', actorSession)))?.activeOrganizationId
+        ).toBe(fallbackId);
+    });
 });

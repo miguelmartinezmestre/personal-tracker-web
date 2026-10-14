@@ -3,21 +3,13 @@
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Field, FieldError, FieldGroup, FieldLabel } from '@/components/ui/field';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import FormModal from '@/components/forms/form-modal';
-import { getFieldErrors } from '@/components/forms/form-utils';
 import { DeleteConfirmationDialog } from '@/components/data-table/components/delete-confirmation-dialog';
-import {
-    dateInputToUtcTimestamp,
-    timestampToDateInput,
-    todayDateInput,
-} from '@/features/objectives/lib/dates';
+import { dateInputToUtcTimestamp, timestampToDateInput } from '@/features/objectives/lib/dates';
 import { formatObjectiveDate, formatObjectiveValue } from '@/features/objectives/lib/format';
 import { useProgress, type ProgressEntry } from '@/features/objectives/hooks/use-progress';
 import { useProgressFormSchema } from '@/features/objectives/hooks/use-form-schemas';
-import { PROGRESS_COMMENT_MAX_LENGTH } from '@/convex/constants';
+import { ProgressFields } from '@/features/objectives/components/progress-fields';
 import { type ProgressFormValues } from '@/features/objectives/schemas/objective';
 import { useLocale, useTranslations } from 'next-intl';
 import { useMutation } from '@tanstack/react-query';
@@ -195,114 +187,13 @@ function EditProgressModal({
             submitTestId="progress-edit-save-button"
         >
             {form => (
-                <FieldGroup>
-                    <form.Field name="updatedValue">
-                        {field => {
-                            const errors = getFieldErrors(form, field);
-                            const isInvalid = errors.length > 0;
-                            let value: number | '' = '';
-                            if (
-                                typeof field.state.value === 'number' &&
-                                Number.isFinite(field.state.value)
-                            ) {
-                                value = field.state.value;
-                            } else {
-                                value = '';
-                            }
-                            const handleChange = (rawValue: string) => {
-                                let nextValue: number;
-                                if (rawValue === '') {
-                                    nextValue = Number.NaN;
-                                } else {
-                                    nextValue = Number(rawValue);
-                                }
-                                field.handleChange(nextValue);
-                            };
-                            return (
-                                <Field data-invalid={isInvalid}>
-                                    <FieldLabel htmlFor={`edit-${field.name}`}>
-                                        {unit ? t('entryValueWithUnit', { unit }) : t('entryValue')}
-                                    </FieldLabel>
-                                    <Input
-                                        id={`edit-${field.name}`}
-                                        name={field.name}
-                                        type="number"
-                                        step="any"
-                                        min={0}
-                                        value={value}
-                                        onBlur={field.handleBlur}
-                                        onChange={event => handleChange(event.target.value)}
-                                        aria-invalid={isInvalid}
-                                        data-testid="progress-edit-value-input"
-                                    />
-                                    <p className="text-muted-foreground text-sm">
-                                        {t('entryValueDescription')}
-                                    </p>
-                                    {isInvalid ? <FieldError errors={errors} /> : null}
-                                </Field>
-                            );
-                        }}
-                    </form.Field>
-                    <form.Field name="updateDate">
-                        {field => {
-                            const errors = getFieldErrors(form, field);
-                            const isInvalid = errors.length > 0;
-                            let value: string;
-                            if (typeof field.state.value === 'string') {
-                                value = field.state.value;
-                            } else {
-                                value = '';
-                            }
-                            return (
-                                <Field data-invalid={isInvalid}>
-                                    <FieldLabel htmlFor={`edit-${field.name}`}>
-                                        {t('table.columns.date')}
-                                    </FieldLabel>
-                                    <Input
-                                        id={`edit-${field.name}`}
-                                        name={field.name}
-                                        type="date"
-                                        max={todayDateInput()}
-                                        value={value}
-                                        onBlur={field.handleBlur}
-                                        onChange={event => field.handleChange(event.target.value)}
-                                        aria-invalid={isInvalid}
-                                    />
-                                    {isInvalid ? <FieldError errors={errors} /> : null}
-                                </Field>
-                            );
-                        }}
-                    </form.Field>
-                    <form.Field name="comment">
-                        {field => {
-                            const errors = getFieldErrors(form, field);
-                            const isInvalid = errors.length > 0;
-                            let value: string;
-                            if (typeof field.state.value === 'string') {
-                                value = field.state.value;
-                            } else {
-                                value = '';
-                            }
-                            return (
-                                <Field data-invalid={isInvalid}>
-                                    <FieldLabel htmlFor={`edit-${field.name}`}>
-                                        {t('comment')}
-                                    </FieldLabel>
-                                    <Textarea
-                                        id={`edit-${field.name}`}
-                                        name={field.name}
-                                        value={value}
-                                        maxLength={PROGRESS_COMMENT_MAX_LENGTH}
-                                        onBlur={field.handleBlur}
-                                        onChange={event => field.handleChange(event.target.value)}
-                                        aria-invalid={isInvalid}
-                                    />
-                                    {isInvalid ? <FieldError errors={errors} /> : null}
-                                </Field>
-                            );
-                        }}
-                    </form.Field>
-                </FieldGroup>
+                <ProgressFields
+                    form={form}
+                    idPrefix="edit-"
+                    testIdPrefix="progress-edit"
+                    valueLabel={unit ? t('entryValueWithUnit', { unit }) : t('entryValue')}
+                    valueHint={t('entryValueDescription')}
+                />
             )}
         </FormModal>
     );

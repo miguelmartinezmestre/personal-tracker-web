@@ -952,6 +952,7 @@
         "verificationRequiredTitle": "Verifica tu correo antes de responder",
         "verificationRequiredDescription": "Por seguridad, debes demostrar que esta dirección de correo te pertenece antes de aceptar o rechazar una invitación.",
         "sendVerificationEmail": "Enviar correo de verificación",
+        "verifyFromInvitations": "Ir a mis invitaciones para verificar",
         "sendingVerificationEmail": "Enviando correo de verificación...",
         "verificationEmailSent": "Correo de verificación enviado. Abre su enlace y vuelve aquí para responder a la invitación.",
         "verificationEmailError": "No hemos podido enviar el correo de verificación. Inténtalo de nuevo.",

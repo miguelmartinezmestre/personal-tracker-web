@@ -1,5 +1,5 @@
 import { internal } from './_generated/api';
-import { internalQuery, type MutationCtx } from './_generated/server';
+import { internalMutation, internalQuery, type MutationCtx } from './_generated/server';
 import { ConvexError, v } from 'convex/values';
 import type { Id } from './_generated/dataModel';
 import { ERROR_CODES } from './constants';
@@ -14,9 +14,10 @@ import {
 } from './personalOrganization';
 import { buildBetterAuthOptions } from './authOptions';
 import { insertDefaultCategories } from './categories';
-import { internalMutation, isActiveAccount, type GenericCtx } from './utils';
+import { isActiveAccount, type GenericCtx } from './utils';
 const SESSION_RECOVERY_BATCH_SIZE = 20;
-type SessionRecoveryPhase = 'actor-null' | 'actor-unset' | 'actor-deleted' | 'affected';
+// Other members' sessions are repaired by the organization deletion cascade's sessions phase.
+type SessionRecoveryPhase = 'actor-null' | 'actor-unset' | 'actor-deleted';
 type SessionRecoveryResult = {
     status: 'in_progress' | 'completed';
     phase: SessionRecoveryPhase;
@@ -24,11 +25,10 @@ type SessionRecoveryResult = {
 const NEXT_SESSION_RECOVERY_PHASE: Record<SessionRecoveryPhase, SessionRecoveryPhase | null> = {
     'actor-null': 'actor-unset',
     'actor-unset': 'actor-deleted',
-    'actor-deleted': 'affected',
-    affected: null,
+    'actor-deleted': null,
 };
 function actorPhaseOrganizationId(
-    phase: Exclude<SessionRecoveryPhase, 'affected'>,
+    phase: SessionRecoveryPhase,
     organizationId: Id<'organization'>
 ): Id<'organization'> | null | undefined {
     switch (phase) {
@@ -241,20 +241,14 @@ export const recoverSessionsAfterOrganizationDeletion = internalMutation({
         phase: v.union(
             v.literal('actor-null'),
             v.literal('actor-unset'),
-            v.literal('actor-deleted'),
-            v.literal('affected')
+            v.literal('actor-deleted')
         ),
     }),
     args: {
         organizationId: v.string(),
         actorUserId: v.string(),
         phase: v.optional(
-            v.union(
-                v.literal('actor-null'),
-                v.literal('actor-unset'),
-                v.literal('actor-deleted'),
-                v.literal('affected')
-            )
+            v.union(v.literal('actor-null'), v.literal('actor-unset'), v.literal('actor-deleted'))
         ),
     },
     handler: async (ctx, args) => {
@@ -264,27 +258,13 @@ export const recoverSessionsAfterOrganizationDeletion = internalMutation({
             throw new ConvexError(ERROR_CODES.INTERNAL_ERROR);
         }
         const phase = args.phase ?? 'actor-null';
-        let sessions: Array<{
-            _id: Id<'session'>;
-            userId: string;
-            expiresAt: number;
-        }>;
-        if (phase === 'affected') {
-            sessions = await ctx.db
-                .query('session')
-                .withIndex('activeOrganizationId', q =>
-                    q.eq('activeOrganizationId', organizationId)
-                )
-                .take(SESSION_RECOVERY_BATCH_SIZE);
-        } else {
-            const activeOrganizationId = actorPhaseOrganizationId(phase, organizationId);
-            sessions = await ctx.db
-                .query('session')
-                .withIndex('by_userId_and_activeOrganizationId', q =>
-                    q.eq('userId', actorUserId).eq('activeOrganizationId', activeOrganizationId)
-                )
-                .take(SESSION_RECOVERY_BATCH_SIZE);
-        }
+        const activeOrganizationId = actorPhaseOrganizationId(phase, organizationId);
+        const sessions = await ctx.db
+            .query('session')
+            .withIndex('by_userId_and_activeOrganizationId', q =>
+                q.eq('userId', actorUserId).eq('activeOrganizationId', activeOrganizationId)
+            )
+            .take(SESSION_RECOVERY_BATCH_SIZE);
         await repairSessionsAfterOrganizationDeletion(ctx, sessions, organizationId);
         if (sessions.length === SESSION_RECOVERY_BATCH_SIZE) {
             await scheduleSessionRecovery(ctx, {

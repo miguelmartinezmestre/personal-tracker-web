@@ -17,7 +17,7 @@ export default async function InvitationPage({ params }: InvitationPageProps) {
     const client = new ConvexHttpClient(NEXT_PUBLIC_CONVEX_URL);
     const { isValid, organizationName } = await client.query(
         api.organizations.getPublicInvitationStatus,
-        { invitationId: token, now: Date.now() }
+        { invitationId: token }
     );
     return (
         <InvitationContent

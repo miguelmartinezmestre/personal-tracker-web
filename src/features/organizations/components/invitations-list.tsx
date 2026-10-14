@@ -61,16 +61,7 @@ function VerificationAlert({
 
 export function InvitationsList() {
     const t = useTranslations('Invitations');
-    const common = useTranslations('Common');
-    const {
-        data: invitations,
-        isLoading,
-        isError,
-        refetch,
-        hasMore,
-        loadMore,
-        isFetching,
-    } = usePendingInvitations();
+    const { data: invitations, isLoading, isError, refetch } = usePendingInvitations();
     const session = useQuery(convexQuery(api.organizations.getCurrentSession, {}));
     const acceptInvitation = useAcceptInvitation();
     const rejectInvitation = useRejectInvitation();
@@ -167,6 +158,17 @@ export function InvitationsList() {
 
     const pendingInvitations = invitations;
 
+    // Unverified accounts get no invitations from the backend, only the prompt to verify.
+    if (requiresEmailVerification) {
+        return (
+            <VerificationAlert
+                verificationSent={verificationSent}
+                isPending={sendVerificationEmail.isPending}
+                onSend={() => sendVerificationEmail.mutate()}
+            />
+        );
+    }
+
     if (pendingInvitations.length === 0) {
         if (acceptInvitation.isPending) {
             return (
@@ -185,17 +187,6 @@ export function InvitationsList() {
         );
     }
 
-    let verificationAlert = null;
-    if (requiresEmailVerification) {
-        verificationAlert = (
-            <VerificationAlert
-                verificationSent={verificationSent}
-                isPending={sendVerificationEmail.isPending}
-                onSend={() => sendVerificationEmail.mutate()}
-            />
-        );
-    }
-
     let actionErrorAlert = null;
     if (actionError) {
         actionErrorAlert = (
@@ -207,19 +198,8 @@ export function InvitationsList() {
         );
     }
 
-    let loadMoreButton = null;
-    if (hasMore) {
-        loadMoreButton = (
-            <Button variant="outline" disabled={isFetching} onClick={loadMore}>
-                {common('actions.loadMore')}
-            </Button>
-        );
-    }
-
     return (
         <div className="space-y-4">
-            {verificationAlert}
-
             {actionErrorAlert}
 
             <div
@@ -234,11 +214,10 @@ export function InvitationsList() {
                         onReject={() => void handleReject(invitation.id)}
                         isAccepting={acceptInvitation.isPending}
                         isRejecting={rejectInvitation.isPending}
-                        isResponseDisabled={session.isPending || requiresEmailVerification}
+                        isResponseDisabled={session.isPending}
                     />
                 ))}
             </div>
-            {loadMoreButton}
         </div>
     );
 }

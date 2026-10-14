@@ -1,10 +1,9 @@
 import { ConvexError, v } from 'convex/values';
 import { paginationOptsValidator } from 'convex/server';
 import type { Id } from './_generated/dataModel';
-import type { MutationCtx } from './_generated/server';
+import { internalMutation, type MutationCtx } from './_generated/server';
 import { queryWithRLS } from './rls/wrappers';
 import { DEFAULT_CATEGORIES, ERROR_CODES } from './constants';
-import { internalMutation } from './utils';
 
 export const listCategories = queryWithRLS({
     args: {},

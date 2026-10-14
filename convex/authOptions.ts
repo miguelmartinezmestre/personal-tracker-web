@@ -12,6 +12,7 @@ import {
     buildPasswordResetEmail,
     buildVerificationEmail,
     getInvitationIdFromCallbackPath,
+    isOrganizationRoleValue,
     platformAdminRoles,
     platformRoles,
     readAuthStringField,
@@ -41,6 +42,16 @@ function throwReservedPersonalOrganizationIdentity() {
         code: ERROR_CODES.PERSONAL_ORG_UPDATE_RESTRICTED,
         message: 'Personal organization slug and metadata are reserved.',
     });
+}
+
+// Better Auth stores a role list as "owner,admin"; the app compares exact single roles.
+function assertSingleOrganizationRole(role: string) {
+    if (!isOrganizationRoleValue(role)) {
+        throw new APIError('BAD_REQUEST', {
+            code: ERROR_CODES.VALIDATION_ERROR,
+            message: 'A member has exactly one role: owner, admin or member.',
+        });
+    }
 }
 
 async function assertOrganizationNameAvailable(
@@ -258,7 +269,12 @@ function createOrganizationPlugin(ctx: GenericCtx) {
                     throwReservedPersonalOrganizationIdentity();
                 }
             },
-            beforeCreateInvitation: async ({ organization }) => {
+            beforeUpdateMemberRole: ({ newRole }) => {
+                assertSingleOrganizationRole(newRole);
+                return Promise.resolve();
+            },
+            beforeCreateInvitation: async ({ invitation, organization }) => {
+                assertSingleOrganizationRole(invitation.role);
                 if (await isProtectedDefaultOrganization(ctx, organization.id)) {
                     throw new APIError('FORBIDDEN', {
                         code: ERROR_CODES.PERSONAL_ORG_INVITE_FORBIDDEN,

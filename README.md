@@ -38,9 +38,9 @@ Install Playwright browsers only when you need E2E tests: `pnpm run playwright:i
 - `pnpm dev` — Convex + Next in dev (`convex dev` starts the frontend via `dev:front`).
 - `pnpm dev:front` / `pnpm dev:convex` — Next or Convex alone.
 - `pnpm checks` — `checks:static` then `test`.
-- `pnpm checks:static` — format, types, lint, knip, translations, requirements, and peer-dependency
-  compatibility.
-- `pnpm ci` — `checks:static`, `test:coverage`, `build`, and `test:e2e`.
+- `pnpm checks:static` — format, types, lint, knip, translations, and peer-dependency compatibility.
+- `pnpm run ci` — `checks:static`, `test:coverage`, `build`, and `test:e2e`. Use `run`: plain
+  `pnpm ci` is pnpm's own clean install.
 - `pnpm test` — `test:backend` then `test:frontend`.
 - `pnpm test:coverage` — both Vitest suites with coverage thresholds.
 - `pnpm test:e2e` — Playwright against the Docker e2e stack (includes MailDev SMTP).
@@ -56,9 +56,6 @@ Install Playwright browsers only when you need E2E tests: `pnpm run playwright:i
   deployment).
 
 ## Documentation
-
-- [Current implementation inventory](docs/estado-proyecto.md).
-- [Local operation and recovery](docs/operacion-local.md).
 
 - [`AGENTS.md`](./AGENTS.md) — project structure, coding style, and the full command reference.
 - [`self-host.md`](./self-host.md) — local Docker stack (Convex self-hosted, MySQL, MailDev) and
@@ -80,13 +77,13 @@ against a personal/dev deployment. Use `npx convex deploy` **only** for producti
 | Variable                                                                  | Where  | Notes                                                              |
 | ------------------------------------------------------------------------- | ------ | ------------------------------------------------------------------ |
 | `SITE_URL`                                                                | Convex | Public app origin (`https://…`), no trailing slash                 |
-| `BETTER_AUTH_URL`                                                         | Convex | Usually the Convex site URL used by Better Auth                    |
+| `BETTER_AUTH_URL`                                                         | Convex | Public app origin, same as `SITE_URL`                              |
 | `BETTER_AUTH_SECRET`                                                      | Convex | Long random secret; not a `NEXT_PUBLIC_*` value                    |
 | `SETUP_SECRET`                                                            | Convex | 32–256 chars; required before first `/setup` on non-loopback hosts |
 | `EMAIL_PROVIDER`                                                          | Convex | `resend` (typical prod) or `smtp`                                  |
 | `EMAIL_FROM` / `RESEND_API_KEY`                                           | Convex | When `EMAIL_PROVIDER=resend`                                       |
 | `SMTP_HOST` / `SMTP_PORT` / `SMTP_SECURE` / `SMTP_USER` / `SMTP_PASSWORD` | Convex | When `EMAIL_PROVIDER=smtp`                                         |
-| `JWKS`                                                                    | Convex | Generate after auth secret changes (`pnpm run generate-jwks`)      |
+| `JWKS`                                                                    | Convex | Optional; caches Better Auth's signing keys                        |
 
 3. Deploy functions: `npx convex deploy` (or `CONVEX_DEPLOY_KEY=… npx convex deploy` in CI).
 4. Open the app URL, complete `/setup` once with `SETUP_SECRET`, then treat that secret as
@@ -109,13 +106,6 @@ against a personal/dev deployment. Use `npx convex deploy` **only** for producti
 
 - Auth redirects and CORS: `SITE_URL` and `NEXT_PUBLIC_SITE_URL` must match the browser origin.
 - Mail: send a password-reset or invitation and confirm delivery (Resend dashboard or SMTP inbox).
-- Do **not** set `E2E_SETUP_SECRET` in a real deployment (local e2e runner flag only).
 
 Local self-hosting remains documented in [`self-host.md`](./self-host.md); MailDev (`:1080`) is for
 dev/e2e SMTP capture, not production.
-
-## Testing note
-
-The e2e stack uses `E2E_SETUP_SECRET` only as a **local-only runner flag** that permits production
-mode over a loopback HTTP URL. It also configures a separate test `SETUP_SECRET` so the global setup
-exercises the protected bootstrap request. Do not set `E2E_SETUP_SECRET` in a real deployment.

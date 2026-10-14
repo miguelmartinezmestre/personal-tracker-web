@@ -952,6 +952,7 @@
         "verificationRequiredTitle": "Verify your email before responding",
         "verificationRequiredDescription": "For security, you must prove ownership of this email address before accepting or rejecting an invitation.",
         "sendVerificationEmail": "Send verification email",
+        "verifyFromInvitations": "Go to my invitations to verify",
         "sendingVerificationEmail": "Sending verification email...",
         "verificationEmailSent": "Verification email sent. Open its link, then return here to respond to the invitation.",
         "verificationEmailError": "We could not send the verification email. Please try again.",

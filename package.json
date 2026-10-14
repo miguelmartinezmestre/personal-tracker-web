@@ -37,7 +37,6 @@
         "check-translations": "tsx scripts/check-translations.ts",
         "check-peers": "pnpm peers check",
         "format:check": "prettier . --check --ignore-unknown",
-        "generate-admin-key": "cd infrastructure && docker compose exec backend ./generate_admin_key.sh",
         "generate-jwks": "tsx scripts/generate-jwks.ts",
         "playwright:install": "pnpm exec playwright install chromium",
         "playwright:install:ci": "pnpm exec playwright install --with-deps chromium",

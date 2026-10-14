@@ -5,8 +5,6 @@ import {
     wrapDatabaseWriter,
 } from 'convex-helpers/server/rowLevelSecurity';
 import {
-    internalMutation,
-    internalQuery,
     mutation,
     query,
     type DatabaseReader,
@@ -15,7 +13,6 @@ import {
     type QueryCtx,
 } from '../_generated/server';
 import type { Id } from '../_generated/dataModel';
-import { domainTriggers } from '../utils';
 import { resolveAuthContext } from './authContext';
 import { createRlsRules } from './policies';
 
@@ -25,7 +22,7 @@ type QueryRlsCtx = {
     db: DatabaseReader;
     dbForIntegrityChecks: DatabaseReader;
     userId: Id<'user'>;
-    email: string;
+    email: string | null;
     organizationId: Id<'organization'> | null;
     role: string;
     memberRole: string | null;
@@ -35,7 +32,7 @@ type MutationRlsCtx = {
     db: DatabaseWriter;
     dbForIntegrityChecks: DatabaseReader;
     userId: Id<'user'>;
-    email: string;
+    email: string | null;
     organizationId: Id<'organization'> | null;
     role: string;
     memberRole: string | null;
@@ -62,17 +59,9 @@ async function buildQueryRlsCtx(ctx: QueryCtx): Promise<QueryRlsCtx> {
 
 async function buildMutationRlsCtx(ctx: MutationCtx): Promise<MutationRlsCtx> {
     const { userId, email, organizationId, role, memberRole } = await resolveAuthContext(ctx);
-    const triggerDb = domainTriggers.wrapDB({
-        ...ctx,
-        db: ctx.db,
-        userId,
-        organizationId,
-        role,
-    }).db;
-
     const rlsDb = wrapDatabaseWriter(
         ctx,
-        triggerDb,
+        ctx.db,
         createRlsRules({ userId, role, memberRole, ctx, organizationId, email }),
         config
     );
@@ -97,20 +86,6 @@ export const queryWithRLS = customQuery(
 
 export const mutationWithRLS = customMutation(
     mutation,
-    customCtx(async (ctx): Promise<MutationRlsCtx> => {
-        return await buildMutationRlsCtx(ctx);
-    })
-);
-
-export const internalQueryWithRLS = customQuery(
-    internalQuery,
-    customCtx(async (ctx): Promise<QueryRlsCtx> => {
-        return await buildQueryRlsCtx(ctx);
-    })
-);
-
-export const internalMutationWithRLS = customMutation(
-    internalMutation,
     customCtx(async (ctx): Promise<MutationRlsCtx> => {
         return await buildMutationRlsCtx(ctx);
     })

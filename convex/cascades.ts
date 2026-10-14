@@ -24,8 +24,6 @@ const userDeletionPhaseValidator = v.union(
     v.literal('memberships')
 );
 
-const memberLeaveCleanupPhaseValidator = v.union(v.literal('done'));
-
 type OrganizationDeletionPhase =
     | 'progressUpdates'
     | 'objectives'
@@ -51,7 +49,6 @@ type UserDeletionResult = {
 export const cascadeUserDeletionInternal = internalMutation({
     args: {
         userId: v.id('user'),
-        actorUserId: v.optional(v.id('user')),
     },
     returns: v.null(),
     handler: async (ctx, args) => {
@@ -233,19 +230,6 @@ export const continueOrganizationDeletionCascade = internalMutation({
             }
         }
     },
-});
-
-export const continueMemberLeaveCleanup = internalMutation({
-    args: {
-        organizationId: v.id('organization'),
-        userId: v.id('user'),
-        phase: v.optional(memberLeaveCleanupPhaseValidator),
-    },
-    returns: v.object({
-        status: v.union(v.literal('in_progress'), v.literal('completed')),
-        phase: memberLeaveCleanupPhaseValidator,
-    }),
-    handler: () => ({ status: 'completed' as const, phase: 'done' as const }),
 });
 
 async function deleteOrganizationProgressUpdatesBatch(
@@ -462,9 +446,9 @@ async function transferOrDeleteMembership(
             organizationId: organization._id,
             phase: 'progressUpdates',
         });
-    } else if (membership.role === 'owner') {
+    } else if (membership.role === 'owner' && !successors.some(member => member.role === 'owner')) {
         const successor = successors.at(0);
-        if (successor && successor.role !== 'owner') {
+        if (successor) {
             await ctx.db.patch('member', successor._id, { role: 'owner' });
         }
     }

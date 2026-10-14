@@ -124,7 +124,6 @@ describe('Convex runtime env', () => {
             BETTER_AUTH_URL: 'http://app.example.com',
             SETUP_SECRET: 's'.repeat(32),
         };
-        delete process.env.E2E_SETUP_SECRET;
 
         await expect(loadEnvModule()).rejects.toThrow('SITE_URL must use HTTPS in production');
     });
@@ -136,7 +135,6 @@ describe('Convex runtime env', () => {
             SITE_URL: 'http://localhost:3000',
             BETTER_AUTH_URL: 'http://localhost:3000',
         };
-        delete process.env.E2E_SETUP_SECRET;
         delete process.env.SETUP_SECRET;
 
         await expect(loadEnvModule()).resolves.toMatchObject({
@@ -150,7 +148,6 @@ describe('Convex runtime env', () => {
         process.env = {
             ...originalEnv,
             NODE_ENV: 'production',
-            E2E_SETUP_SECRET: 'local-e2e-secret',
             SITE_URL: 'http://localhost:3000',
             BETTER_AUTH_URL: 'http://localhost:3000',
         };
@@ -167,7 +164,6 @@ describe('Convex runtime env', () => {
         process.env = {
             ...originalEnv,
             NODE_ENV: 'production',
-            E2E_SETUP_SECRET: 'local-e2e-secret',
             SITE_URL: 'http://localhost:3000',
             BETTER_AUTH_URL: 'http://auth.example.com',
         };
@@ -267,7 +263,6 @@ describe('Next.js runtime env', () => {
             NEXT_PUBLIC_CONVEX_URL: 'https://deployment.convex.cloud',
             NEXT_PUBLIC_CONVEX_SITE_URL: 'https://deployment.convex.site',
         };
-        delete process.env.E2E_SETUP_SECRET;
 
         await expect(loadFrontendEnvModule()).rejects.toThrow(
             'NEXT_PUBLIC_SITE_URL must use HTTPS in production'

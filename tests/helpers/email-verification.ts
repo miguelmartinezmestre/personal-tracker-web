@@ -110,15 +110,9 @@ export async function waitForInvitationUrl(
 export async function verifyEmailFromInvitationPage(page: Page, email: string): Promise<void> {
     const verificationRequired = page.getByTestId('invitation-verification-required');
     const acceptButton = page.getByTestId('invitation-accept-button').first();
-    await expect
-        .poll(
-            async () =>
-                (await verificationRequired.isVisible().catch(() => false)) ||
-                (await acceptButton.isEnabled().catch(() => false)),
-            { timeout: 15000 }
-        )
-        .toBe(true);
-    if (!(await verificationRequired.isVisible().catch(() => false))) {
+    // Unverified accounts see only the verification prompt; verified ones see the invitations.
+    await expect(verificationRequired.or(acceptButton)).toBeVisible({ timeout: 15000 });
+    if (!(await verificationRequired.isVisible())) {
         return;
     }
     await page.getByTestId('invitation-send-verification-email').click();

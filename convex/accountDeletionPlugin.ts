@@ -72,7 +72,6 @@ export function accountDeletionPlugin(ctx: GenericCtx) {
 
                     await runnableCtx.runMutation(internal.cascades.cascadeUserDeletionInternal, {
                         userId: normalizedUserId,
-                        actorUserId: normalizedUserId,
                     });
                     deleteSessionCookie(endpointCtx);
 

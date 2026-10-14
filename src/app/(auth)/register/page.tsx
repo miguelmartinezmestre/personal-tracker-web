@@ -33,7 +33,6 @@ export default async function Register({ searchParams }: RegisterProps) {
     if (registrationRequiresInvitation && params.invitation) {
         invitationStatus = await client.query(api.organizations.getPublicInvitationStatus, {
             invitationId: params.invitation,
-            now: Date.now(),
         });
     }
 

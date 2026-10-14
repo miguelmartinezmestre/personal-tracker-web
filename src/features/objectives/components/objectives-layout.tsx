@@ -1,25 +1,21 @@
 'use client';
 
-import { useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import CreateObjectiveFormModal from '@/features/objectives/components/objective-form-create-modal';
 import ObjectivesTable from '@/features/objectives/components/objectives-table';
 import {
     OBJECTIVE_STATUS_FILTERS,
+    parseObjectiveStatusFilter,
     type ObjectiveStatusFilter,
 } from '@/features/objectives/lib/status-filter';
 import { useTranslations } from 'next-intl';
 
-export default function ObjectivesLayout({
-    initialStatus,
-}: {
-    initialStatus: ObjectiveStatusFilter;
-}) {
+export default function ObjectivesLayout() {
     const t = useTranslations('Objectives');
-    const [status, setStatus] = useState(initialStatus);
-    // The filter lives in the URL so a reload or the back button keeps it.
+    // The filter lives only in the URL, so links that drop `status` also reset it.
+    const status = parseObjectiveStatusFilter(useSearchParams().get('status') ?? undefined);
     const selectStatus = (next: ObjectiveStatusFilter) => {
-        setStatus(next);
         const url = new URL(window.location.href);
         if (next === 'all') {
             url.searchParams.delete('status');

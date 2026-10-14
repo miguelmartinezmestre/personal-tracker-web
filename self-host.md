@@ -68,7 +68,7 @@ pnpm run convex:local:no-docker:reset
 ```
 
 Ambos perfiles conservan sus datos por separado. Para volver a Docker basta con ejecutar
-`pnpm run convex:local`, que restaura las variables de `.env.local`. Los e2e siguen usando Docker.
+`pnpm run convex:local`, que restaura las variables de `.env.local`.
 
 ## Detención, reinicio y borrado explícito
 
@@ -112,8 +112,8 @@ pnpm run test:e2e
 ```
 
 Cada ejecución usa un proyecto Docker independiente, MySQL interno y MailDev (bandeja en
-http://127.0.0.1:1081). Sus volúmenes son efímeros. Al terminar conserva informes y logs en
-`reports/e2e`, además de las trazas y capturas de Playwright.
+http://127.0.0.1:1081). Sus volúmenes son efímeros. Si la ejecución falla, conserva informes y logs
+en `reports/e2e`, además de las trazas y capturas de Playwright; si pasa, los borra.
 
 ### E2E sin Docker
 
@@ -130,9 +130,6 @@ mismos argumentos que `test:e2e`, que se pasan a Playwright.
 El binario es el mismo que usa el CLI de Convex y comparte su caché (`~/.cache/convex/binaries`). Si
 falta, se descarga de las releases de GitHub y se descomprime con `unzip`. La versión está fijada
 para que las ejecuciones sean reproducibles; `E2E_CONVEX_BACKEND_VERSION` la cambia. Los logs del
-backend y de MailDev quedan en `reports/e2e`. Alternar entre ambos modos fuerza a reconstruir Next,
-porque cambia la dirección SMTP que forma parte de la huella del build.
+backend y de MailDev quedan en `reports/e2e` cuando la ejecución falla.
 
-Los e2e corren solo en Chrome de escritorio (Chromium de Playwright). Consulta el
-[procedimiento operativo](docs/operacion-local.md) para copias y restauración de la misma versión,
-reconstrucción de agregados, observación y verificación de entregas.
+Los e2e corren solo en Chrome de escritorio (Chromium de Playwright).

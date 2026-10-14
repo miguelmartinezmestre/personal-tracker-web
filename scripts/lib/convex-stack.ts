@@ -301,12 +301,11 @@ async function setConvexEnvVar(
 function convexEnvValues(
     commandEnv: NodeJS.ProcessEnv,
     siteUrl: string,
-    options?: { e2eSetupSecret?: string; setupSecret?: string }
+    options?: { setupSecret?: string }
 ): Record<string, string> {
     const values: Record<string, string | undefined> = {
         SITE_URL: siteUrl,
         BETTER_AUTH_URL: siteUrl,
-        E2E_SETUP_SECRET: options?.e2eSetupSecret,
         SETUP_SECRET: options?.setupSecret,
         BETTER_AUTH_SECRET: commandEnv.BETTER_AUTH_SECRET,
         JWKS: commandEnv.JWKS,
@@ -320,7 +319,7 @@ function convexEnvValues(
 export async function configureConvexEnv(
     commandEnv: NodeJS.ProcessEnv,
     siteUrl: string,
-    options?: { e2eSetupSecret?: string; setupSecret?: string }
+    options?: { setupSecret?: string }
 ): Promise<void> {
     for (const [key, value] of Object.entries(convexEnvValues(commandEnv, siteUrl, options))) {
         await setConvexEnvVar(commandEnv, key, value);

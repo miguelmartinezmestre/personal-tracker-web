@@ -4,8 +4,7 @@ import { getAuthUserIdentity } from 'kitcn/auth';
 import { internalQuery, mutation, query } from './_generated/server';
 import type { MutationCtx } from './_generated/server';
 import { ERROR_CODES } from './constants';
-import { queryWithRLS } from './rls/wrappers';
-import { GLOBAL_ADMIN_ROLE, isGlobalAdminRole } from './utils';
+import { GLOBAL_ADMIN_ROLE } from './utils';
 import type { Id } from './_generated/dataModel';
 import { isPersonalOrganizationForUser } from './personalOrganization';
 import { buildOrganizationSlug } from './utils';
@@ -246,32 +245,5 @@ export const isPlatformSetupUserInternal = internalQuery({
     handler: async (ctx, args) => {
         const settings = await ctx.db.query('platformSettings').first();
         return settings?.setupCompletedBy === args.userId;
-    },
-});
-export const isCurrentUserPlatformSetupUser = query({
-    args: {},
-    returns: v.boolean(),
-    handler: async ctx => {
-        const identity = await getAuthUserIdentity(ctx);
-        if (!identity) {
-            return false;
-        }
-        const userId = ctx.db.normalizeId('user', identity.userId);
-        if (!userId) {
-            return false;
-        }
-        const settings = await ctx.db.query('platformSettings').first();
-        return settings?.setupCompletedBy === userId;
-    },
-});
-export const getPlatformSetupUserId = queryWithRLS({
-    args: {},
-    returns: v.union(v.id('user'), v.null()),
-    handler: async ctx => {
-        if (!isGlobalAdminRole(ctx.role)) {
-            throw new ConvexError(ERROR_CODES.FORBIDDEN);
-        }
-        const settings = await ctx.db.query('platformSettings').first();
-        return settings?.setupCompletedBy ?? null;
     },
 });

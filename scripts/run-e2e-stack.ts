@@ -428,7 +428,6 @@ async function main(): Promise<void> {
     const baseUrl = `http://127.0.0.1:${frontendPort}`;
     const siteUrl = baseUrl;
     const nextDistDir = E2E_NEXT_DIST_DIR;
-    const e2eSetupSecret = randomBytes(32).toString('base64url');
     const setupSecret = randomBytes(32).toString('base64url');
     const commandEnv = buildConvexCommandEnv({
         deployment: { kind: 'self-hosted', adminKey },
@@ -441,7 +440,6 @@ async function main(): Promise<void> {
         ...(NO_DOCKER ? { smtp: { host: '127.0.0.1', port: E2E_MAILDEV_SMTP_PORT } } : {}),
         allowLocalHttp: true,
         extra: {
-            E2E_SETUP_SECRET: e2eSetupSecret,
             SETUP_SECRET: setupSecret,
             BASE_URL: baseUrl,
             E2E_MAILDEV_WEB_PORT,
@@ -450,7 +448,7 @@ async function main(): Promise<void> {
         },
     });
     console.log('Configuring Convex env vars for e2e...');
-    await configureConvexEnv(commandEnv, siteUrl, { e2eSetupSecret, setupSecret });
+    await configureConvexEnv(commandEnv, siteUrl, { setupSecret });
     console.log('Deploying Convex functions...');
     await deployConvexFunctions(commandEnv);
     if (E2E_FRONTEND_MODE === 'production') {
