@@ -70,12 +70,8 @@ async function waitForAuthenticatedDashboard(page: Page, timeout = 15000): Promi
     await page.waitForURL(DASHBOARD_HOME_RE, { timeout });
     await expect(page.getByRole('main')).toBeVisible({ timeout });
 }
-async function ensureActiveOrganization(page: Page, timeout = 12000): Promise<void> {
+async function waitForActiveOrganization(page: Page, timeout = 12000): Promise<void> {
     await expect.poll(() => hasOrganizationSelectedInUI(page), { timeout }).toBe(true);
-}
-export async function ensureAuthenticatedState(page: Page): Promise<void> {
-    await waitForAuthenticatedDashboard(page);
-    await ensureActiveOrganization(page);
 }
 async function loginWithCredentials(page: Page, email: string, password: string): Promise<void> {
     await page.getByTestId('email-input').fill(email);
@@ -83,7 +79,7 @@ async function loginWithCredentials(page: Page, email: string, password: string)
     await page.getByTestId('login-button').click();
     await page.waitForURL(DASHBOARD_HOME_RE, { timeout: 30000 });
     await expect(page.getByRole('main')).toBeVisible({ timeout: 15000 });
-    await ensureActiveOrganization(page);
+    await waitForActiveOrganization(page);
 }
 async function signInViaApi(page: Page, userData: TestUserData): Promise<void> {
     const result = await page.evaluate(async user => {
@@ -122,7 +118,7 @@ async function createTestUserViaApi(page: Page, userData: TestUserData): Promise
         await signInViaApi(page, userData);
         await waitForAuthenticatedDashboard(page);
     }
-    await ensureActiveOrganization(page);
+    await waitForActiveOrganization(page);
 }
 export async function createTestUser(
     page: Page,

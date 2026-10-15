@@ -5,12 +5,12 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Target, LineChart, CheckCircle, Users, Calendar, Lightbulb } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
 import { redirect } from 'next/navigation';
-import { checkPlatformSetUp } from '@/features/setup/server';
+import { isPlatformSetUp } from '@/features/setup/server';
 
 export const dynamic = 'force-dynamic';
 
 export default async function RouteComponent() {
-    if (!(await checkPlatformSetUp())) {
+    if (!(await isPlatformSetUp())) {
         redirect('/setup');
     }
 

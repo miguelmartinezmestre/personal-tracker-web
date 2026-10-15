@@ -29,7 +29,6 @@ const DOCKER_MAILDEV_SMTP: SmtpCapture = { host: 'maildev', port: '1025' };
 const MAILDEV_SMTP_CREDENTIALS = { user: 'maildev', password: 'maildev' } as const;
 
 const SMTP_CAPTURE_KEYS = [
-    'EMAIL_PROVIDER',
     'EMAIL_FROM',
     'SMTP_HOST',
     'SMTP_PORT',
@@ -40,7 +39,6 @@ const SMTP_CAPTURE_KEYS = [
 
 function smtpCaptureEnv(capture: SmtpCapture): Record<(typeof SMTP_CAPTURE_KEYS)[number], string> {
     return {
-        EMAIL_PROVIDER: 'smtp',
         EMAIL_FROM: 'Metricas <noreply@metricas.local>',
         SMTP_HOST: capture.host,
         SMTP_PORT: capture.port,

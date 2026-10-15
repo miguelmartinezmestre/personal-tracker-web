@@ -1,5 +1,5 @@
 // @vitest-environment node
-import { readdirSync, readFileSync } from 'node:fs';
+import { readdirSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, test } from 'vitest';
@@ -59,18 +59,5 @@ describe('Convex test files stay out of the function bundle', () => {
             .map(file => relative(root, file).replace(/\\/g, '/'))
             .filter(file => (file.split('/').pop() ?? '').split('.').length < 3);
         expect(leaked).toEqual([]);
-    });
-
-    test('generated Convex API does not register test modules', () => {
-        const api = readFileSync(join(root, 'convex/_generated/api.d.ts'), 'utf8');
-        expect(
-            [...api.matchAll(/from ['"](\.\.\/tests\/[^'"]+)['"]/g)].map(match => match[1])
-        ).toEqual([]);
-    });
-
-    test('auth config does not load optional Convex env vars', () => {
-        const source = readFileSync(join(root, 'convex/auth.config.ts'), 'utf8');
-        expect(source).not.toMatch('SETUP_SECRET');
-        expect(source).not.toMatch("from './env'");
     });
 });

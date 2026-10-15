@@ -1,18 +1,8 @@
-import { Resend } from '@convex-dev/resend';
 import { v } from 'convex/values';
-import { components, internal } from './_generated/api';
+import { internal } from './_generated/api';
 import { env, internalMutation } from './_generated/server';
 
-export type EmailProvider = 'resend' | 'smtp';
-
-export type ResendEmailConfig = {
-    provider: 'resend';
-    from: string;
-    apiKey: string;
-};
-
 export type SmtpEmailConfig = {
-    provider: 'smtp';
     from: string;
     host: string;
     port: number;
@@ -21,48 +11,17 @@ export type SmtpEmailConfig = {
     password: string;
 };
 
-const DEFAULT_EMAIL_PROVIDER: EmailProvider = 'resend';
 const MIN_PORT = 1;
 const MAX_PORT = 65535;
 
 type EmailSettings = {
-    EMAIL_PROVIDER?: string;
     EMAIL_FROM?: string;
-    RESEND_API_KEY?: string;
     SMTP_HOST?: string;
     SMTP_PORT?: string;
     SMTP_SECURE?: string;
     SMTP_USER?: string;
     SMTP_PASSWORD?: string;
 };
-
-export function getEmailProvider(source: EmailSettings = env): EmailProvider {
-    const provider = (source.EMAIL_PROVIDER?.trim() || DEFAULT_EMAIL_PROVIDER).toLowerCase();
-
-    if (provider === 'resend' || provider === 'smtp') {
-        return provider;
-    }
-
-    throw new Error(`Unsupported EMAIL_PROVIDER: ${provider}`);
-}
-
-export function getResendEmailConfig(source: EmailSettings = env): ResendEmailConfig {
-    const from = source.EMAIL_FROM?.trim();
-    if (!from) {
-        throw new Error('EMAIL_FROM is required');
-    }
-
-    const apiKey = source.RESEND_API_KEY?.trim();
-    if (!apiKey) {
-        throw new Error('RESEND_API_KEY is required');
-    }
-
-    return {
-        provider: 'resend',
-        from,
-        apiKey,
-    };
-}
 
 export function getSmtpEmailConfig(source: EmailSettings = env): SmtpEmailConfig {
     const rawPort = source.SMTP_PORT?.trim();
@@ -108,7 +67,6 @@ export function getSmtpEmailConfig(source: EmailSettings = env): SmtpEmailConfig
     }
 
     return {
-        provider: 'smtp',
         from,
         host,
         port,
@@ -117,11 +75,6 @@ export function getSmtpEmailConfig(source: EmailSettings = env): SmtpEmailConfig
         password,
     };
 }
-
-const resend = new Resend(components.resend, {
-    apiKey: env.RESEND_API_KEY?.trim() || undefined,
-    testMode: false,
-});
 
 // A mutation, not a Node action: on a self-hosted backend a Node action reaches the scheduler
 // through CONVEX_CLOUD_ORIGIN, which is the host-facing URL and is not reachable from inside the
@@ -134,24 +87,11 @@ export const sendTransactionalEmail = internalMutation({
         text: v.optional(v.string()),
         html: v.optional(v.string()),
     },
-    returns: v.object({ message: v.string(), provider: v.string() }),
+    returns: v.object({ message: v.string() }),
     handler: async (ctx, args) => {
-        const provider = getEmailProvider();
-
-        if (provider === 'smtp') {
-            getSmtpEmailConfig();
-            await ctx.scheduler.runAfter(0, internal.emailSmtp.sendEmail, args);
-            return { message: 'Email queued successfully', provider };
-        }
-
-        const config = getResendEmailConfig();
-        await resend.sendEmail(ctx, {
-            from: config.from,
-            to: args.to,
-            subject: args.subject,
-            text: args.text,
-            html: args.html,
-        });
-        return { message: 'Email queued successfully', provider };
+        // Fails here, inside the caller's transaction, instead of later in the scheduled action.
+        getSmtpEmailConfig();
+        await ctx.scheduler.runAfter(0, internal.emailSmtp.sendEmail, args);
+        return { message: 'Email queued successfully' };
     },
 });

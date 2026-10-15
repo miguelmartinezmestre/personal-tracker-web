@@ -35,6 +35,31 @@ test.describe('Organization Members', () => {
     );
 
     test(
+        'a member leaves the organization',
+        { tag: ['@REQ-EQUIPOS-004'] },
+        async ({ page, browser }) => {
+            const collaborator = await setupCollaboratorInOrganization(browser, page);
+            try {
+                await openOrganizationDetail(collaborator.page, collaborator.organizationName);
+                await collaborator.page.getByTestId('organization-leave').click();
+                await collaborator.page.getByTestId('delete-confirm-button').click();
+
+                await expect(
+                    collaborator.page.getByTestId('organization-switcher')
+                ).not.toContainText(collaborator.organizationName, { timeout: 15000 });
+                await collaborator.page.goto('/dashboard/organizations');
+                await expect(
+                    collaborator.page
+                        .getByTestId('table-row')
+                        .filter({ hasText: collaborator.organizationName })
+                ).toHaveCount(0, { timeout: 15000 });
+            } finally {
+                await collaborator.context.close();
+            }
+        }
+    );
+
+    test(
         'owner removes a member from the organization',
         { tag: ['@REQ-EQUIPOS-004'] },
         async ({ page, browser }) => {
@@ -55,6 +80,30 @@ test.describe('Organization Members', () => {
             await expect(
                 page.getByTestId('table-row').filter({ hasText: collaborator.user.email })
             ).toHaveCount(0, { timeout: 15000 });
+        }
+    );
+
+    test(
+        'owner changes a member role to admin',
+        { tag: ['@REQ-EQUIPOS-003', '@REQ-EQUIPOS-004'] },
+        async ({ page, browser }) => {
+            const collaborator = await setupCollaboratorInOrganization(browser, page);
+            await collaborator.context.close();
+
+            await openOrganizationDetail(page, collaborator.organizationName);
+
+            const memberRow = page
+                .getByTestId('table-row')
+                .filter({ hasText: collaborator.user.email })
+                .first();
+            await expect(memberRow).toBeVisible({ timeout: 15000 });
+
+            await memberRow.getByTestId('organization-member-edit-open').click();
+            await page.getByTestId('organization-member-edit-role-select').click();
+            await page.getByRole('option', { name: /^(admin|administrador)$/i }).click();
+            await page.getByTestId('organization-member-edit-save-button').click();
+
+            await expect(memberRow).toContainText(/admin|administrador/i, { timeout: 15000 });
         }
     );
 

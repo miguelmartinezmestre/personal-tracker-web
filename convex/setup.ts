@@ -1,7 +1,7 @@
 import { ConvexError, v } from 'convex/values';
 import type { ObjectType } from 'convex/values';
 import { getAuthUserIdentity } from 'kitcn/auth';
-import { internalQuery, mutation, query } from './_generated/server';
+import { mutation, query } from './_generated/server';
 import type { MutationCtx } from './_generated/server';
 import { ERROR_CODES } from './constants';
 import { GLOBAL_ADMIN_ROLE } from './utils';
@@ -65,15 +65,9 @@ function validateSetupArgs(args: CompleteSetupArgs) {
     }
 }
 
-async function assertFirstSetupUser(ctx: MutationCtx, userId: Id<'user'>) {
-    const currentUser = await ctx.db.get('user', userId);
-    if (!currentUser) {
-        throw new ConvexError(ERROR_CODES.INTERNAL_ERROR);
-    }
+async function isFirstSetupUser(ctx: MutationCtx, userId: Id<'user'>): Promise<boolean> {
     const firstUser = await ctx.db.query('user').order('asc').first();
-    if (!firstUser || firstUser._id !== userId) {
-        throw new ConvexError(ERROR_CODES.SETUP_USER_MISMATCH);
-    }
+    return firstUser?._id === userId;
 }
 
 export const isPlatformSetUp = query({
@@ -122,7 +116,9 @@ export const completeSetup = mutation({
             throw new ConvexError(ERROR_CODES.PLATFORM_ALREADY_CONFIGURED);
         }
         validateSetupArgs(args);
-        await assertFirstSetupUser(ctx, userId);
+        if (!(await isFirstSetupUser(ctx, userId))) {
+            throw new ConvexError(ERROR_CODES.SETUP_USER_MISMATCH);
+        }
 
         await ctx.db.patch('user', userId, { role: GLOBAL_ADMIN_ROLE });
 
@@ -221,22 +217,5 @@ export const completeSetup = mutation({
         });
 
         return { organizationId };
-    },
-});
-
-export const normalizeUserId = internalQuery({
-    args: { userId: v.string() },
-    returns: v.union(v.id('user'), v.null()),
-    handler: (ctx, args) => {
-        return ctx.db.normalizeId('user', args.userId);
-    },
-});
-
-export const isPlatformSetupUserInternal = internalQuery({
-    args: { userId: v.id('user') },
-    returns: v.boolean(),
-    handler: async (ctx, args) => {
-        const settings = await ctx.db.query('platformSettings').first();
-        return settings?.setupCompletedBy === args.userId;
     },
 });

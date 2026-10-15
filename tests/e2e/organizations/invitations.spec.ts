@@ -72,6 +72,50 @@ test.describe('Organization Invitations', () => {
         }
     );
     test(
+        'invitee rejects an invitation and it leaves the list',
+        { tag: ['@REQ-EQUIPOS-006'] },
+        async ({ page, browser }) => {
+            const inviteeContext = await browser.newContext();
+            try {
+                const inviteePage = await inviteeContext.newPage();
+                const invitee = await createTestUser(inviteePage);
+                const organization = await createOrganization(page, {
+                    name: `Reject Invite Org ${randomUUID().substring(0, 8)}`,
+                });
+                await openOrganizationDetail(page, organization.name);
+                await inviteByEmail(page, invitee.email);
+
+                await inviteePage.goto('/dashboard/invitations', { waitUntil: 'domcontentloaded' });
+                await verifyEmailFromInvitationPage(inviteePage, invitee.email);
+                const invitationRow = inviteePage
+                    .getByTestId('table-row')
+                    .filter({ hasText: organization.name });
+                await expect(invitationRow).toBeVisible({ timeout: 15000 });
+                await invitationRow.getByTestId('invitation-reject-button').click();
+                await expect(invitationRow).toHaveCount(0, { timeout: 15000 });
+            } finally {
+                await inviteeContext.close();
+            }
+        }
+    );
+    test('admin cancels a pending invitation', { tag: ['@REQ-EQUIPOS-002'] }, async ({ page }) => {
+        const organization = await createOrganization(page, {
+            name: `Cancel Invite Org ${randomUUID().substring(0, 8)}`,
+        });
+        await openOrganizationDetail(page, organization.name);
+        const inviteEmail = `cancel-${randomUUID().substring(0, 8)}@example.com`;
+        await inviteByEmail(page, inviteEmail);
+
+        const pendingRow = page
+            .getByTestId('organization-pending-invitations')
+            .getByTestId('table-row')
+            .filter({ hasText: inviteEmail });
+        await expect(pendingRow).toBeVisible({ timeout: 15000 });
+        await pendingRow.getByTestId('organization-invitation-cancel').click();
+        await page.getByTestId('delete-confirm-button').click();
+        await expect(pendingRow).toHaveCount(0, { timeout: 15000 });
+    });
+    test(
         'accepting an invitation adds the user as an organization member',
         { tag: ['@REQ-EQUIPOS-006'] },
         async ({ page, browser }) => {

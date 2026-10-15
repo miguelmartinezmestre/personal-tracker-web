@@ -190,9 +190,6 @@ importers:
       '@convex-dev/react-query':
         specifier: ^0.1.0
         version: 0.1.0(@tanstack/react-query@5.101.4(react@19.2.8))(convex@1.43.0(react@19.2.8))
-      '@convex-dev/resend':
-        specifier: 0.2.6
-        version: 0.2.6(convex-helpers@0.1.120(@standard-schema/spec@1.1.0)(convex@1.43.0(react@19.2.8))(hono@4.13.1)(react@19.2.8)(typescript@6.0.3)(zod@4.4.3))(convex@1.43.0(react@19.2.8))(react@19.2.8)
       '@tanstack/charts':
         specifier: 1.0.0
         version: 1.0.0(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
@@ -752,12 +749,6 @@ packages:
     peerDependencies:
       convex: ^1.43.0
 
-  '@convex-dev/batch-worker@0.2.0':
-    resolution: {integrity: sha512-dn0L/5jqufXHzgzAhWqjGBmDGXbwRA0S6YVV5Z66y4pMXZ+YL3M4aHCk9iBInPp5zOtEPgVbfo/BYMxhLxVP+w==}
-    peerDependencies:
-      convex: ^1.36.1
-      react: ^18.3.1 || ^19.0.0
-
   '@convex-dev/batch-worker@0.3.3':
     resolution: {integrity: sha512-A9mOhSqITtdF6TR9bVZjTy+eES6/r/8ZvMWnNdKsATg8EOn5JMzDplibjaHCjQ57FjVeizbuKJ8GlnMs1RWF0g==}
     peerDependencies:
@@ -769,32 +760,11 @@ packages:
     peerDependencies:
       convex: ^1.34.1
 
-  '@convex-dev/rate-limiter@0.3.2':
-    resolution: {integrity: sha512-+oBPsBfFbzdxiF/9XaaTQmVnvDlvEfg/c69/v8LxTbw4VLuiflIKlfnPQL8OS0azXQQ11hcPWHmU8ytFmHKDXA==}
-    peerDependencies:
-      convex: ^1.24.8
-      react: ^18.2.0 || ^19.0.0
-    peerDependenciesMeta:
-      react:
-        optional: true
-
   '@convex-dev/react-query@0.1.0':
     resolution: {integrity: sha512-ULmBZCtAQDUePdBhUv7hj1Yy4QiCelhi6uEIOtMpjW8db6W9CFKvQwLt9heLngccFyMFfAZdOfSrT+cP4AH0Jw==}
     peerDependencies:
       '@tanstack/react-query': ^5.0.0
       convex: ^1.29.3
-
-  '@convex-dev/resend@0.2.6':
-    resolution: {integrity: sha512-TUmHezzRDtZFrsEC32c5lu5JHXlTSb7zNoaXNETKI5+X1xOrAkRT3sK/HoeWFqb/Xy42h+hqnqQWwnWpGNMiFA==}
-    peerDependencies:
-      convex: ^1.31.7
-      convex-helpers: ^0.1.106
-
-  '@convex-dev/workpool@0.4.9':
-    resolution: {integrity: sha512-2EauCO+fXqhBE0qN3aC2G/CA8Udc1nDiSha2uwdJi5SaElz6HmuM3Rv60AeQ3snMZ8PdHugKKlVeEFvAhSaokQ==}
-    peerDependencies:
-      convex: ^1.36.1
-      convex-helpers: ^0.1.94
 
   '@csstools/color-helpers@5.1.0':
     resolution: {integrity: sha512-S11EXWJyy0Mz5SYvRmY8nJYTFFd1LCNV+7cXyAgQtOOuzb4EsgfqDufL+9esx72/eLhsRdGZwaldu/h+E4t4BA==}
@@ -4534,9 +4504,6 @@ packages:
   po-parser@2.1.1:
     resolution: {integrity: sha512-ECF4zHLbUItpUgE3OTtLKlPjeBN+fKEczj2zYjDfCGOzicNs0GK3Vg2IoAYwx7LH/XYw43fZQP6xnZ4TkNxSLQ==}
 
-  postal-mime@2.7.4:
-    resolution: {integrity: sha512-0WdnFQYUrPGGTFu1uOqD2s7omwua8xaeYGdO6rb88oD5yJ/4pPHDA4sdWqfD8wQVfCny563n/HQS7zTFft+f/g==}
-
   postcss@8.5.25:
     resolution: {integrity: sha512-DTPx3RWSSnWyzLxQnlH0rJP+EW5ekl16ZU4/psbIhA0e53kJfdgaN5vKM+xP7yJtXVu+nfdVFmlgFDEKAe4Pyw==}
     engines: {node: ^10 || ^12 || >=14}
@@ -4676,15 +4643,6 @@ packages:
 
   reselect@5.3.0:
     resolution: {integrity: sha512-XGoLeRAVzUTcJ1qkxPQhDJyIZ5d6zzZD9nT7AEZOaaU9UbWclhycElmhO+VD5bFeLuzhPBaOV2oXC8uG35ZSpg==}
-
-  resend@6.12.3:
-    resolution: {integrity: sha512-FkEi6YPnVL96/LvH8+QP7NaeaBy5brYXwlRqUCqZZeNL0/iyKij18IPmyPXYauT/2ODn1JG04qKz+qlJfzqzTw==}
-    engines: {node: '>=20'}
-    peerDependencies:
-      '@react-email/render': '*'
-    peerDependenciesMeta:
-      '@react-email/render':
-        optional: true
 
   resolve-pkg-maps@1.0.0:
     resolution: {integrity: sha512-seS2Tj26TBVOC2NIc2rOe2y2ZO7efxITtLZcGSOnHHNOQ7CkiUBfw0Iw2ck6xkIhPwLhKNLS8BO+hEpngQlqzw==}
@@ -4915,9 +4873,6 @@ packages:
   supports-color@7.2.0:
     resolution: {integrity: sha512-qpCAvRl9stuOHveKsn7HncJRvv501qIacKzQlO/+Lwxc9+0q2wLyv4Dfvt80/DPn2pqOBsJdDiogXGR9+OvwRw==}
     engines: {node: '>=8'}
-
-  svix@1.92.2:
-    resolution: {integrity: sha512-ZmuA3UVvlnF9EgxlzmPtF7CKjQb64Z6OFlyfdDfU0sdcC7dJa+3aOYX5B9mA+RS6ch1AxBa4UP/l6KmqfGtWBQ==}
 
   svix@1.94.0:
     resolution: {integrity: sha512-FuP5nJez1P/SeK+4zOBI8RrNhtrzMTBSvwuD4yGGsn+Af2yQazid6OwPu3fpZpMifOJxrJua0su/dYB5fe4v9Q==}
@@ -5782,11 +5737,6 @@ snapshots:
       - typescript
       - zod
 
-  '@convex-dev/batch-worker@0.2.0(convex@1.43.0(react@19.2.8))(react@19.2.8)':
-    dependencies:
-      convex: 1.43.0(react@19.2.8)
-      react: 19.2.8
-
   '@convex-dev/batch-worker@0.3.3(@standard-schema/spec@1.1.0)(convex@1.43.0(react@19.2.8))(hono@4.13.1)(react@19.2.8)(typescript@6.0.3)(zod@4.4.3)':
     dependencies:
       convex: 1.43.0(react@19.2.8)
@@ -5808,37 +5758,10 @@ snapshots:
       - supports-color
       - typescript
 
-  '@convex-dev/rate-limiter@0.3.2(convex@1.43.0(react@19.2.8))(react@19.2.8)':
-    dependencies:
-      convex: 1.43.0(react@19.2.8)
-    optionalDependencies:
-      react: 19.2.8
-
   '@convex-dev/react-query@0.1.0(@tanstack/react-query@5.101.4(react@19.2.8))(convex@1.43.0(react@19.2.8))':
     dependencies:
       '@tanstack/react-query': 5.101.4(react@19.2.8)
       convex: 1.43.0(react@19.2.8)
-
-  '@convex-dev/resend@0.2.6(convex-helpers@0.1.120(@standard-schema/spec@1.1.0)(convex@1.43.0(react@19.2.8))(hono@4.13.1)(react@19.2.8)(typescript@6.0.3)(zod@4.4.3))(convex@1.43.0(react@19.2.8))(react@19.2.8)':
-    dependencies:
-      '@convex-dev/rate-limiter': 0.3.2(convex@1.43.0(react@19.2.8))(react@19.2.8)
-      '@convex-dev/workpool': 0.4.9(convex-helpers@0.1.120(@standard-schema/spec@1.1.0)(convex@1.43.0(react@19.2.8))(hono@4.13.1)(react@19.2.8)(typescript@6.0.3)(zod@4.4.3))(convex@1.43.0(react@19.2.8))(react@19.2.8)
-      convex: 1.43.0(react@19.2.8)
-      convex-helpers: 0.1.120(@standard-schema/spec@1.1.0)(convex@1.43.0(react@19.2.8))(hono@4.13.1)(react@19.2.8)(typescript@6.0.3)(zod@4.4.3)
-      remeda: 2.34.1
-      resend: 6.12.3
-      svix: 1.94.0
-    transitivePeerDependencies:
-      - '@react-email/render'
-      - react
-
-  '@convex-dev/workpool@0.4.9(convex-helpers@0.1.120(@standard-schema/spec@1.1.0)(convex@1.43.0(react@19.2.8))(hono@4.13.1)(react@19.2.8)(typescript@6.0.3)(zod@4.4.3))(convex@1.43.0(react@19.2.8))(react@19.2.8)':
-    dependencies:
-      '@convex-dev/batch-worker': 0.2.0(convex@1.43.0(react@19.2.8))(react@19.2.8)
-      convex: 1.43.0(react@19.2.8)
-      convex-helpers: 0.1.120(@standard-schema/spec@1.1.0)(convex@1.43.0(react@19.2.8))(hono@4.13.1)(react@19.2.8)(typescript@6.0.3)(zod@4.4.3)
-    transitivePeerDependencies:
-      - react
 
   '@csstools/color-helpers@5.1.0': {}
 
@@ -9267,8 +9190,6 @@ snapshots:
 
   po-parser@2.1.1: {}
 
-  postal-mime@2.7.4: {}
-
   postcss@8.5.25:
     dependencies:
       nanoid: 3.3.18
@@ -9396,11 +9317,6 @@ snapshots:
   require-from-string@2.0.2: {}
 
   reselect@5.3.0: {}
-
-  resend@6.12.3:
-    dependencies:
-      postal-mime: 2.7.4
-      svix: 1.92.2
 
   resolve-pkg-maps@1.0.0: {}
 
@@ -9686,10 +9602,6 @@ snapshots:
   supports-color@7.2.0:
     dependencies:
       has-flag: 4.0.0
-
-  svix@1.92.2:
-    dependencies:
-      standardwebhooks: 1.0.0
 
   svix@1.94.0:
     dependencies:

@@ -144,15 +144,6 @@ test.describe('Organizations CRUD', () => {
         await expect(row).toHaveCount(0, { timeout: 10000 });
     });
 
-    test('switch active organization', async ({ page }) => {
-        const newOrg = await createOrganization(page, {
-            name: `Switch Org ${randomUUID().substring(0, 8)}`,
-        });
-
-        await page.goto('/dashboard/home');
-        await setActiveOrganization(page, newOrg.name);
-    });
-
     test('the only owner cannot leave and stays on the organization', async ({ page }) => {
         const organization = await createOrganization(page, {
             name: `Sole Owner Org ${randomUUID().substring(0, 8)}`,

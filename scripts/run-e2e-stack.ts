@@ -18,7 +18,8 @@ import {
     waitForHttp,
 } from './lib/command';
 import {
-    assertNodeSupportedByLocalBackend,
+    isNodeSupportedByLocalBackend,
+    UNSUPPORTED_NODE_MESSAGE,
     type LocalProcess,
     startLocalBackend,
     startMailDev,
@@ -52,7 +53,6 @@ const BUILD_FINGERPRINT_ENV_KEYS = [
     'NEXT_PUBLIC_E2E_ALLOW_LOCAL_HTTP',
     'NEXT_PUBLIC_SITE_URL',
     'SITE_URL',
-    'EMAIL_PROVIDER',
     'EMAIL_FROM',
     'SMTP_HOST',
     'SMTP_PORT',
@@ -154,16 +154,14 @@ const E2E_WORKSPACE_ARTIFACT_DIRS = [
     'reports/e2e',
     'tests/.auth',
 ];
-function assertSafeRepoRelativeDirectory(relativePath: string): string {
-    const root = resolve(process.cwd());
-    const directoryPath = resolve(root, relativePath);
-    if (!directoryPath.startsWith(`${root}${sep}`)) {
-        throw new Error(`Refusing to delete an invalid E2E artifact path: ${relativePath}`);
-    }
-    return directoryPath;
+function isInsideRepo(directoryPath: string): boolean {
+    return directoryPath.startsWith(`${resolve(process.cwd())}${sep}`);
 }
 function removeGuardedDirectory(relativePath: string): void {
-    const directoryPath = assertSafeRepoRelativeDirectory(relativePath);
+    const directoryPath = resolve(process.cwd(), relativePath);
+    if (!isInsideRepo(directoryPath)) {
+        throw new Error(`Refusing to delete an invalid E2E artifact path: ${relativePath}`);
+    }
     if (!existsSync(directoryPath)) {
         return;
     }
@@ -348,7 +346,9 @@ async function startLocalStack(browserLabel: string): Promise<{
     betterAuthSecret: string;
     jwks: string;
 }> {
-    await assertNodeSupportedByLocalBackend();
+    if (!(await isNodeSupportedByLocalBackend())) {
+        throw new Error(UNSUPPORTED_NODE_MESSAGE);
+    }
     // Unlike `docker compose down`, nothing here may kill whatever already holds the ports.
     if (await isListening(buildUrl(CONVEX_URL, '/version'))) {
         throw new Error(`Something is already listening on ${CONVEX_URL}; stop it first.`);

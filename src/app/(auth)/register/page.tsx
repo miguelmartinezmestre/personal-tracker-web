@@ -1,7 +1,7 @@
 import { RegisterForm } from '@/features/auth';
 import { getTranslations } from 'next-intl/server';
 import { redirect } from 'next/navigation';
-import { checkPlatformSetUp } from '@/features/setup/server';
+import { isPlatformSetUp } from '@/features/setup/server';
 import { ConvexHttpClient } from 'convex/browser';
 import { api } from '@/convex/_generated/api';
 import { NEXT_PUBLIC_CONVEX_URL } from '@/lib/env';
@@ -16,7 +16,7 @@ interface RegisterProps {
 export const dynamic = 'force-dynamic';
 
 export default async function Register({ searchParams }: RegisterProps) {
-    if (!(await checkPlatformSetUp())) {
+    if (!(await isPlatformSetUp())) {
         redirect('/setup');
     }
 

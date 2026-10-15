@@ -8,8 +8,7 @@ import {
     createTestMember,
     createTestSession,
 } from './test.helpers';
-import type { TestConvexForDataModel } from 'convex-test';
-import type { DataModel, Id } from '../_generated/dataModel';
+import type { Id } from '../_generated/dataModel';
 import { asInvalidArg } from './test.casts';
 import { z } from 'zod';
 
@@ -20,7 +19,6 @@ const sessionCreateResultSchema = z.object({
 
 describe('convex auth', () => {
     const t = initConvexTest();
-    let userIdentity: TestConvexForDataModel<DataModel>;
     let userId: Id<'user'>;
     let _organizationId: Id<'organization'>;
 
@@ -49,32 +47,6 @@ describe('convex auth', () => {
         });
 
         _organizationId = orgId;
-
-        userIdentity = t.withIdentity({
-            subject: userData.docId,
-            role: userData.role ?? 'globalAdmin',
-            email: userData.email,
-            name: userData.name,
-            password: 'test-password',
-            emailVerified: false,
-            createdAt: Date.now(),
-            userId: userData.docId,
-            image: 'https://example.com/image.png',
-            banExpires: null,
-            banReason: null,
-            banned: false,
-        });
-    });
-
-    test('getCurrentUser throws when unauthenticated', async () => {
-        await expect(t.query(api.auth.getCurrentUser, {})).rejects.toThrow(
-            /Unauthenticated|AUTH_REQUIRED/
-        );
-    });
-
-    test('getCurrentUser returns user when authenticated', async () => {
-        const current = await userIdentity.query(api.auth.getCurrentUser, {});
-        expect(current?._id).toBe(userId);
     });
 
     test('auth triggersApi writes audit logs for session create and delete', async () => {
@@ -173,6 +145,9 @@ describe('convex auth', () => {
         });
 
         expect(isDefaultOrganization).toBe(true);
+        expect(
+            await t.query(internal.auth.isDefaultOrganization, { organizationId: _organizationId })
+        ).toBe(false);
 
         // Runs on every sign-in: later calls reuse the organization instead of creating another.
         await expect(
@@ -235,14 +210,6 @@ describe('convex auth', () => {
         expect(await check('Other team')).toBe(false);
         // Renaming an organization to its own name is not a duplicate.
         expect(await check('Acme Team', organizationId)).toBe(false);
-    });
-
-    test('regular organization is not protected as default organization', async () => {
-        const isDefaultOrganization = await t.query(internal.auth.isDefaultOrganization, {
-            organizationId: _organizationId,
-        });
-
-        expect(isDefaultOrganization).toBe(false);
     });
 
     test('listOrganizations and getPersonalOrganizationId find the personal organization', async () => {

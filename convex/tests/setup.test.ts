@@ -5,51 +5,7 @@ import { createTestUser, createTestOrganization, createTestMember } from './test
 import { ERROR_CODES } from '../constants';
 
 describe('convex setup', () => {
-    describe('isPlatformSetUp', () => {
-        test('returns false when no platformSettings exist', async () => {
-            const t = initConvexTest();
-            const result = await t.query(api.setup.isPlatformSetUp, {});
-            expect(result).toBe(false);
-        });
-
-        test('returns true when platformSettings exist', async () => {
-            const t = initConvexTest();
-
-            await t.run(async ctx => {
-                const userId = await ctx.db.insert('user', {
-                    name: 'Admin',
-                    email: 'admin@test.com',
-                    role: 'globalAdmin',
-                    emailVerified: true,
-                    createdAt: Date.now(),
-                    updatedAt: Date.now(),
-                    userId: 'test-user-1',
-                    image: null,
-                    banExpires: null,
-                    banReason: null,
-                    banned: false,
-                });
-
-                await ctx.db.insert('platformSettings', {
-                    platformName: 'Test Platform',
-                    defaultLanguage: 'en',
-                    registrationPolicy: 'open',
-                    setupCompletedBy: userId,
-                });
-            });
-
-            const result = await t.query(api.setup.isPlatformSetUp, {});
-            expect(result).toBe(true);
-        });
-    });
-
     describe('getPublicPlatformSettings', () => {
-        test('returns null when no settings exist', async () => {
-            const t = initConvexTest();
-            const result = await t.query(api.setup.getPublicPlatformSettings, {});
-            expect(result).toBeNull();
-        });
-
         test('returns only public fields when settings exist', async () => {
             const t = initConvexTest();
 

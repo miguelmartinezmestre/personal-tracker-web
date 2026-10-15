@@ -7,8 +7,7 @@ import { internalMutation } from './objectiveStats';
 import { mutationWithRLS, queryWithRLS } from './rls/wrappers';
 import { ERROR_CODES } from './constants';
 import {
-    assertCanEditProgress,
-    assertCanManageObjective,
+    canEditProgress,
     canManageObjective,
     completedAtWhenFinished,
     currentValueAfterProgressChange,
@@ -290,7 +289,9 @@ export const updateObjective = mutationWithRLS({
     handler: async (ctx, args) => {
         const organizationId = requireOrganizationId(ctx.organizationId);
         const existing = await requireObjectiveInOrganization(ctx, args.id, organizationId);
-        assertCanManageObjective(ctx, existing);
+        if (!canManageObjective(ctx, existing)) {
+            throw new ConvexError(ERROR_CODES.NOT_AUTHORIZED_OBJECTIVE);
+        }
         const now = Date.now();
         const { title, description, unit, categoryId, deadline, startValue, targetValue } =
             resolvedObjectiveFields(existing, args);
@@ -348,7 +349,9 @@ export const deleteObjective = mutationWithRLS({
     handler: async (ctx, args) => {
         const organizationId = requireOrganizationId(ctx.organizationId);
         const objective = await requireObjectiveInOrganization(ctx, args.id, organizationId);
-        assertCanManageObjective(ctx, objective);
+        if (!canManageObjective(ctx, objective)) {
+            throw new ConvexError(ERROR_CODES.NOT_AUTHORIZED_OBJECTIVE);
+        }
         const rows = await ctx.db
             .query('progressUpdates')
             .withIndex('by_objective_date', q => q.eq('objective', args.id))
@@ -520,7 +523,9 @@ export const updateProgress = mutationWithRLS({
             existing.objective,
             organizationId
         );
-        assertCanEditProgress(ctx, existing, objective);
+        if (!canEditProgress(ctx, existing, objective)) {
+            throw new ConvexError(ERROR_CODES.NOT_AUTHORIZED_PROGRESS);
+        }
         validateProgressValue(args.updatedValue);
         const now = Date.now();
         validateProgressDate(args.updateDate, now);
@@ -574,7 +579,9 @@ export const deleteProgress = mutationWithRLS({
             existing.objective,
             organizationId
         );
-        assertCanEditProgress(ctx, existing, objective);
+        if (!canEditProgress(ctx, existing, objective)) {
+            throw new ConvexError(ERROR_CODES.NOT_AUTHORIZED_PROGRESS);
+        }
         await ctx.db.delete('progressUpdates', args.id);
         const now = Date.now();
         const currentValue = roundStoredValue(

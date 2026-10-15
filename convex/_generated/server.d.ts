@@ -28,9 +28,7 @@ type Env = {
   readonly BETTER_AUTH_SECRET: string;
   readonly BETTER_AUTH_URL: string | undefined;
   readonly EMAIL_FROM: string | undefined;
-  readonly EMAIL_PROVIDER: string | undefined;
   readonly JWKS: string | undefined;
-  readonly RESEND_API_KEY: string | undefined;
   readonly SETUP_SECRET: string | undefined;
   readonly SITE_URL: string | undefined;
   readonly SMTP_HOST: string | undefined;

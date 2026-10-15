@@ -1,1 +1,1 @@
-export { checkPlatformSetUp } from './lib/setup-check';
+export { isPlatformSetUp } from './lib/setup-check';

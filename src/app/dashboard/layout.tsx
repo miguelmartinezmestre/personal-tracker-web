@@ -8,14 +8,13 @@ import { LanguageSwitcher } from '@/features/landing';
 import { OrganizationSwitcher } from '@/features/organizations';
 import { SignOutButton } from '@/features/auth';
 import { redirect } from 'next/navigation';
-import { checkPlatformSetUp } from '@/features/setup/server';
+import { isPlatformSetUp } from '@/features/setup/server';
 import { getTranslations } from 'next-intl/server';
 import { SkipToContent } from '@/components/skip-to-content';
 export const dynamic = 'force-dynamic';
 export default async function Layout({ children }: { children: React.ReactNode }) {
     const t = await getTranslations('Common');
-    const isPlatformSetUp = await checkPlatformSetUp();
-    if (!isPlatformSetUp) {
+    if (!(await isPlatformSetUp())) {
         redirect('/setup');
     }
     let dashboardContext: Awaited<ReturnType<typeof fetchDashboardContext>>;

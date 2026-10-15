@@ -66,7 +66,6 @@ export function getEnvs() {
     const JWKS = env.JWKS?.trim() || undefined;
     const SETUP_SECRET = env.SETUP_SECRET?.trim() || undefined;
     const setupSecretIsRequired = !LOCAL_HOSTNAMES.has(new URL(SITE_URL).hostname.toLowerCase());
-    const RESEND_API_KEY = env.RESEND_API_KEY?.trim() || undefined;
 
     if (setupSecretIsRequired && !SETUP_SECRET) {
         throw new Error('SETUP_SECRET must be set when SITE_URL is not a loopback URL');
@@ -83,7 +82,6 @@ export function getEnvs() {
         BETTER_AUTH_URL,
         JWKS,
         SETUP_SECRET,
-        RESEND_API_KEY,
         ENVIRONMENT: isProduction ? 'production' : 'development',
     };
 }

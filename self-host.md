@@ -102,7 +102,7 @@ No añadas credenciales a variables `NEXT_PUBLIC_*`. Conserva los secretos origi
 una copia si necesitas mantener válidas las sesiones y claves cifradas. La rotación requiere un
 procedimiento separado, porque puede invalidarlas.
 
-MailDev captura el correo en local. Este perfil configura SMTP interno y no envía correo a Resend.
+MailDev captura el correo en local. Este perfil configura SMTP interno y no envía correo real.
 
 ## E2E
 

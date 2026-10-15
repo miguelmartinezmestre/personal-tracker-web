@@ -1,4 +1,4 @@
-import { assertUniqueTranslationKeys } from './lib/translation-validation';
+import { findDuplicateTranslationKey } from './lib/translation-validation';
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -41,7 +41,10 @@ function loadTranslations(locale: string): TranslationObject {
     }
 
     const source = readFileSync(filePath, 'utf8');
-    assertUniqueTranslationKeys(source, filePath);
+    const duplicateKey = findDuplicateTranslationKey(source, filePath);
+    if (duplicateKey) {
+        throw new Error(duplicateKey);
+    }
     let parsed: unknown;
     try {
         parsed = JSON.parse(source);

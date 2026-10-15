@@ -80,9 +80,8 @@ against a personal/dev deployment. Use `npx convex deploy` **only** for producti
 | `BETTER_AUTH_URL`                                                         | Convex | Public app origin, same as `SITE_URL`                              |
 | `BETTER_AUTH_SECRET`                                                      | Convex | Long random secret; not a `NEXT_PUBLIC_*` value                    |
 | `SETUP_SECRET`                                                            | Convex | 32–256 chars; required before first `/setup` on non-loopback hosts |
-| `EMAIL_PROVIDER`                                                          | Convex | `resend` (typical prod) or `smtp`                                  |
-| `EMAIL_FROM` / `RESEND_API_KEY`                                           | Convex | When `EMAIL_PROVIDER=resend`                                       |
-| `SMTP_HOST` / `SMTP_PORT` / `SMTP_SECURE` / `SMTP_USER` / `SMTP_PASSWORD` | Convex | When `EMAIL_PROVIDER=smtp`                                         |
+| `EMAIL_FROM`                                                              | Convex | Sender address for transactional email                             |
+| `SMTP_HOST` / `SMTP_PORT` / `SMTP_SECURE` / `SMTP_USER` / `SMTP_PASSWORD` | Convex | SMTP server that delivers the email (Nodemailer)                   |
 | `JWKS`                                                                    | Convex | Optional; caches Better Auth's signing keys                        |
 
 3. Deploy functions: `npx convex deploy` (or `CONVEX_DEPLOY_KEY=… npx convex deploy` in CI).
@@ -105,7 +104,7 @@ against a personal/dev deployment. Use `npx convex deploy` **only** for producti
 ### 3) Sanity checks
 
 - Auth redirects and CORS: `SITE_URL` and `NEXT_PUBLIC_SITE_URL` must match the browser origin.
-- Mail: send a password-reset or invitation and confirm delivery (Resend dashboard or SMTP inbox).
+- Mail: send a password-reset or invitation and confirm delivery (SMTP inbox).
 
 Local self-hosting remains documented in [`self-host.md`](./self-host.md); MailDev (`:1080`) is for
 dev/e2e SMTP capture, not production.

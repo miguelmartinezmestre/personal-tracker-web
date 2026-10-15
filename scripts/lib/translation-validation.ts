@@ -1,8 +1,11 @@
 import ts from 'typescript';
 
-export function assertUniqueTranslationKeys(text: string, filename: string): void {
+// Returns an error message for the first key repeated inside one object, or null.
+export function findDuplicateTranslationKey(text: string, filename: string): string | null {
     const source = ts.parseJsonText(filename, text);
+    let duplicate: string | null = null;
     function visit(node: ts.Node) {
+        if (duplicate) return;
         if (ts.isObjectLiteralExpression(node)) {
             const keys = new Set<string>();
             for (const property of node.properties) {
@@ -13,9 +16,8 @@ export function assertUniqueTranslationKeys(text: string, filename: string): voi
                     const location = source.getLineAndCharacterOfPosition(
                         property.getStart(source)
                     );
-                    throw new Error(
-                        `${filename}:${location.line + 1}: duplicate translation key "${key}"`
-                    );
+                    duplicate = `${filename}:${location.line + 1}: duplicate translation key "${key}"`;
+                    return;
                 }
                 keys.add(key);
             }
@@ -23,4 +25,5 @@ export function assertUniqueTranslationKeys(text: string, filename: string): voi
         ts.forEachChild(node, visit);
     }
     visit(source);
+    return duplicate;
 }

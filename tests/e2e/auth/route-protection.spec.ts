@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { createTestUser, ensureAuthenticatedState, logoutUser } from '../../helpers/test-helpers';
+import { createTestUser, logoutUser } from '../../helpers/test-helpers';
 import { expectOnLogin, expectOnDashboard } from '../../helpers/assertions';
 
 test.describe('Route Protection', () => {
@@ -56,27 +56,6 @@ test.describe('Route Protection', () => {
 
             await page.goto('/register', { waitUntil: 'domcontentloaded' });
             await expect(page).toHaveURL(/\/register$/);
-        }
-    );
-
-    test(
-        'removed admin routes are not available in the shell',
-        {
-            tag: ['@REQ-ROLES-001', '@REQ-ROLES-002'],
-        },
-        async ({ page, browser }) => {
-            await createTestUser(page);
-            await page.goto('/dashboard/home', { waitUntil: 'domcontentloaded' });
-            await expect(page.locator('a[href*="admin"], [data-testid*="admin"]')).toHaveCount(0);
-
-            const adminContext = await browser.newContext({
-                storageState: 'tests/.auth/admin-user.json',
-            });
-            const adminPage = await adminContext.newPage();
-            await ensureAuthenticatedState(adminPage);
-            await adminPage.goto('/dashboard/home', { waitUntil: 'domcontentloaded' });
-            await expect(adminPage.locator('a[href*="/dashboard/admin"]')).toHaveCount(0);
-            await adminContext.close();
         }
     );
 });

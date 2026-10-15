@@ -45,32 +45,32 @@ function throwReservedPersonalOrganizationIdentity() {
 }
 
 // Better Auth stores a role list as "owner,admin"; the app compares exact single roles.
-function assertSingleOrganizationRole(role: string) {
-    if (!isOrganizationRoleValue(role)) {
-        throw new APIError('BAD_REQUEST', {
-            code: ERROR_CODES.VALIDATION_ERROR,
-            message: 'A member has exactly one role: owner, admin or member.',
-        });
-    }
+function throwInvalidOrganizationRole() {
+    throw new APIError('BAD_REQUEST', {
+        code: ERROR_CODES.VALIDATION_ERROR,
+        message: 'A member has exactly one role: owner, admin or member.',
+    });
 }
 
-async function assertOrganizationNameAvailable(
+function throwOrganizationNameTaken() {
+    throw new APIError('BAD_REQUEST', {
+        code: ERROR_CODES.ORGANIZATION_NAME_TAKEN,
+        message: 'You already belong to an organization with that name.',
+    });
+}
+
+async function isOrganizationNameAvailable(
     ctx: GenericCtx,
     userId: string,
     name: string,
     excludeOrganizationId?: string
-) {
+): Promise<boolean> {
     const taken = await requireRunnableCtx(ctx).runQuery(internal.auth.userHasOrganizationNamed, {
         userId,
         name,
         ...(excludeOrganizationId ? { excludeOrganizationId } : {}),
     });
-    if (taken) {
-        throw new APIError('BAD_REQUEST', {
-            code: ERROR_CODES.ORGANIZATION_NAME_TAKEN,
-            message: 'You already belong to an organization with that name.',
-        });
-    }
+    return !taken;
 }
 
 async function isProtectedDefaultOrganization(ctx: GenericCtx, organizationId: string) {
@@ -208,8 +208,11 @@ function createOrganizationPlugin(ctx: GenericCtx) {
                 if (usesReservedPersonalOrganizationIdentity(newOrganization)) {
                     throwReservedPersonalOrganizationIdentity();
                 }
-                if (typeof newOrganization.name === 'string') {
-                    await assertOrganizationNameAvailable(ctx, user.id, newOrganization.name);
+                if (
+                    typeof newOrganization.name === 'string' &&
+                    !(await isOrganizationNameAvailable(ctx, user.id, newOrganization.name))
+                ) {
+                    throwOrganizationNameTaken();
                 }
             },
             afterCreateOrganization: async ({ organization }) => {
@@ -246,13 +249,16 @@ function createOrganizationPlugin(ctx: GenericCtx) {
                 );
             },
             beforeUpdateOrganization: async ({ organization, member, user }) => {
-                if (typeof organization.name === 'string') {
-                    await assertOrganizationNameAvailable(
+                if (
+                    typeof organization.name === 'string' &&
+                    !(await isOrganizationNameAvailable(
                         ctx,
                         user.id,
                         organization.name,
                         member.organizationId
-                    );
+                    ))
+                ) {
+                    throwOrganizationNameTaken();
                 }
                 if (!('slug' in organization) && !('metadata' in organization)) {
                     return;
@@ -270,11 +276,15 @@ function createOrganizationPlugin(ctx: GenericCtx) {
                 }
             },
             beforeUpdateMemberRole: ({ newRole }) => {
-                assertSingleOrganizationRole(newRole);
+                if (!isOrganizationRoleValue(newRole)) {
+                    throwInvalidOrganizationRole();
+                }
                 return Promise.resolve();
             },
             beforeCreateInvitation: async ({ invitation, organization }) => {
-                assertSingleOrganizationRole(invitation.role);
+                if (!isOrganizationRoleValue(invitation.role)) {
+                    throwInvalidOrganizationRole();
+                }
                 if (await isProtectedDefaultOrganization(ctx, organization.id)) {
                     throw new APIError('FORBIDDEN', {
                         code: ERROR_CODES.PERSONAL_ORG_INVITE_FORBIDDEN,

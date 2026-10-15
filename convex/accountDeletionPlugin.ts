@@ -29,37 +29,29 @@ export function accountDeletionPlugin(ctx: GenericCtx) {
                         });
                     }
                     const runnableCtx = requireRunnableCtx(ctx);
-                    const normalizedUserId = await runnableCtx.runQuery(
-                        internal.setup.normalizeUserId,
+                    const target = await runnableCtx.runQuery(
+                        internal.auth.getAccountDeletionTarget,
                         { userId: rawUserId }
                     );
 
-                    if (!normalizedUserId) {
+                    if (!target) {
                         throw new APIError('BAD_REQUEST', {
                             code: 'INVALID_USER',
                             message: 'Invalid user',
                         });
                     }
 
-                    const isSetupUser = await runnableCtx.runQuery(
-                        internal.setup.isPlatformSetupUserInternal,
-                        { userId: normalizedUserId }
-                    );
-                    if (isSetupUser) {
+                    if (target.isSetupUser) {
                         throw new APIError('FORBIDDEN', {
                             code: ERROR_CODES.SETUP_USER_DELETE_FORBIDDEN,
                             message: 'The platform setup user cannot be deleted.',
                         });
                     }
 
-                    const credentialPasswordHash: string | null = await runnableCtx.runQuery(
-                        internal.auth.getCredentialPasswordHashForDeletion,
-                        { userId: normalizedUserId }
-                    );
                     const passwordMatches =
-                        credentialPasswordHash !== null &&
+                        target.passwordHash !== null &&
                         (await endpointCtx.context.password.verify({
-                            hash: credentialPasswordHash,
+                            hash: target.passwordHash,
                             password: endpointCtx.body.password,
                         }));
 
@@ -71,7 +63,7 @@ export function accountDeletionPlugin(ctx: GenericCtx) {
                     }
 
                     await runnableCtx.runMutation(internal.cascades.cascadeUserDeletionInternal, {
-                        userId: normalizedUserId,
+                        userId: target.userId,
                     });
                     deleteSessionCookie(endpointCtx);
 

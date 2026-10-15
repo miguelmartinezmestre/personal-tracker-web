@@ -368,17 +368,34 @@ export const isDefaultOrganization = internalQuery({
         return false;
     },
 });
-export const getCredentialPasswordHashForDeletion = internalQuery({
-    args: { userId: v.id('user') },
-    returns: v.union(v.string(), v.null()),
+/** Everything the account deletion endpoint checks before deleting the session user. */
+export const getAccountDeletionTarget = internalQuery({
+    args: { userId: v.string() },
+    returns: v.union(
+        v.object({
+            userId: v.id('user'),
+            isSetupUser: v.boolean(),
+            passwordHash: v.union(v.string(), v.null()),
+        }),
+        v.null()
+    ),
     handler: async (ctx, args) => {
+        const userId = ctx.db.normalizeId('user', args.userId);
+        if (!userId) {
+            return null;
+        }
+        const settings = await ctx.db.query('platformSettings').first();
         const account = await ctx.db
             .query('account')
             .withIndex('providerId_userId', q =>
-                q.eq('providerId', 'credential').eq('userId', args.userId)
+                q.eq('providerId', 'credential').eq('userId', userId)
             )
             .unique();
-        return typeof account?.password === 'string' ? account.password : null;
+        return {
+            userId,
+            isSetupUser: settings?.setupCompletedBy === userId,
+            passwordHash: typeof account?.password === 'string' ? account.password : null,
+        };
     },
 });
 export default defineAuth((ctx: GenericCtx) => buildBetterAuthOptions(ctx));

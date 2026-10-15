@@ -12,6 +12,7 @@ describe('convex organizations', () => {
     const t = initConvexTest();
     let userIdentity: ReturnType<typeof t.withIdentity>;
     let organizationId: Id<'organization'>;
+    let organizationSlug: string;
     let memberUserId: Id<'user'>;
     beforeEach(async () => {
         const randomSuffix = Math.random().toString(36).substring(2, 15);
@@ -25,9 +26,10 @@ describe('convex organizations', () => {
         };
         const userData = await createTestUser(t, user);
         memberUserId = userData.docId;
+        organizationSlug = 'organizations-test-org-' + randomSuffix;
         organizationId = await createTestOrganization(t, {
             name: 'Organizations Test Org ' + randomSuffix,
-            slug: 'organizations-test-org-' + randomSuffix,
+            slug: organizationSlug,
         });
         await createTestMember(t, {
             organizationId,
@@ -135,7 +137,17 @@ describe('convex organizations', () => {
             })
         ).rejects.toThrow(/Unauthenticated|User not authenticated|AUTH_REQUIRED/);
     });
-    test('getOrganizationMembers rejects users outside the organization', async () => {
+    test('getOrganizationByIdentifier finds the organization by id or slug for members', async () => {
+        const byId = await userIdentity.query(api.organizations.getOrganizationByIdentifier, {
+            identifier: organizationId,
+        });
+        const bySlug = await userIdentity.query(api.organizations.getOrganizationByIdentifier, {
+            identifier: organizationSlug,
+        });
+        expect(byId).toMatchObject({ id: organizationId, role: 'owner' });
+        expect(bySlug?.id).toBe(organizationId);
+    });
+    test('users outside the organization cannot read it or its members', async () => {
         const randomSuffix = Math.random().toString(36).substring(2, 15);
         const outsider = await createTestUser(t, {
             userId: 'organizations-outsider-' + randomSuffix,
@@ -163,5 +175,10 @@ describe('convex organizations', () => {
                 paginationOpts: { numItems: 20, cursor: null },
             })
         ).rejects.toThrow(/FORBIDDEN|Forbidden|Not authorized/i);
+        await expect(
+            outsiderIdentity.query(api.organizations.getOrganizationByIdentifier, {
+                identifier: organizationId,
+            })
+        ).resolves.toBeNull();
     });
 });

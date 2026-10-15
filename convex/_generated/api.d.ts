@@ -103,6 +103,5 @@ export declare const internal: FilterApi<
 >;
 
 export declare const components: {
-  resend: import("@convex-dev/resend/_generated/component.js").ComponentApi<"resend">;
   objectiveStats: import("@convex-dev/aggregate/_generated/component.js").ComponentApi<"objectiveStats">;
 };

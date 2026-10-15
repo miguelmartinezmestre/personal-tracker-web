@@ -14,7 +14,10 @@ import {
     startProcess,
     stopProcess,
 } from './lib/command';
-import { assertNodeSupportedByLocalBackend } from './lib/convex-local-backend';
+import {
+    isNodeSupportedByLocalBackend,
+    UNSUPPORTED_NODE_MESSAGE,
+} from './lib/convex-local-backend';
 import {
     bootstrapConvexCredentials,
     buildConvexCommandEnv,
@@ -254,7 +257,9 @@ async function mainWithoutDocker(): Promise<void> {
             `Something is already listening on ${CONVEX_URL}. Stop \`pnpm dev\` or the Docker stack (\`pnpm convex:local:stop\`) first.`
         );
     }
-    await assertNodeSupportedByLocalBackend();
+    if (!(await isNodeSupportedByLocalBackend())) {
+        throw new Error(UNSUPPORTED_NODE_MESSAGE);
+    }
     if (RESET) {
         console.log('Resetting the CLI-managed local deployment...');
         cleanupGeneratedDirectories([CLI_LOCAL_DEPLOYMENT_DIRECTORY]);

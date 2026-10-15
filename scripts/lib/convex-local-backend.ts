@@ -29,15 +29,13 @@ const LOCAL_BACKEND_NODE_MAJORS = [20, 22, 24];
 // Same instance name as the Docker image, so admin keys look the same in both stacks.
 const INSTANCE_NAME = 'convex-self-hosted';
 
-export async function assertNodeSupportedByLocalBackend(): Promise<void> {
+export const UNSUPPORTED_NODE_MESSAGE =
+    'The local Convex backend runs "use node" actions with the node on PATH. ' +
+    `It needs Node ${LOCAL_BACKEND_NODE_MAJORS.join(', ')}; run \`nvm use\` (.nvmrc) and retry.`;
+
+export async function isNodeSupportedByLocalBackend(): Promise<boolean> {
     const version = (await runCommandCapture('node', ['--version'])).trim();
-    const major = Number.parseInt(version.replace(/^v/, ''), 10);
-    if (!LOCAL_BACKEND_NODE_MAJORS.includes(major)) {
-        throw new Error(
-            `The local Convex backend runs "use node" actions with the node on PATH, which is ${version}. ` +
-                `It needs Node ${LOCAL_BACKEND_NODE_MAJORS.join(', ')}; run \`nvm use\` (.nvmrc) and retry.`
-        );
-    }
+    return LOCAL_BACKEND_NODE_MAJORS.includes(Number.parseInt(version.replace(/^v/, ''), 10));
 }
 
 function convexCacheDir(): string {

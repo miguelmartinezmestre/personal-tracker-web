@@ -1,7 +1,7 @@
 import { LoginForm } from '@/features/auth';
 import { getTranslations } from 'next-intl/server';
 import { redirect } from 'next/navigation';
-import { checkPlatformSetUp } from '@/features/setup/server';
+import { isPlatformSetUp } from '@/features/setup/server';
 import { getSafeCallbackPath } from '@/convex/utils';
 import { translatedPageTitle } from '@/lib/page-metadata';
 
@@ -15,7 +15,7 @@ export default async function Login({
         callbackUrl?: string | string[];
     }>;
 }) {
-    if (!(await checkPlatformSetUp())) {
+    if (!(await isPlatformSetUp())) {
         redirect('/setup');
     }
     const params = await searchParams;

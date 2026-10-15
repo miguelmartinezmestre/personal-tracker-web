@@ -71,24 +71,12 @@ export function canManageObjective(
     );
 }
 
-export function assertCanManageObjective(
-    actor: ObjectiveActor,
-    objective: { organizationId: Id<'organization'>; createdBy: Id<'user'> }
-): void {
-    if (!canManageObjective(actor, objective)) {
-        throw new ConvexError(ERROR_CODES.NOT_AUTHORIZED_OBJECTIVE);
-    }
-}
-
-export function assertCanEditProgress(
+export function canEditProgress(
     actor: ObjectiveActor,
     entry: { createdBy: Id<'user'> },
     objective: { organizationId: Id<'organization'>; createdBy: Id<'user'> }
-): void {
-    if (entry.createdBy === actor.userId || canManageObjective(actor, objective)) {
-        return;
-    }
-    throw new ConvexError(ERROR_CODES.NOT_AUTHORIZED_PROGRESS);
+): boolean {
+    return entry.createdBy === actor.userId || canManageObjective(actor, objective);
 }
 
 export function toObjectiveSummary(

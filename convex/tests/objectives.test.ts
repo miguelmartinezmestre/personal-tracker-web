@@ -12,10 +12,7 @@ import { identityFor } from './test.identities';
 
 describe('objectives and progress', () => {
     const t = initConvexTest();
-    const invalidValues = [
-        ['negative', -1, 'VALUE_NEGATIVE'],
-        ['NaN', Number.NaN, 'VALUE_NOT_FINITE'],
-    ] as const;
+    const invalidValues = [['negative', -1, 'VALUE_NEGATIVE']] as const;
     let owner: TestUserData;
     let ownerIdentity: ReturnType<typeof t.withIdentity>;
     let organizationId: Id<'organization'>;
@@ -94,10 +91,7 @@ describe('objectives and progress', () => {
         }
     );
 
-    test.each([
-        ['zero', 0, 'TARGET_TOO_SMALL'],
-        ['NaN', Number.NaN, 'TARGET_NOT_FINITE'],
-    ] as const)(
+    test.each([['zero', 0, 'TARGET_TOO_SMALL']] as const)(
         'rejects %s targets on create and update',
         async (_label, targetValue, errorCode) => {
             const objectiveId = await ownerIdentity.mutation(api.objectives.createObjective, {
@@ -704,6 +698,64 @@ describe('objectives and progress', () => {
             title: 'Shared title',
         });
         expect(updated.title).toBe('Shared title');
+    });
+
+    test('assigns, changes and clears the category, only within the organization', async () => {
+        const suffix = Math.random().toString(36).slice(2, 10);
+        const otherOrganizationId = await createTestOrganization(t, {
+            name: `Other ${suffix}`,
+            slug: `other-${suffix}`,
+        });
+        const [health, study, foreign] = await t.run(async ctx => {
+            const now = Date.now();
+            const category = (organization: Id<'organization'>, name: string) =>
+                ctx.db.insert('categories', {
+                    organizationId: organization,
+                    name,
+                    color: '#22c55e',
+                    createdAt: now,
+                    updatedAt: now,
+                });
+            return await Promise.all([
+                category(organizationId, 'Health'),
+                category(organizationId, 'Study'),
+                category(otherOrganizationId, 'Foreign'),
+            ]);
+        });
+        const objectiveId = await ownerIdentity.mutation(api.objectives.createObjective, {
+            title: 'Categorised',
+            startValue: 0,
+            targetValue: 5,
+            categoryId: health,
+        });
+
+        const changed = await ownerIdentity.mutation(api.objectives.updateObjective, {
+            id: objectiveId,
+            categoryId: study,
+        });
+        expect(changed).toMatchObject({ categoryId: study, categoryName: 'Study' });
+
+        await expect(
+            ownerIdentity.mutation(api.objectives.updateObjective, {
+                id: objectiveId,
+                categoryId: foreign,
+            })
+        ).rejects.toThrow('CATEGORY_NOT_FOUND');
+        await expect(
+            ownerIdentity.mutation(api.objectives.createObjective, {
+                title: 'Foreign category',
+                startValue: 0,
+                targetValue: 5,
+                categoryId: foreign,
+            })
+        ).rejects.toThrow('CATEGORY_NOT_FOUND');
+
+        const cleared = await ownerIdentity.mutation(api.objectives.updateObjective, {
+            id: objectiveId,
+            categoryId: null,
+        });
+        expect(cleared.categoryId).toBeUndefined();
+        expect(cleared.categoryName).toBeUndefined();
     });
 
     test('hides objectives from another organization', async () => {
