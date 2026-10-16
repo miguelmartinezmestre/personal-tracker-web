@@ -8,6 +8,6 @@ import type { ObjectiveStatusFilter } from '@/features/objectives/lib/status-fil
 export type ObjectiveSummary = FunctionReturnType<
     typeof api.objectives.listObjectives
 >['page'][number];
-export function useObjectives(status: ObjectiveStatusFilter) {
-    return usePaginatedList(api.objectives.listObjectives, { status });
+export function useObjectives(status: ObjectiveStatusFilter, search: string) {
+    return usePaginatedList(api.objectives.listObjectives, { status, search });
 }

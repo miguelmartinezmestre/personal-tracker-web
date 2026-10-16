@@ -290,8 +290,6 @@
         "filters": {
             "search": "Search objectives...",
             "status": "Status",
-            "category": "Category",
-            "deadline": "Deadline",
             "options": {
                 "all": "All",
                 "active": "Active",
@@ -303,7 +301,8 @@
             "all": "You have no objectives yet.",
             "active": "There are no active objectives.",
             "completed": "You have not completed any objective yet.",
-            "allHint": "Create one to start tracking your progress."
+            "allHint": "Create one to start tracking your progress.",
+            "search": "No objectives match \"{search}\"."
         },
         "visibility": {
             "label": "Visibility",

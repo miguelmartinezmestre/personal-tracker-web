@@ -68,7 +68,11 @@ export default defineSchema({
         updatedAt: v.number(),
     })
         .index('by_organization_createdAt', ['organizationId', 'createdAt'])
-        .index('by_organization_status_createdAt', ['organizationId', 'status', 'createdAt']),
+        .index('by_organization_status_createdAt', ['organizationId', 'status', 'createdAt'])
+        .searchIndex('search_title', {
+            searchField: 'title',
+            filterFields: ['organizationId', 'status'],
+        }),
 
     progressUpdates: defineTable({
         objective: v.id('objectives'),

@@ -301,6 +301,62 @@ describe('objectives and progress', () => {
         expect(last.isDone).toBe(true);
     });
 
+    test('searches objective titles within the active organization and status', async () => {
+        const morningRun = await ownerIdentity.mutation(api.objectives.createObjective, {
+            title: 'Morning run',
+            startValue: 0,
+            targetValue: 10,
+        });
+        const eveningRun = await ownerIdentity.mutation(api.objectives.createObjective, {
+            title: 'Evening run',
+            startValue: 0,
+            targetValue: 1,
+        });
+        await ownerIdentity.mutation(api.objectives.createProgress, {
+            objectiveId: eveningRun,
+            updatedValue: 1,
+            updateDate: Date.UTC(2026, 0, 2),
+        });
+        await ownerIdentity.mutation(api.objectives.createObjective, {
+            title: 'Read books',
+            startValue: 0,
+            targetValue: 10,
+        });
+        const suffix = Math.random().toString(36).slice(2, 10);
+        const otherUser = await createTestUser(t, {
+            userId: `objective-search-${suffix}`,
+            email: `objective-search-${suffix}@example.com`,
+            name: 'Other searcher',
+            role: 'user',
+        });
+        const otherOrg = await createTestOrganization(t, {
+            name: `Other search ${suffix}`,
+            slug: `other-search-${suffix}`,
+        });
+        await createTestMember(t, {
+            organizationId: otherOrg,
+            userId: otherUser.docId,
+            role: 'owner',
+        });
+        await asUser(otherUser).mutation(api.objectives.createObjective, {
+            title: 'Morning run',
+            startValue: 0,
+            targetValue: 10,
+        });
+
+        const search = async (status: 'all' | 'active') =>
+            (
+                await ownerIdentity.query(api.objectives.listObjectives, {
+                    status,
+                    search: ' run ',
+                    paginationOpts: { numItems: 20, cursor: null },
+                })
+            ).page.map(objective => objective.id);
+
+        expect((await search('all')).sort()).toEqual([morningRun, eveningRun].sort());
+        expect(await search('active')).toEqual([morningRun]);
+    });
+
     test('does not expose another organization through a reused objective cursor', async () => {
         const cursorObjective = await ownerIdentity.mutation(api.objectives.createObjective, {
             title: 'Owner objective',

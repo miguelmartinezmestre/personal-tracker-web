@@ -54,8 +54,8 @@ test.describe('Objectives', () => {
     );
 
     test(
-        'filters objectives by status and shows the assigned category',
-        { tag: ['@REQ-OBJETIVOS-002', '@REQ-OBJETIVOS-004'] },
+        'filters objectives by status and title, and shows the assigned category',
+        { tag: ['@REQ-OBJETIVOS-002', '@REQ-OBJETIVOS-004', '@REQ-OBJETIVOS-008'] },
         async ({ page }) => {
             const suffix = randomUUID().substring(0, 8);
             const doneTitle = `Done goal ${suffix}`;
@@ -90,6 +90,11 @@ test.describe('Objectives', () => {
             await page.getByTestId('objectives-filter-active').click();
             await expect(activeRow).toBeVisible({ timeout: 15000 });
             await expect(doneRow).toHaveCount(0);
+
+            await page.getByTestId('objectives-filter-all').click();
+            await page.getByTestId('objectives-search').fill('Done');
+            await expect(doneRow).toBeVisible({ timeout: 15000 });
+            await expect(activeRow).toHaveCount(0);
         }
     );
 });

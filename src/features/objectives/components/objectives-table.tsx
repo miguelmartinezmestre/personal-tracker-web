@@ -1,5 +1,6 @@
 'use client';
 
+import type { ReactNode } from 'react';
 import Link from 'next/link';
 import type { ColumnDef } from '@tanstack/react-table';
 import { toast } from 'sonner';
@@ -30,10 +31,16 @@ const MOBILE_HIDDEN_COLUMNS = {
     deadline: 'hidden md:table-cell',
 };
 
-export default function ObjectivesTable({ status }: { status: ObjectiveStatusFilter }) {
+export default function ObjectivesTable({
+    status,
+    search,
+}: {
+    status: ObjectiveStatusFilter;
+    search: string;
+}) {
     const t = useTranslations('Objectives');
     const locale = useLocale();
-    const objectives = useObjectives(status);
+    const objectives = useObjectives(status, search);
     const deleteObjective = useMutation({
         meta: { handlesErrorsLocally: true },
         mutationFn: useConvexMutation(api.objectives.deleteObjective),
@@ -138,6 +145,21 @@ export default function ObjectivesTable({ status }: { status: ObjectiveStatusFil
             },
         },
     ];
+    let emptyMessage: ReactNode = t(`empty.${status}`);
+    if (search) {
+        emptyMessage = t('empty.search', { search });
+    } else if (status === 'all') {
+        emptyMessage = (
+            <div
+                className="flex flex-col items-center gap-3 py-6 whitespace-normal"
+                data-testid="objectives-empty"
+            >
+                <p className="font-medium">{t('empty.all')}</p>
+                <p className="text-muted-foreground">{t('empty.allHint')}</p>
+                <CreateObjectiveFormModal triggerTestId="objectives-empty-create" />
+            </div>
+        );
+    }
     return (
         <div data-testid="objectives-table">
             <DataTable
@@ -146,20 +168,7 @@ export default function ObjectivesTable({ status }: { status: ObjectiveStatusFil
                 data={objectives.data}
                 isLoading={objectives.isLoading}
                 pagination={objectives}
-                emptyMessage={
-                    status === 'all' ? (
-                        <div
-                            className="flex flex-col items-center gap-3 py-6 whitespace-normal"
-                            data-testid="objectives-empty"
-                        >
-                            <p className="font-medium">{t('empty.all')}</p>
-                            <p className="text-muted-foreground">{t('empty.allHint')}</p>
-                            <CreateObjectiveFormModal triggerTestId="objectives-empty-create" />
-                        </div>
-                    ) : (
-                        t(`empty.${status}`)
-                    )
-                }
+                emptyMessage={emptyMessage}
             />
         </div>
     );

@@ -20,6 +20,7 @@ import {
     roundStoredValue,
     toObjectiveSummary,
     toProgressEntry,
+    type ObjectiveActor,
 } from './objectiveRecords';
 import { withPaginationLimits } from './utils';
 import { withNextPageCheck } from './pagination';
@@ -141,15 +142,52 @@ const objectiveListValidator = paginationResultValidator(objectiveSummaryValidat
 
 const progressListValidator = paginationResultValidator(progressEntryValidator);
 
+async function toObjectiveSummaries(
+    db: QueryCtx['db'],
+    actor: ObjectiveActor,
+    objectives: Doc<'objectives'>[]
+) {
+    const categoryNames = new Map<Id<'categories'>, string>();
+    for (const objective of objectives) {
+        if (objective.categoryId && !categoryNames.has(objective.categoryId)) {
+            const category = await db.get('categories', objective.categoryId);
+            if (category) {
+                categoryNames.set(objective.categoryId, category.name);
+            }
+        }
+    }
+    return objectives.map(objective => {
+        const categoryName = objective.categoryId
+            ? categoryNames.get(objective.categoryId)
+            : undefined;
+        return toObjectiveSummary(objective, categoryName, actor);
+    });
+}
+
 export const listObjectives = queryWithRLS({
     args: {
         status: v.optional(v.union(v.literal('all'), v.literal('active'), v.literal('completed'))),
+        search: v.optional(v.string()),
         paginationOpts: paginationOptsValidator,
     },
     returns: objectiveListValidator,
     handler: async (ctx, args) => {
         const organizationId = requireOrganizationId(ctx.organizationId);
         const status = args.status ?? 'all';
+        const search = args.search?.trim();
+        if (search) {
+            // Matches come by relevance, so the next-page check of the date indexes doesn't apply.
+            const result = await ctx.db
+                .query('objectives')
+                .withSearchIndex('search_title', q => {
+                    const inOrganization = q
+                        .search('title', search)
+                        .eq('organizationId', organizationId);
+                    return status === 'all' ? inOrganization : inOrganization.eq('status', status);
+                })
+                .paginate(withPaginationLimits(args.paginationOpts));
+            return { ...result, page: await toObjectiveSummaries(ctx.db, ctx, result.page) };
+        }
         let indexed;
         if (status === 'all') {
             indexed = ctx.db
@@ -167,15 +205,6 @@ export const listObjectives = queryWithRLS({
         const result = await indexed
             .order('desc')
             .paginate(withPaginationLimits(args.paginationOpts));
-        const categoryNames = new Map<Id<'categories'>, string>();
-        for (const objective of result.page) {
-            if (objective.categoryId && !categoryNames.has(objective.categoryId)) {
-                const category = await ctx.db.get('categories', objective.categoryId);
-                if (category) {
-                    categoryNames.set(objective.categoryId, category.name);
-                }
-            }
-        }
         return await withNextPageCheck(
             ctx.db,
             status === 'all'
@@ -194,12 +223,7 @@ export const listObjectives = queryWithRLS({
                       paginationOpts: args.paginationOpts,
                   },
             result,
-            result.page.map(objective => {
-                const categoryName = objective.categoryId
-                    ? categoryNames.get(objective.categoryId)
-                    : undefined;
-                return toObjectiveSummary(objective, categoryName, ctx);
-            })
+            await toObjectiveSummaries(ctx.db, ctx, result.page)
         );
     },
 });

@@ -290,8 +290,6 @@
         "filters": {
             "search": "Buscar objetivos...",
             "status": "Estado",
-            "category": "Categoría",
-            "deadline": "Fecha límite",
             "options": {
                 "all": "Todos",
                 "active": "Activos",
@@ -303,7 +301,8 @@
             "all": "Todavía no tienes objetivos.",
             "active": "No hay objetivos activos.",
             "completed": "Aún no has completado ningún objetivo.",
-            "allHint": "Crea uno para empezar a registrar tu progreso."
+            "allHint": "Crea uno para empezar a registrar tu progreso.",
+            "search": "Ningún objetivo coincide con «{search}»."
         },
         "visibility": {
             "label": "Visibilidad",
