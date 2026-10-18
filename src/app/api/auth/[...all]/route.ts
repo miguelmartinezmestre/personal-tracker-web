@@ -17,6 +17,7 @@ export async function GET(request: Request) {
     if (isAnonymousTokenRequest(request)) {
         return Response.json({ token: null });
     }
+
     return handler.GET(request);
 }
 

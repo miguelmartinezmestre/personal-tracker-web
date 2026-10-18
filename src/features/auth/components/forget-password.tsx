@@ -23,6 +23,7 @@ export default function ForgetPasswordForm() {
     const locale = useLocale() === 'es' ? 'es' : 'en';
     const tCommon = useTranslations('Common');
     const t = useTranslations('ForgotPassword');
+
     const forgetPasswordSchema = createForgetPasswordSchema({
         invalidEmail: tCommon('validation.invalidEmail'),
     });
@@ -50,6 +51,7 @@ export default function ForgetPasswordForm() {
         setSuccessMessage('');
 
         const redirectTo = `${window.location.origin}/reset-password`;
+
         const { error } = await authClient.requestPasswordReset({
             email: values.email,
             redirectTo,
@@ -57,6 +59,7 @@ export default function ForgetPasswordForm() {
 
         if (error) {
             setLoginError(resolveErrorMessage(error, locale, tCommon('genericErrorDescription')));
+
             return;
         }
 
@@ -92,6 +95,7 @@ export default function ForgetPasswordForm() {
                     {field => {
                         const errors = getFieldErrors(form, field);
                         const isInvalid = !!errors.length;
+
                         return (
                             <Field data-invalid={isInvalid}>
                                 <FieldLabel htmlFor={field.name} className="text-foreground">

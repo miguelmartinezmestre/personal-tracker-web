@@ -4,9 +4,11 @@ import { expect, test } from '../../fixtures/test-base';
 async function switchLanguage(page: Page, locale: 'es' | 'en'): Promise<void> {
     const switcher = page.locator('[data-testid="language-switcher"]:visible');
     const menu = page.getByTestId('header-menu-toggle');
+
     if (!(await switcher.isVisible()) && (await menu.isVisible())) {
         await menu.click();
     }
+
     await expect(switcher).toBeVisible({ timeout: 15000 });
     await switcher.click();
     await page.getByTestId(`language-option-${locale}`).click();

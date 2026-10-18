@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { AlertCircle, CheckCircle2, Loader2 } from 'lucide-react';
 import Link from 'next/link';
-import { getInvitationCallbackPath } from '@/convex/utils';
+import { getInvitationCallbackPath } from '@/convex/features/auth/redirects';
 import { InvitationActivationPending } from '@/features/organizations/components/invitation-activation-pending';
 import {
     acceptInvitationAndActivateOrganization,
@@ -44,6 +44,7 @@ export default function InvitationContent({
             const timer = setTimeout(() => {
                 router.push('/dashboard/organizations');
             }, 2000);
+
             return () => clearTimeout(timer);
         }
     }, [status, router]);
@@ -56,6 +57,7 @@ export default function InvitationContent({
             const result = await acceptInvitationAndActivateOrganization({
                 invitationId: token,
             });
+
             if (result.status === 'acceptedActivationPending') {
                 setPendingOrganization(result.organizationId);
                 setStatus('ready');
@@ -73,7 +75,9 @@ export default function InvitationContent({
         if (!pendingOrganization) {
             return;
         }
+
         setStatus('accepting');
+
         try {
             await activateAcceptedOrganization(pendingOrganization);
             setPendingOrganization(null);
@@ -83,6 +87,7 @@ export default function InvitationContent({
             setErrorMessage(t('errorAccepting'));
         }
     }
+
     if (pendingOrganization) {
         return (
             <InvitationActivationPending
@@ -92,6 +97,7 @@ export default function InvitationContent({
             />
         );
     }
+
     if (sessionQuery.isPending) {
         return (
             <div className="flex min-h-screen items-center justify-center">
@@ -138,6 +144,7 @@ export default function InvitationContent({
     }
 
     let acceptButtonContent;
+
     if (status === 'accepting') {
         acceptButtonContent = (
             <>
@@ -193,10 +200,13 @@ function InvitationLoginRequired({
 }) {
     const router = useRouter();
     const t = useTranslations('Invitations');
+
     const loginSearchParams = new URLSearchParams({
         callbackUrl: getInvitationCallbackPath(token),
     });
+
     const registerSearchParams = new URLSearchParams({ invitation: token });
+
     return (
         <div className="flex min-h-screen items-center justify-center p-4">
             <Card className="w-full max-w-md">
@@ -237,6 +247,7 @@ function InvitationLoginRequired({
 
 function InvitationVerificationRequired() {
     const t = useTranslations('Invitations');
+
     return (
         <div className="flex min-h-screen items-center justify-center p-4">
             <Card className="w-full max-w-md" data-testid="invitation-link-verification-required">
@@ -260,6 +271,7 @@ function InvitationVerificationRequired() {
 
 function InvitationUnavailable() {
     const t = useTranslations('Invitations');
+
     return (
         <div className="flex min-h-screen items-center justify-center p-4">
             <Card className="w-full max-w-md" data-testid="invitation-invalid">
@@ -284,6 +296,7 @@ function InvitationUnavailable() {
 
 function InvitationError({ message }: { message: string }) {
     const t = useTranslations('Invitations');
+
     return (
         <div className="flex min-h-screen items-center justify-center p-4">
             <Card className="w-full max-w-md">

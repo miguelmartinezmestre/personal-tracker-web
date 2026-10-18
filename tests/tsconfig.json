@@ -4,5 +4,5 @@
         "incremental": false
     },
     "include": ["./**/*.ts", "./**/*.tsx", "../playwright.config.ts"],
-    "exclude": ["../node_modules", "./.auth/**"]
+    "exclude": ["../node_modules"]
 }

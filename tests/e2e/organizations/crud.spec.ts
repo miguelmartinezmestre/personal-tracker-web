@@ -13,6 +13,7 @@ async function setActiveOrganization(page: Page, orgName: string): Promise<void>
     const trigger = switcher.first();
 
     const retryButton = page.getByRole('button', { name: /try again|reintentar/i });
+
     if (await retryButton.isVisible()) {
         await retryButton.click();
     }
@@ -21,6 +22,7 @@ async function setActiveOrganization(page: Page, orgName: string): Promise<void>
     await expect(trigger).toBeEnabled({ timeout: 15000 });
 
     const currentOrganizationText = (await trigger.textContent({ timeout: 2000 }))?.trim() ?? '';
+
     if (currentOrganizationText.includes(orgName)) {
         return;
     }
@@ -31,6 +33,7 @@ async function setActiveOrganization(page: Page, orgName: string): Promise<void>
         .locator('[data-testid^="organization-option-"]')
         .filter({ hasText: new RegExp(escapeRegExp(orgName), 'i') })
         .first();
+
     await expect(orgOption).toBeVisible({ timeout: 10000 });
     await expect(orgOption).not.toHaveAttribute('aria-disabled', 'true');
 
@@ -70,14 +73,17 @@ test.describe('Organizations CRUD', () => {
         await page.waitForLoadState('domcontentloaded');
 
         const orgTable = page.getByTestId('organizations-table');
+
         const row = orgTable
             .locator('[data-testid="table-row"]')
             .filter({ hasText: organization.name })
             .first();
 
         await expect(row).toBeVisible({ timeout: 10000 });
+
         const organizationName =
             (await row.locator('[data-testid="table-cell"]').first().textContent())?.trim() ?? '';
+
         await setActiveOrganization(page, organizationName);
 
         const editButton = row.getByTestId('organization-edit-open');
@@ -97,10 +103,12 @@ test.describe('Organizations CRUD', () => {
         await saveButton.click();
 
         await expect(nameInput).toBeHidden({ timeout: 10000 });
+
         const updatedRow = orgTable
             .locator('[data-testid="table-row"]')
             .filter({ hasText: newName })
             .first();
+
         await expect(updatedRow).toContainText(newDescription, { timeout: 10000 });
     });
 
@@ -113,6 +121,7 @@ test.describe('Organizations CRUD', () => {
         await page.waitForLoadState('domcontentloaded');
 
         const orgTable = page.getByTestId('organizations-table');
+
         const row = orgTable
             .locator('[data-testid="table-row"]')
             .filter({ hasText: organization.name })
@@ -122,6 +131,7 @@ test.describe('Organizations CRUD', () => {
 
         const organizationName =
             (await row.locator('[data-testid="table-cell"]').first().textContent())?.trim() ?? '';
+
         await setActiveOrganization(page, organizationName);
 
         const deleteButton = row.getByTestId('organization-delete-button');
@@ -132,6 +142,7 @@ test.describe('Organizations CRUD', () => {
         const confirmDialog = page.locator(
             '[data-slot="alert-dialog-content"], [role="alertdialog"]'
         );
+
         const activeDialog = confirmDialog.first();
         await expect(activeDialog).toBeVisible({ timeout: 5000 });
 
@@ -148,13 +159,16 @@ test.describe('Organizations CRUD', () => {
         const organization = await createOrganization(page, {
             name: `Sole Owner Org ${randomUUID().substring(0, 8)}`,
         });
+
         await page.goto('/dashboard/organizations');
         await setActiveOrganization(page, organization.name);
+
         const row = page
             .getByTestId('organizations-table')
             .locator('[data-testid="table-row"]')
             .filter({ hasText: organization.name })
             .first();
+
         await row.getByTestId('organization-detail-link').click();
 
         // Leaving first switches to the personal organization, then must switch back on failure.

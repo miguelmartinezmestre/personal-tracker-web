@@ -10,6 +10,7 @@ import es from '../../../translations/es.json';
 import ProgressChart from './progress-chart';
 
 const objectiveId = 'objective-1' as Id<'objectives'>;
+
 const objective = {
     id: objectiveId,
     startValue: 0,
@@ -34,6 +35,8 @@ function renderWithHistory(
             },
         },
     });
+
+    // SAFETY: Convex ids are opaque strings and these only key seeded queries, never the backend.
     queryClient.setQueryData(
         convexQuery(api.objectives.getProgressHistory, { objectiveId }).queryKey,
         {
@@ -43,6 +46,7 @@ function renderWithHistory(
             })),
         }
     );
+
     return render(
         <QueryClientProvider client={queryClient}>
             <NextIntlClientProvider locale="es" messages={es}>
@@ -72,6 +76,7 @@ test('renders a single same-day update without a degenerate time axis', () => {
     const { container } = renderWithHistory([
         { updateDate: Date.UTC(2026, 0, 1), value: 2, delta: 2 },
     ]);
+
     expect(screen.getByTestId('progress-chart')).toBeInTheDocument();
     expect(container.innerHTML).not.toContain('NaN');
 });
@@ -81,9 +86,11 @@ test('adds the year to day labels when the axis crosses into a new year', () => 
         [{ updateDate: Date.UTC(2026, 0, 10), value: 2, delta: 2 }],
         { ...objective, createdAt: Date.UTC(2025, 11, 1), deadline: Date.UTC(2026, 1, 1) }
     );
-    const tickLabels = [...container.querySelectorAll('svg text')]
-        .map(node => node.textContent)
-        .filter(label => /[a-z]/.test(label));
+
+    const tickLabels = [...container.querySelectorAll('svg text')].flatMap(node =>
+        /[a-z]/.test(node.textContent) ? [node.textContent] : []
+    );
+
     expect(tickLabels.length).toBeGreaterThan(0);
     expect(tickLabels.every(label => /\d{4}/.test(label))).toBe(true);
 });

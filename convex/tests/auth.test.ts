@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, test } from 'vitest';
 import { api, internal } from '../_generated/api';
 import { initConvexTest } from './test.helper';
-import { DEFAULT_CATEGORIES } from '../constants';
+import { DEFAULT_CATEGORIES } from '../features/categories/constants';
 import {
     createTestUser,
     createTestOrganization,
@@ -9,7 +9,6 @@ import {
     createTestSession,
 } from './test.helpers';
 import type { Id } from '../_generated/dataModel';
-import { asInvalidArg } from './test.casts';
 import { z } from 'zod';
 
 const sessionCreateResultSchema = z.object({
@@ -33,6 +32,7 @@ describe('convex auth', () => {
             role: 'globalAdmin',
             emailVerified: false,
         });
+
         userId = userData.docId;
 
         const orgId = await createTestOrganization(t, {
@@ -62,8 +62,7 @@ describe('convex auth', () => {
             activeOrganizationId: String(_organizationId),
         };
 
-        const createdSession = asInvalidArg<Record<string, unknown>>(
-            // oxlint-disable-next-line typescript/no-unsafe-argument -- generated Better Auth adapter returns an untyped document
+        const parsedSession = sessionCreateResultSchema.safeParse(
             await t.mutation(internal.generated.auth.create, {
                 input: {
                     model: 'session',
@@ -71,11 +70,13 @@ describe('convex auth', () => {
                 },
             })
         );
-        const parsedSession = sessionCreateResultSchema.safeParse(createdSession);
+
         if (!parsedSession.success) {
             throw new Error('Expected session create result');
         }
+
         const sessionId = parsedSession.data._id ?? parsedSession.data.id;
+
         if (!sessionId) {
             throw new Error('Expected session id');
         }
@@ -110,6 +111,7 @@ describe('convex auth', () => {
         ).toBe(true);
 
         const sessionLogs = adminLogs.filter(log => log.resourceId === sessionId);
+
         for (const log of sessionLogs) {
             expect(log.metadata?.before ?? {}).not.toHaveProperty('token');
             expect(log.metadata?.after ?? {}).not.toHaveProperty('token');
@@ -123,6 +125,7 @@ describe('convex auth', () => {
 
     test('default organization created for a user is protected', async () => {
         const randomSuffix = Math.random().toString(36).substring(2, 15);
+
         const user = await createTestUser(t, {
             userId: `default-org-user-${randomSuffix}`,
             email: `default-org-user-${randomSuffix}@example.com`,
@@ -136,6 +139,7 @@ describe('convex auth', () => {
         const organization = await t.run(
             async ctx => await ctx.db.get('organization', organizationId)
         );
+
         expect(organization?.metadata).toBe(
             JSON.stringify({ type: 'personal', ownerUserId: user.docId })
         );
@@ -153,17 +157,20 @@ describe('convex auth', () => {
         await expect(
             t.mutation(internal.auth.ensureDefaultOrganizationForUser, { userId: user.docId })
         ).resolves.toBe(organizationId);
+
         const memberships = await t.run(ctx =>
             ctx.db
                 .query('member')
                 .withIndex('userId', q => q.eq('userId', user.docId))
                 .collect()
         );
+
         expect(memberships).toHaveLength(1);
     });
 
     test('default organization starts with the default categories once', async () => {
         const randomSuffix = Math.random().toString(36).substring(2, 15);
+
         const user = await createTestUser(t, {
             userId: `default-categories-user-${randomSuffix}`,
             email: `default-categories-user-${randomSuffix}@example.com`,
@@ -173,6 +180,7 @@ describe('convex auth', () => {
         const organizationId = await t.mutation(internal.auth.ensureDefaultOrganizationForUser, {
             userId: user.docId,
         });
+
         await t.mutation(internal.categories.seedDefaultCategories, { organizationId });
 
         const categories = await t.run(
@@ -182,6 +190,7 @@ describe('convex auth', () => {
                     .withIndex('by_organization', q => q.eq('organizationId', organizationId))
                     .take(50)
         );
+
         expect(categories.map(category => category.name).sort()).toEqual(
             DEFAULT_CATEGORIES.map(category => category.name).sort()
         );
@@ -189,23 +198,27 @@ describe('convex auth', () => {
 
     test('detects an organization name the user already has, ignoring case', async () => {
         const suffix = Math.random().toString(36).slice(2, 10);
+
         const user = await createTestUser(t, {
             userId: `org-name-user-${suffix}`,
             email: `org-name-user-${suffix}@example.com`,
             name: 'Org Name User',
         });
+
         const organizationId = await createTestOrganization(t, {
             name: 'Acme Team',
             slug: `acme-team-${suffix}`,
         });
+
         await createTestMember(t, { organizationId, userId: user.docId, role: 'owner' });
 
         const check = (name: string, excludeOrganizationId?: string) =>
             t.query(internal.auth.userHasOrganizationNamed, {
                 userId: user.docId,
                 name,
-                ...(excludeOrganizationId ? { excludeOrganizationId } : {}),
+                excludeOrganizationId,
             });
+
         expect(await check('  acme team ')).toBe(true);
         expect(await check('Other team')).toBe(false);
         // Renaming an organization to its own name is not a duplicate.
@@ -214,6 +227,7 @@ describe('convex auth', () => {
 
     test('listOrganizations and getPersonalOrganizationId find the personal organization', async () => {
         const randomSuffix = Math.random().toString(36).substring(2, 15);
+
         const user = await createTestUser(t, {
             userId: `personal-org-list-user-${randomSuffix}`,
             email: `personal-org-list-user-${randomSuffix}@example.com`,

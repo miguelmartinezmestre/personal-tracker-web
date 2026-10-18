@@ -2,10 +2,7 @@
 
 import { useState, useRef } from 'react';
 
-export function useFormSubmit<T>(mutationFn: (values: T) => Promise<void>): {
-    submit: (values: T) => Promise<void>;
-    isSubmitting: boolean;
-} {
+export function useFormSubmit<T>(mutationFn: (values: T) => Promise<void>) {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const isSubmittingRef = useRef(false);
 
@@ -16,6 +13,7 @@ export function useFormSubmit<T>(mutationFn: (values: T) => Promise<void>): {
 
         isSubmittingRef.current = true;
         setIsSubmitting(true);
+
         try {
             await mutationFn(values);
         } catch (error) {

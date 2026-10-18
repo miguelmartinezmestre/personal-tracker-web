@@ -40,6 +40,7 @@ export function DataTable<TData extends RowData>({
     'use no memo';
 
     const t = useTranslations('Table');
+
     const table = useTable({
         features: dataTableFeatures,
         data,
@@ -87,6 +88,7 @@ export function DataTable<TData extends RowData>({
     }
 
     let tableRows;
+
     if (table.getRowModel().rows.length) {
         tableRows = table.getRowModel().rows.map(row => (
             <TableRow key={row.id} data-testid="table-row">
@@ -120,9 +122,11 @@ export function DataTable<TData extends RowData>({
                             <TableRow key={headerGroup.id}>
                                 {headerGroup.headers.map(header => {
                                     const className = columnClassNames?.[header.column.id];
+
                                     if (header.isPlaceholder) {
                                         return <TableHead key={header.id} className={className} />;
                                     }
+
                                     return (
                                         <TableHead key={header.id} className={className}>
                                             {flexRender(

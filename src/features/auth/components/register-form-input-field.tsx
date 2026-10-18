@@ -28,15 +28,7 @@ export function RegisterFormInputField({
             {field => {
                 const errors = getFieldErrors(form, field);
                 const isInvalid = !!errors.length;
-                let value: string | number;
-                if (
-                    typeof field.state.value === 'string' ||
-                    typeof field.state.value === 'number'
-                ) {
-                    value = field.state.value;
-                } else {
-                    value = '';
-                }
+
                 return (
                     <Field data-invalid={isInvalid}>
                         <FieldLabel htmlFor={field.name} className="text-foreground">
@@ -45,7 +37,7 @@ export function RegisterFormInputField({
                         <Input
                             id={field.name}
                             name={field.name}
-                            value={value}
+                            value={field.state.value}
                             onChange={event => field.handleChange(event.target.value)}
                             onBlur={field.handleBlur}
                             type={type}

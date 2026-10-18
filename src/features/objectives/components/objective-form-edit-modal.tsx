@@ -25,9 +25,11 @@ export default function EditObjectiveFormModal({
 }) {
     const t = useTranslations('Objectives');
     const tCommon = useTranslations('Common');
+
     const updateObjective = useMutation({
         mutationFn: useConvexMutation(api.objectives.updateObjective),
     });
+
     const defaultValues: ObjectiveFormValues = {
         title: objective.title,
         description: objective.description ?? '',
@@ -37,6 +39,7 @@ export default function EditObjectiveFormModal({
         targetValue: objective.targetValue,
         deadline: timestampToDateInput(objective.deadline),
     };
+
     const formSchema = useObjectiveFormSchema(defaultValues.deadline);
 
     return (
@@ -69,17 +72,21 @@ export default function EditObjectiveFormModal({
             }}
             onSubmit={async values => {
                 let deadline: number | undefined;
+
                 if (values.deadline) {
                     deadline = dateInputToUtcTimestamp(values.deadline);
                 } else {
                     deadline = undefined;
                 }
+
                 let categoryId: Id<'categories'> | null;
+
                 if (values.categoryId === NONE_CATEGORY) {
                     categoryId = null;
                 } else {
                     categoryId = values.categoryId as Id<'categories'>;
                 }
+
                 const updated = await updateObjective.mutateAsync({
                     id: objective.id,
                     title: values.title,
@@ -90,6 +97,7 @@ export default function EditObjectiveFormModal({
                     startValue: values.startValue,
                     targetValue: values.targetValue,
                 });
+
                 if (updated.status === objective.status) {
                     toast.success(t('toast.updated'));
                 } else if (updated.status === 'completed') {

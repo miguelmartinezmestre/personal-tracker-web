@@ -81,9 +81,11 @@ test.describe('Objectives', () => {
             await page.getByTestId('objective-save-button').click();
 
             const doneRow = page.getByTestId('objective-row-link').filter({ hasText: doneTitle });
+
             const activeRow = page
                 .getByTestId('objective-row-link')
                 .filter({ hasText: activeTitle });
+
             await page.getByTestId('objectives-filter-completed').click();
             await expect(doneRow).toBeVisible({ timeout: 15000 });
             await expect(activeRow).toHaveCount(0);

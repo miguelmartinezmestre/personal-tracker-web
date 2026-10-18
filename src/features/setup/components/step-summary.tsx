@@ -12,6 +12,7 @@ interface StepSummaryProps {
 export default function StepSummary({ data }: StepSummaryProps) {
     const t = useTranslations('Setup');
     let registrationPolicyLabel: string;
+
     if (data.registration.policy === 'open') {
         registrationPolicyLabel = t('registrationPolicy.openLabel');
     } else {

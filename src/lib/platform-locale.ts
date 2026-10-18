@@ -14,6 +14,7 @@ export async function fetchPlatformDefaultLocale(): Promise<AppLocale | null> {
         const client = new ConvexHttpClient(NEXT_PUBLIC_CONVEX_URL);
         const settings = await client.query(api.setup.getPublicPlatformSettings, {});
         const defaultLanguage = settings?.defaultLanguage;
+
         return defaultLanguage && isAppLocale(defaultLanguage) ? defaultLanguage : null;
     } catch {
         return null;

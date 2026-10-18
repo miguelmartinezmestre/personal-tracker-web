@@ -1,11 +1,14 @@
 // Shared TanStack Form helpers used by form components.
 
+import type { FieldErrorIssue } from '@/components/ui/field';
+
 type FormStateLike = { state: { submissionAttempts: number } };
+
 type FieldStateLike = {
     state: {
         meta: {
             isTouched: boolean;
-            errors: readonly unknown[];
+            errors: readonly FieldErrorIssue[];
         };
     };
 };
@@ -13,10 +16,14 @@ type FieldStateLike = {
 // Errors are shown once a field was touched or a submit was attempted;
 // mirrors the guide's `isTouched && !isValid` while keeping the project's
 // submit-attempt gate so stale errors never appear before the first submit.
-export function getFieldErrors(form: FormStateLike, field: FieldStateLike): readonly unknown[] {
+export function getFieldErrors(
+    form: FormStateLike,
+    field: FieldStateLike
+): readonly FieldErrorIssue[] {
     if (field.state.meta.isTouched || form.state.submissionAttempts > 0) {
         return field.state.meta.errors;
     }
+
     return [];
 }
 

@@ -10,7 +10,7 @@ if (!('MessageChannel' in globalThis)) {
             return false;
         }
 
-        postMessage(_message: string | object | null, _transfer: Transferable[] = []) {}
+        postMessage() {}
         removeEventListener() {}
         start() {}
     }

@@ -8,8 +8,8 @@ import type { CreateOrganization } from '@/features/organizations/schemas/organi
 import { convexQuery } from '@convex-dev/react-query';
 import { throwIfAuthClientError } from '@/features/auth/auth-client-response';
 import type { FunctionReturnType } from 'convex/server';
-import { buildOrganizationSlug } from '@/convex/utils';
-import { DEFAULT_ORGANIZATION_SLUG_BASE } from '@/convex/personalOrganization';
+import { buildOrganizationSlug } from '@/convex/features/organizations/slug';
+import { DEFAULT_ORGANIZATION_SLUG_BASE } from '@/convex/features/organizations/personalOrganization';
 
 type UpdateOrganization = CreateOrganization & { id: string };
 
@@ -38,6 +38,7 @@ export function useOrganizationByIdentifier(identifier: string) {
 // them apart. Personal organizations own the `personal-organization-` prefix.
 function buildUniqueOrganizationSlug(name: string): string {
     const slug = `${buildOrganizationSlug(name)}-${crypto.randomUUID().slice(0, 6)}`;
+
     return slug.startsWith(`${DEFAULT_ORGANIZATION_SLUG_BASE}-`) ? `org-${slug}` : slug;
 }
 
@@ -50,7 +51,9 @@ export function useCreateOrganization() {
                 metadata: values.description ? { description: values.description } : undefined,
                 slug: buildUniqueOrganizationSlug(values.name),
             });
+
             throwIfAuthClientError(result);
+
             return result.data;
         },
     });
@@ -66,7 +69,9 @@ export function useUpdateOrganization() {
                 },
                 organizationId: values.id,
             });
+
             throwIfAuthClientError(result);
+
             return result.data;
         },
     });
@@ -79,7 +84,9 @@ export function useDeleteOrganization() {
             const result = await authClient.organization.delete({
                 organizationId: values.id,
             });
+
             throwIfAuthClientError(result);
+
             return result.data;
         },
     });
@@ -95,16 +102,21 @@ export function useLeaveOrganization() {
                 const switched = await authClient.organization.setActive({
                     organizationId: values.fallbackOrganizationId,
                 });
+
                 throwIfAuthClientError(switched);
             }
+
             const result = await authClient.organization.leave({
                 organizationId: values.organizationId,
             });
+
             if (result.error && values.fallbackOrganizationId) {
                 // The user is still a member (e.g. the only owner): put them back where they were.
                 await authClient.organization.setActive({ organizationId: values.organizationId });
             }
+
             throwIfAuthClientError(result);
+
             return result.data;
         },
     });

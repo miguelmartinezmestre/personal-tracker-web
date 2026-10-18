@@ -20,18 +20,22 @@ describe('organization deletion cascade', () => {
 
     test('removes categories and memberships owned by the organization', async () => {
         const suffix = Math.random().toString(36).slice(2, 10);
+
         const user = await createTestUser(t, {
             userId: `organization-delete-${suffix}`,
             email: `organization-delete-${suffix}@example.com`,
             name: 'Organization owner',
             role: 'user',
         });
+
         const organizationId = await createTestOrganization(t, {
             name: `Organization to delete ${suffix}`,
             slug: `organization-to-delete-${suffix}`,
         });
+
         await createTestMember(t, { organizationId, userId: user.docId, role: 'owner' });
         const now = Date.now();
+
         const categoryId = await t.run(ctx =>
             ctx.db.insert('categories', {
                 userId: user.docId,
@@ -42,6 +46,7 @@ describe('organization deletion cascade', () => {
                 updatedAt: now,
             })
         );
+
         const objectiveId = await t.run(ctx =>
             ctx.db.insert('objectives', {
                 organizationId,
@@ -55,6 +60,7 @@ describe('organization deletion cascade', () => {
                 updatedAt: now,
             })
         );
+
         const progressId = await t.run(ctx =>
             ctx.db.insert('progressUpdates', {
                 objective: objectiveId,
@@ -82,24 +88,29 @@ describe('organization deletion cascade', () => {
 
     test('gives the deleting user back an active organization after Better Auth clears it', async () => {
         const suffix = Math.random().toString(36).slice(2, 10);
+
         const actor = await createTestUser(t, {
             userId: `actor-${suffix}`,
             email: `actor-${suffix}@example.test`,
             name: 'Actor',
         });
+
         const deletedId = await createTestOrganization(t, {
             name: 'Deleted by actor',
             slug: `deleted-by-actor-${suffix}`,
         });
+
         const fallbackId = await createTestOrganization(t, {
             name: 'Kept',
             slug: `kept-${suffix}`,
         });
+
         await createTestMember(t, {
             organizationId: fallbackId,
             userId: actor.docId,
             role: 'owner',
         });
+
         // Better Auth sets the deleting session's active organization to null before deleting.
         const actorSession = await createTestSession(t, {
             userId: actor.docId,
@@ -107,6 +118,7 @@ describe('organization deletion cascade', () => {
             expiresAt: Date.now() + 3600000,
             token: `actor-session-${suffix}`,
         });
+
         await t.run(ctx => ctx.db.delete('organization', deletedId));
 
         await t.mutation(internal.auth.recoverSessionsAfterOrganizationDeletion, {

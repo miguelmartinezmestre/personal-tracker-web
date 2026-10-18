@@ -63,6 +63,7 @@ function OrganizationSwitcherMenuItems({
 
     return organizations.map(organization => {
         let personalBadge = null;
+
         if (organization.isPersonal) {
             personalBadge = (
                 <span className="shrink-0 rounded bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary">
@@ -70,14 +71,17 @@ function OrganizationSwitcherMenuItems({
                 </span>
             );
         }
+
         let currentLabelElement = null;
         let currentCheck = null;
+
         if (organization.id === activeOrganizationId) {
             currentLabelElement = (
                 <span className="text-xs text-primary font-medium">{currentLabel}</span>
             );
             currentCheck = <Check className="h-4 w-4 text-primary flex-shrink-0" />;
         }
+
         return (
             <DropdownMenuItem
                 key={organization.id}
@@ -108,6 +112,7 @@ function organizationDisplayName(
     if (organization?.isPersonal) {
         return labels.personal;
     }
+
     return organization?.name || labels.none;
 }
 
@@ -123,9 +128,11 @@ export function OrganizationSwitcher({ initialActiveOrganizationId }: Organizati
     const sessionQuery = useQuery(convexQuery(api.organizations.getCurrentSession, {}));
     const [optimisticOrganizationId, setOptimisticOrganizationId] = useState<string | null>(null);
     const sessionActiveOrganizationId = sessionQuery.data?.session.activeOrganizationId ?? null;
+
     const activeOrganizationId =
         optimisticOrganizationId ??
         (sessionQuery.data ? sessionActiveOrganizationId : initialActiveOrganizationId);
+
     const activeQuery = useOrganizationByIdentifier(activeOrganizationId ?? '');
     const organizations = organizationsQuery.data;
     const isLoadingData = organizationsQuery.isLoading;
@@ -135,7 +142,9 @@ export function OrganizationSwitcher({ initialActiveOrganizationId }: Organizati
             const result = await authClient.organization.setActive({
                 organizationId,
             });
+
             throwIfAuthClientError(result);
+
             return result.data;
         },
         onSuccess: (_data, organizationId) => {
@@ -147,20 +156,24 @@ export function OrganizationSwitcher({ initialActiveOrganizationId }: Organizati
     const activeOrganization =
         organizations.find(organization => organization.id === activeOrganizationId) ??
         activeQuery.data;
+
     const displayName = organizationDisplayName(activeOrganization, {
         personal: t('personalOrganizationName'),
         none: t('noOrganization'),
     });
+
     const activeIsPersonal = Boolean(activeOrganization?.isPersonal);
 
     const handleOrganizationChange = (organizationId: string) => {
         if (!organizationId || organizationId === activeOrganizationId) {
             return;
         }
+
         setActiveMutation.mutate(organizationId);
     };
 
     let triggerContent;
+
     if (setActiveMutation.isPending || isLoadingData) {
         triggerContent = <Loader2 className="h-4 w-4 animate-spin" />;
     } else {
@@ -181,6 +194,7 @@ export function OrganizationSwitcher({ initialActiveOrganizationId }: Organizati
     }
 
     let personalBadge = null;
+
     if (activeIsPersonal) {
         personalBadge = (
             <span className="shrink-0 rounded bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary">
@@ -190,6 +204,7 @@ export function OrganizationSwitcher({ initialActiveOrganizationId }: Organizati
     }
 
     let loadMoreItem = null;
+
     if (organizations.length > 0) {
         loadMoreItem = (
             <DropdownMenuItem

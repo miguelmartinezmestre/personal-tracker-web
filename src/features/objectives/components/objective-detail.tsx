@@ -43,6 +43,7 @@ export default function ObjectiveDetail({
     const categoryLabel = useCategoryLabel();
     const router = useRouter();
     const objective = useQuery(convexQuery(api.objectives.getObjective, { id: objectiveId }));
+
     const deleteObjective = useMutation({
         meta: { handlesErrorsLocally: true },
         mutationFn: useConvexMutation(api.objectives.deleteObjective),
@@ -51,6 +52,7 @@ export default function ObjectiveDetail({
     if (objective.isPending) {
         return <ObjectiveDetailSkeleton />;
     }
+
     if (objective.isError) {
         return (
             <QueryErrorFallback
@@ -60,12 +62,14 @@ export default function ObjectiveDetail({
             />
         );
     }
+
     if (!objective.data) {
         return <ObjectiveNotFound listHref={listHref} />;
     }
 
     const current = objective.data;
     let managementActions = null;
+
     if (current.canManage) {
         managementActions = (
             <div className="flex gap-2">
@@ -98,7 +102,9 @@ export default function ObjectiveDetail({
             </div>
         );
     }
+
     let progressContent;
+
     if (current.status === 'completed') {
         progressContent = <CompletedNotice />;
     } else {
@@ -118,6 +124,7 @@ export default function ObjectiveDetail({
             </Card>
         );
     }
+
     const details = [
         current.categoryName ? `${t('category')}: ${categoryLabel(current.categoryName)}` : null,
         current.deadline !== undefined
@@ -127,6 +134,7 @@ export default function ObjectiveDetail({
             ? t('completedOn', { date: formatInstantDate(current.completedAt, locale) })
             : null,
     ].filter(detail => detail !== null);
+
     const unitSuffix = current.unit ? ` ${current.unit}` : '';
 
     return (
@@ -221,6 +229,7 @@ function ObjectiveDetailSkeleton() {
 
 function CompletedNotice() {
     const t = useTranslations('Objectives');
+
     return (
         <Alert data-testid="objective-completed-notice">
             <PartyPopper className="h-4 w-4" />
@@ -232,6 +241,7 @@ function CompletedNotice() {
 
 function ObjectiveNotFound({ listHref }: { listHref: Route }) {
     const t = useTranslations('Objectives');
+
     return (
         <div className="space-y-3" data-testid="objective-not-found">
             <p>{t('notFound')}</p>

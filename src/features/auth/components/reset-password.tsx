@@ -30,6 +30,7 @@ export default function ResetPassword({ resetPasswordKey }: ResetPasswordProps) 
     const locale = useLocale() === 'es' ? 'es' : 'en';
     const t = useTranslations('HomePage');
     const tCommon = useTranslations('Common');
+
     const resetPasswordSchema = createResetPasswordSchema({
         weakPassword: t('errors.weakPassword'),
         passwordsDontMatch: t('errors.passwordsDontMatch'),
@@ -65,6 +66,7 @@ export default function ResetPassword({ resetPasswordKey }: ResetPasswordProps) 
         }
 
         const token = values.resetPasswordKey;
+
         const { error } = await authClient.resetPassword({
             newPassword: values.password,
             token,
@@ -76,6 +78,7 @@ export default function ResetPassword({ resetPasswordKey }: ResetPasswordProps) 
             setRegisterError(
                 resolveErrorMessage(error, locale, tCommon('genericErrorDescription'))
             );
+
             return;
         }
 
@@ -115,6 +118,7 @@ export default function ResetPassword({ resetPasswordKey }: ResetPasswordProps) 
                     {field => {
                         const errors = getFieldErrors(form, field);
                         const isInvalid = !!errors.length;
+
                         return (
                             <Field data-invalid={isInvalid}>
                                 <FieldLabel htmlFor={field.name} className="text-foreground">
@@ -142,6 +146,7 @@ export default function ResetPassword({ resetPasswordKey }: ResetPasswordProps) 
                     {field => {
                         const errors = getFieldErrors(form, field);
                         const isInvalid = !!errors.length;
+
                         return (
                             <Field data-invalid={isInvalid}>
                                 <FieldLabel htmlFor={field.name} className="text-foreground">

@@ -1,4 +1,5 @@
 'use client';
+
 import { AlertCircle } from 'lucide-react';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { createRegisterSchema, type RegisterFormValues } from '@/features/auth/schemas/register';
@@ -13,11 +14,12 @@ import { authClient } from '@/features/auth/client';
 import { useSignOutMutationOptions } from '@/features/auth/client';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { resolveErrorMessage } from '@/lib/error-messages';
-import { getInvitationCallbackPath } from '@/convex/utils';
+import { getInvitationCallbackPath } from '@/convex/features/auth/redirects';
 import { RegisterFormInputField } from './register-form-input-field';
 import { useHydrated } from '@/hooks/use-hydrated';
 import { api } from '@/convex/_generated/api';
 import { convexQuery } from '@convex-dev/react-query';
+
 interface RegisterFormProps {
     invitationToken?: string | null;
 }
@@ -34,30 +36,36 @@ async function registerAccount({
     values: RegisterFormValues;
     invitationToken?: string | null;
     hasActiveSession: boolean;
-    signOut: () => Promise<unknown>;
+    signOut: () => Promise<void>;
 }): Promise<RegistrationAttempt> {
     if (hasActiveSession) {
         await signOut();
     }
+
     const result = await authClient.signUp.email({
         name: values.username,
         email: values.email,
         password: values.password,
         callbackURL: invitationToken ? getInvitationCallbackPath(invitationToken) : undefined,
     });
+
     if (result.error) {
         return { status: 'error', error: result.error };
     }
+
     if (!invitationToken) {
         return { status: 'dashboard' };
     }
+
     const verification = await authClient.sendVerificationEmail({
         email: values.email,
         callbackURL: getInvitationCallbackPath(invitationToken),
     });
+
     if (verification.error) {
         return { status: 'error', error: verification.error };
     }
+
     return { status: 'verification-sent' };
 }
 
@@ -67,6 +75,7 @@ export default function RegisterForm({ invitationToken }: RegisterFormProps) {
     const locale = useLocale() === 'es' ? 'es' : 'en';
     const t = useTranslations('HomePage');
     const tCommon = useTranslations('Common');
+
     const registerSchema = createRegisterSchema({
         weakPassword: t('errors.weakPassword'),
         passwordsDontMatch: t('errors.passwordsDontMatch'),
@@ -74,17 +83,20 @@ export default function RegisterForm({ invitationToken }: RegisterFormProps) {
         shortUsername: tCommon('validation.minimumCharacters', { count: 3 }),
         shortPassword: tCommon('validation.minimumCharacters', { count: 8 }),
     });
+
     const [registerError, setRegisterError] = useState('');
     const [verificationSent, setVerificationSent] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const session = useQuery(convexQuery(api.organizations.getCurrentSession, {}));
     const signOutMutation = useMutation(useSignOutMutationOptions());
+
     const registerDefaultValues: RegisterFormValues = {
         email: '',
         password: '',
         confirmPassword: '',
         username: '',
     };
+
     const form = useForm({
         defaultValues: registerDefaultValues,
         validators: {
@@ -95,8 +107,9 @@ export default function RegisterForm({ invitationToken }: RegisterFormProps) {
             await onSubmit(value);
         },
     });
+
     // Signing in from here should bring the invited person back to the invitation.
-    const loginHref = invitationToken
+    const loginHref: Route = invitationToken
         ? `/login?${new URLSearchParams({ callbackUrl: getInvitationCallbackPath(invitationToken) }).toString()}`
         : '/login';
 
@@ -108,19 +121,25 @@ export default function RegisterForm({ invitationToken }: RegisterFormProps) {
             values,
             invitationToken,
             hasActiveSession: Boolean(session.data?.user),
-            signOut: () => signOutMutation.mutateAsync(),
+            signOut: async () => {
+                await signOutMutation.mutateAsync();
+            },
         })
             .then(attempt => {
                 if (attempt.status === 'error') {
                     setRegisterError(
                         resolveErrorMessage(attempt.error, locale, t('errors.registerFallback'))
                     );
+
                     return;
                 }
+
                 if (attempt.status === 'verification-sent') {
                     setVerificationSent(true);
+
                     return;
                 }
+
                 router.push('/dashboard/home');
             })
             .catch(error => {
@@ -201,7 +220,7 @@ export default function RegisterForm({ invitationToken }: RegisterFormProps) {
 
                 <div className="text-center mt-4">
                     <p className="text-sm text-muted-foreground">
-                        <Link href={loginHref as Route} prefetch={false}>
+                        <Link href={loginHref} prefetch={false}>
                             {t('alreadyHaveAccount')} {t('login')}
                         </Link>
                     </p>

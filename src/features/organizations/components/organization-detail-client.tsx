@@ -12,7 +12,10 @@ import Link from 'next/link';
 import { QueryErrorFallback } from '@/components/ui/query-error-fallback';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useTranslations } from 'next-intl';
-import { isOrganizationAdminRole, isOrganizationOwnerRole } from '@/convex/utils';
+import {
+    isOrganizationAdminRole,
+    isOrganizationOwnerRole,
+} from '@/convex/features/organizations/roles';
 
 function OrganizationInviteAction({
     organization,
@@ -20,6 +23,7 @@ function OrganizationInviteAction({
     organization: Pick<Organization, 'id' | 'isPersonal' | 'role'>;
 }) {
     const tMembers = useTranslations('OrganizationMembers');
+
     if (organization.isPersonal) {
         return (
             <p
@@ -30,6 +34,7 @@ function OrganizationInviteAction({
             </p>
         );
     }
+
     if (isOrganizationAdminRole(organization.role)) {
         return (
             <CreateOrganizationMemberFormModal
@@ -38,6 +43,7 @@ function OrganizationInviteAction({
             />
         );
     }
+
     return null;
 }
 
@@ -50,6 +56,7 @@ export default function OrganizationDetailClient({
 }: OrganizationDetailClientProps) {
     const tMembers = useTranslations('OrganizationMembers');
     const tOrganizations = useTranslations('Organizations');
+
     const {
         data: organization,
         isLoading,
@@ -66,6 +73,7 @@ export default function OrganizationDetailClient({
             />
         );
     }
+
     if (isLoading) {
         return (
             <>

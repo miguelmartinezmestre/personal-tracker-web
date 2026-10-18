@@ -4,10 +4,11 @@ import {
     OBJECTIVE_TITLE_MAX_LENGTH,
     OBJECTIVE_UNIT_MAX_LENGTH,
     PROGRESS_COMMENT_MAX_LENGTH,
-} from '@/convex/constants';
+} from '@/convex/features/objectives/constants';
 import { dateInputToUtcTimestamp, todayDateInput } from '@/features/objectives/lib/dates';
 
 export const NONE_CATEGORY = 'none';
+
 // Same minimum the backend enforces in createObjective/updateObjective.
 const OBJECTIVE_TARGET_MIN = 0.001;
 

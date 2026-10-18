@@ -1,4 +1,5 @@
 'use client';
+
 import { PlusCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from '@/components/ui/field';
@@ -13,16 +14,19 @@ import FormModal from '@/components/forms/form-modal';
 import { getFieldErrors } from '@/components/forms/form-utils';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
+
 const defaultValues: CreateOrganization = {
     name: '',
     description: '',
 };
+
 export default function CreateOrganizationFormModal() {
     const t = useTranslations('Organizations');
     const tCommon = useTranslationsCommon('Common');
     const createOrganization = useCreateOrganization();
     const organizationSchema = useOrganizationFormSchema();
     const router = useRouter();
+
     return (
         <FormModal<CreateOrganization>
             trigger={
@@ -59,10 +63,8 @@ export default function CreateOrganizationFormModal() {
                         {field => {
                             const errors = getFieldErrors(form, field);
                             const isInvalid = !!errors.length;
-                            let value = '';
-                            if (typeof field.state.value === 'string') {
-                                value = field.state.value;
-                            }
+                            const value = field.state.value;
+
                             return (
                                 <Field data-invalid={isInvalid}>
                                     <FieldLabel htmlFor={field.name}>{t('name')}</FieldLabel>
@@ -89,10 +91,8 @@ export default function CreateOrganizationFormModal() {
                         {field => {
                             const errors = getFieldErrors(form, field);
                             const isInvalid = !!errors.length;
-                            let value = '';
-                            if (typeof field.state.value === 'string') {
-                                value = field.state.value;
-                            }
+                            const value = field.state.value;
+
                             return (
                                 <Field data-invalid={isInvalid}>
                                     <FieldLabel htmlFor={field.name}>

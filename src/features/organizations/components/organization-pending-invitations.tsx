@@ -8,6 +8,7 @@ import { DataTable } from '@/components/data-table/components/table';
 import { DeleteConfirmationDialog } from '@/components/data-table/components/delete-confirmation-dialog';
 import type { DataTableFeatures } from '@/components/data-table/data-table-features';
 import { getErrorLocale, resolveErrorMessage } from '@/lib/error-messages';
+import type { Id } from '@/convex/_generated/dataModel';
 import {
     useCancelInvitation,
     usePendingOrganizationInvitations,
@@ -24,7 +25,7 @@ type PendingInvitation = {
 export default function OrganizationPendingInvitations({
     organizationId,
 }: {
-    organizationId: string;
+    organizationId: Id<'organization'>;
 }) {
     const t = useTranslations('OrganizationMembers');
     const locale = useLocale();

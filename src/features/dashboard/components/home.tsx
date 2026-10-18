@@ -22,9 +22,11 @@ function DashboardStats() {
             </div>
         );
     }
+
     if (stats.isError) {
         return <QueryErrorFallback onRetry={() => void stats.refetch()} />;
     }
+
     if (stats.data.total === 0) {
         return (
             <p
@@ -37,6 +39,7 @@ function DashboardStats() {
     }
 
     const { total, active, completed, averageProgress, categories } = stats.data;
+
     return (
         <div className="space-y-2" data-testid="dashboard-stats">
             <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]">

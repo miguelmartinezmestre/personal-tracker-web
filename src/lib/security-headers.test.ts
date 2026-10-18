@@ -8,6 +8,7 @@ test('production CSP permits the configured subscription endpoint and nonce with
         convexUrl: 'https://example.convex.cloud',
         development: false,
     });
+
     expect(result['Content-Security-Policy']).toContain("'nonce-synthetic-nonce'");
     expect(result['Content-Security-Policy']).toContain('wss://example.convex.cloud');
     expect(result['Content-Security-Policy']).not.toContain('unsafe-eval');
@@ -21,6 +22,7 @@ test('a production build on loopback does not force local requests to HTTPS', ()
         convexUrl: 'http://127.0.0.1:4210',
         development: false,
     });
+
     expect(result['Content-Security-Policy']).not.toContain('upgrade-insecure-requests');
     expect(result['Content-Security-Policy']).toContain('ws://127.0.0.1:4210');
 });

@@ -41,10 +41,12 @@ export default function ObjectivesTable({
     const t = useTranslations('Objectives');
     const locale = useLocale();
     const objectives = useObjectives(status, search);
+
     const deleteObjective = useMutation({
         meta: { handlesErrorsLocally: true },
         mutationFn: useConvexMutation(api.objectives.deleteObjective),
     });
+
     const columns: ColumnDef<DataTableFeatures, ObjectiveSummary>[] = [
         {
             accessorKey: 'title',
@@ -109,6 +111,7 @@ export default function ObjectivesTable({
                 if (!row.original.canManage) {
                     return null;
                 }
+
                 return (
                     <div className="flex justify-end gap-2">
                         <EditObjectiveFormModal objective={row.original} compactTrigger />
@@ -145,7 +148,9 @@ export default function ObjectivesTable({
             },
         },
     ];
+
     let emptyMessage: ReactNode = t(`empty.${status}`);
+
     if (search) {
         emptyMessage = t('empty.search', { search });
     } else if (status === 'all') {
@@ -160,6 +165,7 @@ export default function ObjectivesTable({
             </div>
         );
     }
+
     return (
         <div data-testid="objectives-table">
             <DataTable

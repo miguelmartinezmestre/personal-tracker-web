@@ -17,6 +17,7 @@ const app = defineApp({
         SMTP_SECURE: v.optional(v.string()),
     },
 });
+
 app.use(aggregate, { name: 'objectiveStats' });
 
 export default app;

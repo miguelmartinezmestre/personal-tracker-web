@@ -47,6 +47,7 @@ function DialogContent({
   ...props
 }: React.ComponentProps<typeof DialogPrimitive.Popup>) {
   const t = useTranslations("Common")
+
   return (
     <DialogPortal data-slot="dialog-portal">
       <DialogBackdrop />

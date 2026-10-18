@@ -1,4 +1,5 @@
 'use client';
+
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useMutation } from '@tanstack/react-query';
@@ -15,14 +16,16 @@ import { resolveErrorMessage } from '@/lib/error-messages';
 import SetupProgress from './setup-progress';
 import { createOrResumeSetupAccount } from '../lib/setup-account';
 import { throwIfAuthClientError } from '@/features/auth/auth-client-response';
-import { SETUP_SECRET_HEADER } from '@/convex/env';
+import { SETUP_SECRET_HEADER } from '@/convex/features/setup/secret';
 import { SetupStepContent, SetupWizardActions } from './setup-step-content';
+
 export default function SetupWizard() {
     const router = useRouter();
     const errorLocale = useLocale() === 'es' ? 'es' : 'en';
     const t = useTranslations('Setup');
     const [error, setError] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
+
     const {
         currentStep,
         currentStepName,
@@ -35,16 +38,20 @@ export default function SetupWizard() {
         isFirstStep,
         isLastStep,
     } = useSetupWizard();
+
     const { mutateAsync: completeSetup } = useMutation({
         mutationFn: useConvexMutation(api.setup.completeSetup),
     });
+
     const canProceed = isStepValid(currentStepName);
+
     async function handleComplete() {
         setError('');
         setIsSubmitting(true);
         const signUpFailedMsg = t('errors.signUpFailed');
         const setupFailedMsg = t('errors.setupFailed');
         let fetchOptions;
+
         if (data.admin.setupSecret) {
             fetchOptions = {
                 headers: {
@@ -54,21 +61,33 @@ export default function SetupWizard() {
         } else {
             fetchOptions = undefined;
         }
+
         try {
-            const signUpError = await createOrResumeSetupAccount(data.admin, fetchOptions);
+            const signUpError = await createOrResumeSetupAccount(
+                authClient,
+                data.admin,
+                fetchOptions
+            );
+
             if (signUpError) {
                 setError(signUpError.message || signUpFailedMsg);
                 setIsSubmitting(false);
+
                 return;
             }
+
             const tokenResult = await authClient.convex.token({
                 fetchOptions: { throw: false },
             });
+
             const token = tokenResult.data?.token;
+
             if (!token) {
                 throw new Error('User not found');
             }
+
             convex.setAuth(() => Promise.resolve(token));
+
             const setupResult = await completeSetup({
                 platformName: data.platform.platformName,
                 defaultLanguage: data.platform.defaultLanguage,
@@ -81,12 +100,15 @@ export default function SetupWizard() {
                     icon: category.icon,
                 })),
             });
+
             if (setupResult.organizationId) {
                 const activeOrganizationResult = await authClient.organization.setActive({
                     organizationId: setupResult.organizationId,
                 });
+
                 throwIfAuthClientError(activeOrganizationResult);
             }
+
             document.cookie = `locale=${data.platform.defaultLanguage};path=/;max-age=31536000;SameSite=Lax`;
             router.push('/dashboard/home');
         } catch (caughtError) {
@@ -94,6 +116,7 @@ export default function SetupWizard() {
             setIsSubmitting(false);
         }
     }
+
     return (
         <div className="mx-auto w-full max-w-2xl px-4 py-8">
             <SetupProgress currentStep={currentStep} isStepValid={isStepValid} />

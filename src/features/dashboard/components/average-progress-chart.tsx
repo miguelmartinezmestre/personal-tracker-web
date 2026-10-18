@@ -18,14 +18,17 @@ export default function AverageProgressChart({
     ariaLabel: string;
 }) {
     const locale = useLocale();
+
     const definition = useMemo(() => {
         const value = Math.min(Math.max(averageProgress, 0), 100);
         const reading = { id: 'complete', value } as const;
+
         const slices = pie([reading, { id: 'remaining', value: 100 - value }] as const, {
             value: 'value',
             startAngle: GAUGE_START,
             endAngle: GAUGE_END,
         });
+
         const percent = new Intl.NumberFormat(locale, { style: 'percent' });
 
         return defineChart({

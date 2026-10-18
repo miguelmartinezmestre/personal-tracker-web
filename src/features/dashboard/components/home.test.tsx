@@ -6,10 +6,13 @@ import { convexQuery } from '@convex-dev/react-query';
 import { NextIntlClientProvider } from 'next-intl';
 import { api } from '../../../../convex/_generated/api';
 import type { Id } from '../../../../convex/_generated/dataModel';
+import type { FunctionReturnType } from 'convex/server';
 import es from '../../../translations/es.json';
 import Home from './home';
 
-const emptyStats = {
+type DashboardStats = FunctionReturnType<typeof api.dashboard.getDashboardStats>;
+
+const emptyStats: DashboardStats = {
     total: 0,
     active: 0,
     completed: 0,
@@ -17,7 +20,7 @@ const emptyStats = {
     categories: [],
 };
 
-function renderHome(stats: typeof emptyStats | Record<string, unknown>) {
+function renderHome(stats: DashboardStats) {
     const queryClient = new QueryClient({
         defaultOptions: {
             queries: {
@@ -29,10 +32,12 @@ function renderHome(stats: typeof emptyStats | Record<string, unknown>) {
             },
         },
     });
+
     queryClient.setQueryData(convexQuery(api.auth.getCurrentUser, {}).queryKey, {
         name: 'Ada',
     });
     queryClient.setQueryData(convexQuery(api.dashboard.getDashboardStats, {}).queryKey, stats);
+
     return render(
         <QueryClientProvider client={queryClient}>
             <NextIntlClientProvider locale="es" messages={es}>

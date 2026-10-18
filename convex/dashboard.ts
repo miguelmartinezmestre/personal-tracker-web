@@ -1,20 +1,11 @@
+import type { Doc } from './_generated/dataModel';
+import { average } from './features/dashboard/stats';
+import { categoryStatsValidator } from './features/dashboard/validators';
+import { objectiveStats } from './features/objectives/stats';
+import { queryWithRLS } from './features/authorization/wrappers';
 import { v } from 'convex/values';
-import type { Doc, Id } from './_generated/dataModel';
-import { queryWithRLS } from './rls/wrappers';
-import { objectiveStats } from './objectiveStats';
 
-const categoryStatsValidator = v.object({
-    categoryId: v.union(v.id('categories'), v.null()),
-    name: v.union(v.string(), v.null()),
-    color: v.union(v.string(), v.null()),
-    total: v.number(),
-    completed: v.number(),
-    averageProgress: v.number(),
-});
-
-function average(sum: number, count: number): number {
-    return count === 0 ? 0 : Math.round(sum / count);
-}
+type StatsQuery = Parameters<typeof objectiveStats.countBatch>[1][number];
 
 export const getDashboardStats = queryWithRLS({
     args: {},
@@ -29,8 +20,10 @@ export const getDashboardStats = queryWithRLS({
         if (!ctx.organizationId) {
             return { total: 0, active: 0, completed: 0, averageProgress: 0, categories: [] };
         }
+
         const namespace = ctx.organizationId;
         const categories: Doc<'categories'>[] = [];
+
         for await (const category of ctx.db
             .query('categories')
             .withIndex('by_organization', q => q.eq('organizationId', namespace))) {
@@ -38,41 +31,37 @@ export const getDashboardStats = queryWithRLS({
         }
 
         // Query 0 is the whole organization, then one active and one completed query per category.
-        const queries = [
+        const queries: StatsQuery[] = [
             { namespace },
-            { namespace, bounds: { prefix: ['completed'] as ['completed'] } },
-            ...categories.flatMap(category => [
-                {
-                    namespace,
-                    bounds: { prefix: ['active', category._id] as ['active', Id<'categories'>] },
-                },
-                {
-                    namespace,
-                    bounds: {
-                        prefix: ['completed', category._id] as ['completed', Id<'categories'>],
-                    },
-                },
+            { namespace, bounds: { prefix: ['completed'] } },
+            ...categories.flatMap((category): StatsQuery[] => [
+                { namespace, bounds: { prefix: ['active', category._id] } },
+                { namespace, bounds: { prefix: ['completed', category._id] } },
             ]),
         ];
+
         const [counts, sums] = await Promise.all([
             objectiveStats.countBatch(ctx, queries),
             objectiveStats.sumBatch(ctx, queries),
         ]);
+
         const total = counts[0] ?? 0;
         const completed = counts[1] ?? 0;
         const progressSum = sums[0] ?? 0;
 
         const stats = categories.map((category, index) => {
             const active = 2 + index * 2;
+
             return {
-                categoryId: category._id as Id<'categories'> | null,
-                name: category.name as string | null,
-                color: category.color as string | null,
+                categoryId: category._id,
+                name: category.name,
+                color: category.color,
                 total: (counts[active] ?? 0) + (counts[active + 1] ?? 0),
                 completed: counts[active + 1] ?? 0,
                 progressSum: (sums[active] ?? 0) + (sums[active + 1] ?? 0),
             };
         });
+
         // Objectives without a category, or pointing at one that no longer exists, are the rest.
         const uncategorized = {
             categoryId: null,
@@ -89,11 +78,11 @@ export const getDashboardStats = queryWithRLS({
             completed,
             averageProgress: average(progressSum, total),
             categories: [...stats, uncategorized]
-                .filter(entry => entry.total > 0)
-                .map(({ progressSum: sum, ...entry }) => ({
-                    ...entry,
-                    averageProgress: average(sum, entry.total),
-                }))
+                .flatMap(({ progressSum: sum, ...entry }) =>
+                    entry.total > 0
+                        ? [{ ...entry, averageProgress: average(sum, entry.total) }]
+                        : []
+                )
                 .sort(
                     (a, b) =>
                         b.total - a.total ||

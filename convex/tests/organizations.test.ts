@@ -8,6 +8,7 @@ import {
     ensureTestUserAuth,
 } from './test.helpers';
 import type { Id } from '../_generated/dataModel';
+
 describe('convex organizations', () => {
     const t = initConvexTest();
     let userIdentity: ReturnType<typeof t.withIdentity>;
@@ -16,6 +17,7 @@ describe('convex organizations', () => {
     let memberUserId: Id<'user'>;
     beforeEach(async () => {
         const randomSuffix = Math.random().toString(36).substring(2, 15);
+
         const user = {
             userId: 'test-user-organizations-' + randomSuffix,
             email: 'organizations-test@example.com-' + randomSuffix,
@@ -24,6 +26,7 @@ describe('convex organizations', () => {
             role: 'user',
             emailVerified: false,
         };
+
         const userData = await createTestUser(t, user);
         memberUserId = userData.docId;
         organizationSlug = 'organizations-test-org-' + randomSuffix;
@@ -56,12 +59,14 @@ describe('convex organizations', () => {
             organizationId,
             paginationOpts: { numItems: 20, cursor: null },
         });
+
         expect(result.page.length).toBe(1);
         expect(result.page[0]?.userId).toBe(memberUserId);
         expect(result.isDone).toBe(true);
     });
     test('getOrganizationPendingInvitations lists only live invitations, and only to admins', async () => {
         const now = Date.now();
+
         const insertInvitation = (email: string, status: string, expiresAt: number) =>
             t.run(async ctx =>
                 ctx.db.insert('invitation', {
@@ -74,6 +79,7 @@ describe('convex organizations', () => {
                     inviterId: memberUserId,
                 })
             );
+
         await insertInvitation('pending@example.com', 'pending', now + 60_000);
         await insertInvitation('expired@example.com', 'pending', now - 60_000);
         await insertInvitation('accepted@example.com', 'accepted', now + 60_000);
@@ -82,20 +88,25 @@ describe('convex organizations', () => {
             api.organizations.getOrganizationPendingInvitations,
             { organizationId, paginationOpts: { numItems: 20, cursor: null } }
         );
+
         expect(asOwner.page.map(invitation => invitation.email)).toEqual(['pending@example.com']);
         expect(asOwner.isDone).toBe(true);
 
         await insertInvitation('later@example.com', 'pending', now + 120_000);
+
         const firstPage = await userIdentity.query(
             api.organizations.getOrganizationPendingInvitations,
             { organizationId, paginationOpts: { numItems: 1, cursor: null } }
         );
+
         expect(firstPage.page.map(invitation => invitation.email)).toEqual(['later@example.com']);
         expect(firstPage.isDone).toBe(false);
+
         const secondPage = await userIdentity.query(
             api.organizations.getOrganizationPendingInvitations,
             { organizationId, paginationOpts: { numItems: 1, cursor: firstPage.continueCursor } }
         );
+
         expect(secondPage.page.map(invitation => invitation.email)).toEqual([
             'pending@example.com',
         ]);
@@ -103,12 +114,15 @@ describe('convex organizations', () => {
         expect(secondPage.isDone).toBe(true);
 
         const suffix = Math.random().toString(36).substring(2, 15);
+
         const plainMember = await createTestUser(t, {
             userId: `plain-member-${suffix}`,
             email: `plain-member-${suffix}@example.com`,
             name: 'Plain member',
         });
+
         await createTestMember(t, { organizationId, userId: plainMember.docId, role: 'member' });
+
         const asMember = await t
             .withIdentity({
                 subject: plainMember.docId,
@@ -127,6 +141,7 @@ describe('convex organizations', () => {
                 organizationId,
                 paginationOpts: { numItems: 20, cursor: null },
             });
+
         expect(asMember.page).toEqual([]);
     });
     test('getOrganizationMembers rejects unauthenticated users', async () => {
@@ -141,21 +156,26 @@ describe('convex organizations', () => {
         const byId = await userIdentity.query(api.organizations.getOrganizationByIdentifier, {
             identifier: organizationId,
         });
+
         const bySlug = await userIdentity.query(api.organizations.getOrganizationByIdentifier, {
             identifier: organizationSlug,
         });
+
         expect(byId).toMatchObject({ id: organizationId, role: 'owner' });
         expect(bySlug?.id).toBe(organizationId);
     });
     test('users outside the organization cannot read it or its members', async () => {
         const randomSuffix = Math.random().toString(36).substring(2, 15);
+
         const outsider = await createTestUser(t, {
             userId: 'organizations-outsider-' + randomSuffix,
             email: 'organizations-outsider@example.com-' + randomSuffix,
             name: 'Organizations Outsider ' + randomSuffix,
             role: 'user',
         });
+
         await ensureTestUserAuth(t, outsider.docId);
+
         const outsiderIdentity = t.withIdentity({
             subject: outsider.docId,
             role: outsider.role ?? 'user',
@@ -169,6 +189,7 @@ describe('convex organizations', () => {
             banReason: null,
             banned: false,
         });
+
         await expect(
             outsiderIdentity.query(api.organizations.getOrganizationMembers, {
                 organizationId,

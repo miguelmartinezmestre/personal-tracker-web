@@ -16,12 +16,13 @@ import { Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { usePaginatedList } from '@/components/data-table/hooks/use-paginated-list';
 import { api } from '@/convex/_generated/api';
+import type { Id } from '@/convex/_generated/dataModel';
 import { useCategoryLabel } from '@/features/categories/hooks/use-category-label';
 import {
     OBJECTIVE_DESCRIPTION_MAX_LENGTH,
     OBJECTIVE_TITLE_MAX_LENGTH,
     OBJECTIVE_UNIT_MAX_LENGTH,
-} from '@/convex/constants';
+} from '@/convex/features/objectives/constants';
 import { todayDateInput } from '@/features/objectives/lib/dates';
 import { NONE_CATEGORY, type ObjectiveFormValues } from '@/features/objectives/schemas/objective';
 import { useTranslations } from 'next-intl';
@@ -34,7 +35,7 @@ export function ObjectiveFormFields({
     form: TanStackFormApi<ObjectiveFormValues>;
     keptDeadline?: string;
     // The objective's own category, which may not be on the pages loaded so far.
-    currentCategory?: { id: string; name: string };
+    currentCategory?: { id: Id<'categories'>; name: string };
 }) {
     const t = useTranslations('Objectives');
     const common = useTranslations('Common');
@@ -43,13 +44,13 @@ export function ObjectiveFormFields({
     const minDeadline = keptDeadline && keptDeadline < today ? keptDeadline : today;
     const categories = usePaginatedList(api.categories.listCategories, {});
     const categoryLabel = useCategoryLabel();
-    const loaded = categories.data.map(category => ({
-        id: category.id as string,
-        name: category.name,
-    }));
+
+    const loaded = categories.data.map(category => ({ id: category.id, name: category.name }));
+
     if (currentCategory && !loaded.some(category => category.id === currentCategory.id)) {
         loaded.push(currentCategory);
     }
+
     const categoryOptions = [
         { value: NONE_CATEGORY, label: t('noCategory') },
         ...loaded.map(category => ({ value: category.id, label: categoryLabel(category.name) })),
@@ -62,15 +63,14 @@ export function ObjectiveFormFields({
                 {field => {
                     const errors = getFieldErrors(form, field);
                     const isInvalid = errors.length > 0;
+
                     return (
                         <Field data-invalid={isInvalid}>
                             <FieldLabel htmlFor={field.name}>{t('tableDescription')}</FieldLabel>
                             <Textarea
                                 id={field.name}
                                 name={field.name}
-                                value={
-                                    typeof field.state.value === 'string' ? field.state.value : ''
-                                }
+                                value={field.state.value}
                                 placeholder={t('describeObjectiveInDetail')}
                                 maxLength={OBJECTIVE_DESCRIPTION_MAX_LENGTH}
                                 onBlur={field.handleBlur}
@@ -87,17 +87,16 @@ export function ObjectiveFormFields({
                 {field => {
                     const errors = getFieldErrors(form, field);
                     const isInvalid = errors.length > 0;
-                    const value =
-                        typeof field.state.value === 'string' ? field.state.value : NONE_CATEGORY;
+
                     return (
                         <Field data-invalid={isInvalid}>
                             <FieldLabel htmlFor={field.name}>{t('category')}</FieldLabel>
                             <Select
                                 name={field.name}
-                                value={value}
+                                value={field.state.value}
                                 items={categoryOptions}
                                 onValueChange={next => {
-                                    if (typeof next === 'string') {
+                                    if (next !== null) {
                                         field.handleChange(next);
                                     }
                                 }}
@@ -141,15 +140,14 @@ export function ObjectiveFormFields({
                 {field => {
                     const errors = getFieldErrors(form, field);
                     const isInvalid = errors.length > 0;
+
                     return (
                         <Field data-invalid={isInvalid}>
                             <FieldLabel htmlFor={field.name}>{t('unit')}</FieldLabel>
                             <Input
                                 id={field.name}
                                 name={field.name}
-                                value={
-                                    typeof field.state.value === 'string' ? field.state.value : ''
-                                }
+                                value={field.state.value}
                                 placeholder={t('unitExample')}
                                 maxLength={OBJECTIVE_UNIT_MAX_LENGTH}
                                 onBlur={field.handleBlur}
@@ -178,6 +176,7 @@ export function ObjectiveFormFields({
                 {field => {
                     const errors = getFieldErrors(form, field);
                     const isInvalid = errors.length > 0;
+
                     return (
                         <Field data-invalid={isInvalid}>
                             <FieldLabel htmlFor={field.name}>{t('deadline')}</FieldLabel>
@@ -186,9 +185,7 @@ export function ObjectiveFormFields({
                                 name={field.name}
                                 type="date"
                                 min={minDeadline}
-                                value={
-                                    typeof field.state.value === 'string' ? field.state.value : ''
-                                }
+                                value={field.state.value}
                                 onBlur={field.handleBlur}
                                 onChange={event => field.handleChange(event.target.value)}
                                 aria-invalid={isInvalid}
@@ -219,21 +216,21 @@ function NumberField({
             {field => {
                 const errors = getFieldErrors(form, field);
                 const isInvalid = errors.length > 0;
-                let value: number | '' = '';
-                if (typeof field.state.value === 'number' && Number.isFinite(field.state.value)) {
-                    value = field.state.value;
-                } else {
-                    value = '';
-                }
+                // An emptied input is stored as NaN so the schema reports it as required.
+                const value = Number.isFinite(field.state.value) ? field.state.value : '';
+
                 const handleChange = (rawValue: string) => {
                     let nextValue: number;
+
                     if (rawValue === '') {
                         nextValue = Number.NaN;
                     } else {
                         nextValue = Number(rawValue);
                     }
+
                     field.handleChange(nextValue);
                 };
+
                 return (
                     <Field data-invalid={isInvalid}>
                         <FieldLabel htmlFor={field.name}>{label}</FieldLabel>
@@ -259,12 +256,14 @@ function NumberField({
 
 function TitleField({ form }: { form: TanStackFormApi<ObjectiveFormValues> }) {
     const t = useTranslations('Objectives');
+
     return (
         <form.Field name="title">
             {field => {
                 const errors = getFieldErrors(form, field);
                 const isInvalid = errors.length > 0;
-                const title = typeof field.state.value === 'string' ? field.state.value : '';
+                const title = field.state.value;
+
                 return (
                     <Field data-invalid={isInvalid}>
                         <FieldLabel htmlFor={field.name}>

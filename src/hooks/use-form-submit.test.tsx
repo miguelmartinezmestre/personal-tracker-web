@@ -4,12 +4,14 @@ import { useFormSubmit } from './use-form-submit';
 
 test('coalesces repeated submissions while pending and releases the lock after failure', async () => {
     let rejectRequest: (error: Error) => void = () => undefined;
+
     const operation = vi.fn(
         () =>
             new Promise<void>((_resolve, reject) => {
                 rejectRequest = reject;
             })
     );
+
     const { result } = renderHook(() => useFormSubmit(operation));
     let pending: Promise<void> | undefined;
     await act(async () => {

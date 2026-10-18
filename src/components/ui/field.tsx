@@ -65,34 +65,8 @@ function FieldDescription({ className, ...props }: React.ComponentProps<'p'>) {
     );
 }
 
-// Accepts TanStack Form errors: strings, { message }, Error objects, nested arrays.
-function formatFieldError(error: unknown): string | undefined {
-    if (error === null || error === undefined) {
-        return undefined;
-    }
-    if (typeof error === 'string') {
-        return error;
-    }
-    if (Array.isArray(error)) {
-        for (const item of error) {
-            const formatted = formatFieldError(item);
-            if (formatted) {
-                return formatted;
-            }
-        }
-        return undefined;
-    }
-    if (error instanceof Error) {
-        return error.message;
-    }
-    if (typeof error === 'object' && 'message' in error) {
-        const message = (error as { message?: unknown }).message;
-        if (typeof message === 'string') {
-            return message;
-        }
-    }
-    return undefined;
-}
+// Every form validates with a Standard Schema (zod), so field errors are its issues.
+export type FieldErrorIssue = { message: string } | undefined;
 
 function FieldError({
     className,
@@ -100,28 +74,27 @@ function FieldError({
     errors,
     ...props
 }: React.ComponentProps<'div'> & {
-    errors?: readonly unknown[];
+    errors?: readonly FieldErrorIssue[];
 }) {
     const content = React.useMemo(() => {
         if (children) {
             return children;
         }
+
         if (!errors?.length) {
             return null;
         }
-        const messages = [
-            ...new Set(
-                errors
-                    .map(error => formatFieldError(error))
-                    .filter((message): message is string => !!message)
-            ),
-        ];
+
+        const messages = [...new Set(errors.flatMap(error => (error ? [error.message] : [])))];
+
         if (messages.length === 1) {
             return messages[0];
         }
+
         if (messages.length === 0) {
             return null;
         }
+
         return (
             <ul className="ml-4 flex list-disc flex-col gap-1">
                 {messages.map((message, index) => (
@@ -134,6 +107,7 @@ function FieldError({
     if (!content) {
         return null;
     }
+
     return (
         <div
             role="alert"

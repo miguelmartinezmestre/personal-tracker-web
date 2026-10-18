@@ -13,14 +13,17 @@ function navbarLinkTestId(href: Route): string | undefined {
     if (href === '/register') {
         return 'navbar-register-link';
     }
+
     if (href === '/login') {
         return 'navbar-login-link';
     }
+
     return undefined;
 }
 
 export default function NavBar() {
     const t = useTranslations('HomePage');
+
     const links: LinkItem[] = [
         { name: t('register'), href: '/register' },
         { name: t('login'), href: '/login' },

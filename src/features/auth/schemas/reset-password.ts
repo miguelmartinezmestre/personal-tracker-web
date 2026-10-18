@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { STRONG_PASSWORD_REGEX } from '@/convex/utils';
+import { STRONG_PASSWORD_REGEX } from '@/convex/features/auth/passwordPolicy';
 
 interface ResetPasswordValidationMessages {
     weakPassword: string;

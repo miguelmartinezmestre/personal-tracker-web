@@ -4,7 +4,6 @@ import { afterAll } from 'vitest';
 import schema from '../schema';
 import { modules } from './test.setup';
 import { getDefaultTestSessionId } from './test.helpers';
-import { asInvalidArg, asTestId } from './test.casts';
 
 export { modules };
 
@@ -21,9 +20,11 @@ export function initConvexTest() {
     aggregateTest.register(t, 'objectiveStats');
 
     const withIdentity = t.withIdentity.bind(t);
+
     const withIdentityAndSession = (identity: Parameters<typeof t.withIdentity>[0]) => {
         if (!identity.sessionId && identity.subject) {
-            const sessionId = getDefaultTestSessionId(t, asTestId<'user'>(identity.subject));
+            const sessionId = getDefaultTestSessionId(t, identity.subject);
+
             if (sessionId) {
                 return withIdentity({ ...identity, sessionId });
             }
@@ -31,7 +32,8 @@ export function initConvexTest() {
 
         return withIdentity(identity);
     };
-    t.withIdentity = asInvalidArg<typeof t.withIdentity>(withIdentityAndSession);
+
+    t.withIdentity = withIdentityAndSession;
 
     afterAll(async () => {
         await drainScheduledFunctions(t);

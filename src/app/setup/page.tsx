@@ -12,6 +12,7 @@ export default async function SetupPage() {
     if (await isPlatformSetUp()) {
         redirect('/');
     }
+
     const t = await getTranslations('Setup');
 
     return (

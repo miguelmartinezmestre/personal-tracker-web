@@ -42,6 +42,7 @@ export function DeleteConfirmationDialog({
     const handleConfirm = async (event: React.MouseEvent<HTMLButtonElement>) => {
         event.preventDefault();
         setInternalIsLoading(true);
+
         try {
             // Callers report their own errors, so the dialog closes either way.
             await onConfirm();

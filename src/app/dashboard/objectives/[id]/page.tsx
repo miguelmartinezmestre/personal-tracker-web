@@ -15,6 +15,7 @@ export default async function ObjectivePage({
     searchParams: Promise<{ status?: string | string[] }>;
 }) {
     const [{ id }, { status }] = await Promise.all([params, searchParams]);
+
     return (
         <ObjectiveDetail
             objectiveId={id}

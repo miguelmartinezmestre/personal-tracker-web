@@ -9,10 +9,12 @@ import {
 
 export function useOrganizationFormSchema() {
     const t = useTranslations('Organizations.validation');
+
     return useMemo(() => organizationSchema(key => t(key)), [t]);
 }
 
 export function useSavedOrganizationFormSchema() {
     const t = useTranslations('Organizations.validation');
+
     return useMemo(() => savedOrganizationSchema(key => t(key)), [t]);
 }

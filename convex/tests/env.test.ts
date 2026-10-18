@@ -4,12 +4,14 @@ const originalEnv = { ...process.env };
 
 async function loadEnvModule() {
     vi.resetModules();
-    const { getEnvs } = await import('../env');
+    const { getEnvs } = await import('../shared/env');
+
     return getEnvs();
 }
 
 async function loadFrontendEnvModule() {
     vi.resetModules();
+
     return await import('../../src/lib/env');
 }
 
@@ -169,6 +171,7 @@ describe('Next.js runtime env', () => {
                 NEXT_PUBLIC_CONVEX_URL: 'https://deployment.convex.cloud',
                 NEXT_PUBLIC_CONVEX_SITE_URL: 'https://deployment.convex.site',
             };
+
             if (name === 'NEXT_PUBLIC_SITE_URL') {
                 delete process.env.NEXT_PUBLIC_SITE_URL;
             } else if (name === 'NEXT_PUBLIC_CONVEX_URL') {

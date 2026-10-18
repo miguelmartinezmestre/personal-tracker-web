@@ -7,6 +7,7 @@ async function fillRegistrationForm(page: Page, user = UserFactory.create()) {
     await page.getByTestId('register-email-input').fill(user.email);
     await page.getByTestId('register-password-input').fill(user.password);
     await page.getByTestId('register-confirm-password-input').fill(user.password);
+
     return user;
 }
 

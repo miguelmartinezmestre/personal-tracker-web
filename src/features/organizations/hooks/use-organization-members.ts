@@ -30,7 +30,9 @@ export function useCreateOrganizationMember() {
                 role: values.role,
                 organizationId: values.organizationId,
             });
+
             throwIfAuthClientError(result);
+
             return result.data;
         },
     });
@@ -44,7 +46,9 @@ export function useUpdateOrganizationMember() {
                 role: values.role,
                 organizationId: values.organizationId,
             });
+
             throwIfAuthClientError(result);
+
             return result.data;
         },
     });
@@ -58,7 +62,9 @@ export function useDeleteOrganizationMember() {
                 memberIdOrEmail: values.memberId,
                 organizationId: values.organizationId,
             });
+
             throwIfAuthClientError(result);
+
             return result.data;
         },
     });

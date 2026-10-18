@@ -4,6 +4,7 @@ import * as path from 'path';
 import { generateTestUserData, hasOrganizationSelectedInUI } from '../helpers/test-helpers';
 
 let FIGURES_DIR: string;
+
 if (process.env.MEMORIA_FIGURES_DIR) {
     FIGURES_DIR = path.resolve(process.env.MEMORIA_FIGURES_DIR);
 } else {
@@ -23,6 +24,7 @@ async function hideTransientUi(page: Page): Promise<void> {
                 element.style.display = 'none';
             }
         };
+
         document.querySelectorAll('[data-sonner-toaster]').forEach(hide);
         document.querySelectorAll('[data-loading]').forEach(hide);
         document
@@ -46,7 +48,9 @@ async function hideTransientUi(page: Page): Promise<void> {
                 if (!(element instanceof HTMLElement)) {
                     return;
                 }
+
                 const text = element.textContent || '';
+
                 if (/^\d+\s*Issues?$/i.test(text.trim()) || /^\d+$/.test(text.trim())) {
                     element.style.display = 'none';
                 }
@@ -63,6 +67,7 @@ async function captureFigure(
     await hideTransientUi(page);
 
     const targets = [FIGURES_DIR, FALLBACK_DIR];
+
     for (const dir of targets) {
         if (!fs.existsSync(dir)) {
             fs.mkdirSync(dir, { recursive: true });
@@ -77,6 +82,7 @@ async function captureFigure(
     for (const dir of targets) {
         fs.writeFileSync(path.join(dir, filename), buffer);
     }
+
     console.log(`Wrote figure: ${filename}`);
 }
 
@@ -116,11 +122,13 @@ test.describe('Memoria setup + UI screenshots', () => {
         await page.getByTestId('setup-email').fill(userData.email);
         await page.getByTestId('setup-password').fill(userData.password);
         await page.getByTestId('setup-confirm-password').fill(userData.password);
+
         if (setupSecret) {
             const secretInput = page.getByTestId('setup-secret');
             await expect(secretInput).toBeVisible({ timeout: 5_000 });
             await secretInput.fill(setupSecret);
         }
+
         await expect(page.getByTestId('setup-next-button')).toBeEnabled({ timeout: 10_000 });
         await captureFigure(page, 'setup-admin.png');
         await page.getByTestId('setup-next-button').click();
@@ -173,6 +181,7 @@ test.describe('Memoria setup + UI screenshots', () => {
         await captureFigure(page, 'captura_pantalla_inicial_desktop.png');
 
         const sidebar = page.getByTestId('app-sidebar');
+
         if (await sidebar.isVisible().catch(() => false)) {
             await sidebar.screenshot({
                 path: path.join(FIGURES_DIR, 'navegacion-sidebar.png'),
@@ -191,6 +200,7 @@ test.describe('Memoria setup + UI screenshots', () => {
         await captureFigure(page, 'organizaciones-lista.png');
 
         const orgLink = page.locator('a[href*="/dashboard/organizations/"]').first();
+
         if (await isVisibleNow(orgLink)) {
             await orgLink.click();
             await page.waitForLoadState('networkidle');

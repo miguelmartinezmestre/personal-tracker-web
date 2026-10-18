@@ -17,21 +17,24 @@ import { useLocale, useTranslations } from 'next-intl';
 import { useMutation } from '@tanstack/react-query';
 import { useConvexMutation } from '@convex-dev/react-query';
 import { api } from '@/convex/_generated/api';
+import type { Id } from '@/convex/_generated/dataModel';
 
 export default function ProgressList({
     objectiveId,
     unit,
 }: {
-    objectiveId: string;
+    objectiveId: Id<'objectives'>;
     unit?: string | undefined;
 }) {
     const t = useTranslations('UpdateProgress');
     const locale = useLocale();
     const progress = useProgress(objectiveId);
+
     const deleteProgress = useMutation({
         meta: { handlesErrorsLocally: true },
         mutationFn: useConvexMutation(api.objectives.deleteProgress),
     });
+
     const formatAmount = (entry: ProgressEntry) =>
         `+${formatObjectiveValue(entry.updatedValue, locale)}${unit ? ` ${unit}` : ''}`;
 
@@ -74,11 +77,14 @@ export default function ProgressList({
             header: () => <span className="sr-only">{t('table.columns.edit')}</span>,
             cell: ({ row }) => {
                 const entry = row.original;
+
                 if (!entry.canEdit) {
                     return null;
                 }
+
                 // Every row has the same buttons, so screen readers need to know which entry.
                 const entryLabel = `${formatAmount(entry)} · ${formatObjectiveDate(entry.updateDate, locale)}`;
+
                 return (
                     <div className="flex justify-end gap-2">
                         <EditProgressModal
@@ -143,9 +149,11 @@ function EditProgressModal({
     const t = useTranslations('UpdateProgress');
     const tCommon = useTranslations('Common');
     const formSchema = useProgressFormSchema();
+
     const updateProgress = useMutation({
         mutationFn: useConvexMutation(api.objectives.updateProgress),
     });
+
     const defaultValues: ProgressFormValues = {
         updatedValue: entry.updatedValue,
         updateDate: timestampToDateInput(entry.updateDate),
@@ -175,9 +183,11 @@ function EditProgressModal({
             }}
             onSubmit={async values => {
                 const updateDate = dateInputToUtcTimestamp(values.updateDate);
+
                 if (updateDate === undefined) {
                     return;
                 }
+
                 await updateProgress.mutateAsync({
                     id: entry.id,
                     updatedValue: values.updatedValue,

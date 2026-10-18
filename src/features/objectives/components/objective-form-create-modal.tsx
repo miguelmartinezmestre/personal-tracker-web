@@ -32,6 +32,7 @@ export default function CreateObjectiveFormModal({
     const t = useTranslations('Objectives');
     const tCommon = useTranslations('Common');
     const formSchema = useObjectiveFormSchema();
+
     const createObjective = useMutation({
         mutationFn: useConvexMutation(api.objectives.createObjective),
     });
@@ -54,23 +55,19 @@ export default function CreateObjectiveFormModal({
                 },
             }}
             onSubmit={async values => {
-                const deadline = dateInputToUtcTimestamp(values.deadline);
-                const description = values.description.trim();
-                const unit = values.unit.trim();
-                let category: { categoryId: Id<'categories'> } | Record<string, never>;
-                if (values.categoryId !== NONE_CATEGORY) {
-                    category = { categoryId: values.categoryId as Id<'categories'> };
-                } else {
-                    category = {};
-                }
+                const categoryId =
+                    values.categoryId === NONE_CATEGORY
+                        ? undefined
+                        : (values.categoryId as Id<'categories'>);
+
                 await createObjective.mutateAsync({
                     title: values.title,
                     startValue: values.startValue,
                     targetValue: values.targetValue,
-                    ...(description ? { description } : {}),
-                    ...(unit ? { unit } : {}),
-                    ...category,
-                    ...(deadline !== undefined ? { deadline } : {}),
+                    description: values.description.trim() || undefined,
+                    unit: values.unit.trim() || undefined,
+                    categoryId,
+                    deadline: dateInputToUtcTimestamp(values.deadline),
                 });
                 toast.success(t('toast.created'));
             }}

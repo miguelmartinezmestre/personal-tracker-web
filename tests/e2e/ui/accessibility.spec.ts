@@ -18,16 +18,20 @@ for (const theme of ['light', 'dark'] as const) {
                 await expect(page.getByRole('main')).toHaveCount(1);
                 await expect(page.getByRole('main')).toBeVisible();
                 await expect(page.locator('[data-slot="skeleton"]:visible')).toHaveCount(0);
+
                 const result = await new AxeBuilder({ page })
                     .withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'best-practice'])
                     .analyze();
+
                 await testInfo.attach(`axe-${route}-${theme}`, {
                     body: JSON.stringify(result, null, 2),
                     contentType: 'application/json',
                 });
+
                 const severe = result.violations.filter(
                     violation => violation.impact === 'serious' || violation.impact === 'critical'
                 );
+
                 expect(severe).toEqual([]);
             }
         );

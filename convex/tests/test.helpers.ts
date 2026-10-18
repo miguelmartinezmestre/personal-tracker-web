@@ -5,12 +5,12 @@ import type { Id } from '../_generated/dataModel';
 
 const defaultTestSessionIds = new WeakMap<
     TestConvex<SchemaDefinition<GenericSchema, boolean>>,
-    Map<Id<'user'>, Id<'session'>>
+    Map<string, Id<'session'>>
 >();
 
 export function getDefaultTestSessionId(
     t: TestConvex<SchemaDefinition<GenericSchema, boolean>>,
-    userId: Id<'user'>
+    userId: string
 ): Id<'session'> | undefined {
     return defaultTestSessionIds.get(t)?.get(userId);
 }
@@ -72,6 +72,7 @@ export async function createTestOrganization(
     }
 ): Promise<Id<'organization'>> {
     const now = Date.now();
+
     return t.run(async (ctx: MutationCtx) => {
         return await ctx.db.insert('organization', {
             name: options.name,
@@ -92,6 +93,7 @@ export async function createTestMember(
     }
 ): Promise<Id<'member'>> {
     const now = Date.now();
+
     const memberId = await t.run(async (ctx: MutationCtx) => {
         return await ctx.db.insert('member', {
             organizationId: options.organizationId,
@@ -110,7 +112,7 @@ export async function createTestMember(
             .slice(2)}`,
     });
 
-    const sessions = defaultTestSessionIds.get(t) ?? new Map<Id<'user'>, Id<'session'>>();
+    const sessions = defaultTestSessionIds.get(t) ?? new Map<string, Id<'session'>>();
     sessions.set(options.userId, sessionId);
     defaultTestSessionIds.set(t, sessions);
 
@@ -143,6 +145,7 @@ export async function ensureTestUserAuth(
     });
 
     const sessionId = getDefaultTestSessionId(t, userId);
+
     if (!sessionId) {
         throw new Error(`Failed to create test session for user ${userId}`);
     }
@@ -162,6 +165,7 @@ export async function createTestSession(
     }
 ): Promise<Id<'session'>> {
     const now = Date.now();
+
     return t.run(async (ctx: MutationCtx) => {
         return await ctx.db.insert('session', {
             userId: options.userId,
@@ -175,3 +179,5 @@ export async function createTestSession(
         });
     });
 }
+
+export const TIME = { DAY_MS: 24 * 60 * 60 * 1000 } as const;

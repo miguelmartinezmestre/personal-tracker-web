@@ -2,7 +2,7 @@
 
 import { useCallback } from 'react';
 import { useTranslations } from 'next-intl';
-import { DEFAULT_CATEGORIES } from '@/convex/constants';
+import { DEFAULT_CATEGORIES } from '@/convex/features/categories/constants';
 
 const DEFAULT_CATEGORY_NAMES = new Set(DEFAULT_CATEGORIES.map(category => category.name));
 
@@ -12,5 +12,6 @@ const DEFAULT_CATEGORY_NAMES = new Set(DEFAULT_CATEGORIES.map(category => catego
  */
 export function useCategoryLabel() {
     const t = useTranslations('Categories.defaults');
+
     return useCallback((name: string) => (DEFAULT_CATEGORY_NAMES.has(name) ? t(name) : name), [t]);
 }

@@ -26,6 +26,7 @@ export function SignOutButton() {
 
     let signOutIcon;
     let signOutLabel: string;
+
     if (signOutMutation.isPending) {
         signOutIcon = <Loader2 className="h-4 w-4 animate-spin" />;
         signOutLabel = t('actions.signingOut');

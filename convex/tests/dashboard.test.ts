@@ -21,6 +21,7 @@ describe('dashboard stats', () => {
 
     async function createCategory(name: string, color: string) {
         const now = Date.now();
+
         return await t.run(ctx =>
             ctx.db.insert('categories', {
                 userId: owner.docId,
@@ -68,23 +69,27 @@ describe('dashboard stats', () => {
             targetValue: 10,
             categoryId: health,
         });
+
         const swim = await ownerIdentity.mutation(api.objectives.createObjective, {
             title: 'Swim',
             startValue: 0,
             targetValue: 4,
             categoryId: health,
         });
+
         await ownerIdentity.mutation(api.objectives.createProgress, {
             objectiveId: swim,
             updatedValue: 4,
             updateDate: Date.UTC(2026, 0, 1),
         });
+
         const read = await ownerIdentity.mutation(api.objectives.createObjective, {
             title: 'Read',
             startValue: 0,
             targetValue: 10,
             categoryId: career,
         });
+
         await ownerIdentity.mutation(api.objectives.createProgress, {
             objectiveId: read,
             updatedValue: 5,
@@ -135,10 +140,12 @@ describe('dashboard stats', () => {
     test('listCategories only offers a next page when this organization has one', async () => {
         await createCategory('Health', '#EF4444');
         await createCategory('Career', '#3B82F6');
+
         const otherOrganizationId = await createTestOrganization(t, {
             name: `Other categories ${Math.random().toString(36).slice(2, 10)}`,
             slug: `other-categories-${Math.random().toString(36).slice(2, 10)}`,
         });
+
         const now = Date.now();
         await t.run(ctx =>
             ctx.db.insert('categories', {
@@ -153,28 +160,34 @@ describe('dashboard stats', () => {
         const full = await asUser(owner).query(api.categories.listCategories, {
             paginationOpts: { numItems: 2, cursor: null },
         });
+
         expect(full.page.map(category => category.name)).toEqual(['Health', 'Career']);
         expect(full.isDone).toBe(true);
 
         await createCategory('Finance', '#22C55E');
+
         const again = await asUser(owner).query(api.categories.listCategories, {
             paginationOpts: { numItems: 2, cursor: null },
         });
+
         expect(again.isDone).toBe(false);
     });
 
     test('does not count objectives from another organization', async () => {
         const suffix = Math.random().toString(36).slice(2, 10);
+
         const outsider = await createTestUser(t, {
             userId: `dashboard-outsider-${suffix}`,
             email: `dashboard-outsider-${suffix}@example.com`,
             name: 'Outsider',
             role: 'user',
         });
+
         const otherOrganizationId = await createTestOrganization(t, {
             name: `Other ${suffix}`,
             slug: `other-${suffix}`,
         });
+
         await createTestMember(t, {
             organizationId: otherOrganizationId,
             userId: outsider.docId,
@@ -197,11 +210,13 @@ describe('dashboard stats', () => {
             startValue: 0,
             targetValue: 10,
         });
+
         const removed = await ownerIdentity.mutation(api.objectives.createObjective, {
             title: 'Removed',
             startValue: 0,
             targetValue: 10,
         });
+
         await ownerIdentity.mutation(api.objectives.deleteObjective, { id: removed });
         await expect(
             ownerIdentity.query(api.dashboard.getDashboardStats, {})

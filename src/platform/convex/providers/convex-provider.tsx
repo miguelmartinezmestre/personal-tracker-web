@@ -23,9 +23,11 @@ function isPublicRoute(pathname: string | null): boolean {
     if (!pathname) {
         return false;
     }
+
     if (pathname === '/') {
         return true;
     }
+
     return publicRoutePrefixes.some(prefix => prefix !== '/' && pathname.startsWith(prefix));
 }
 

@@ -55,14 +55,14 @@ export default function OrganizationLeaveButton({
             onConfirm={async () => {
                 if (missingFallback) {
                     toast.error(resolveErrorMessage(null, getErrorLocale()));
+
                     return;
                 }
+
                 try {
                     await leaveOrganization.mutateAsync({
                         organizationId,
-                        ...(isActive && personalOrganizationId
-                            ? { fallbackOrganizationId: personalOrganizationId }
-                            : {}),
+                        fallbackOrganizationId: isActive ? personalOrganizationId : undefined,
                     });
                     toast.success(t('leave.success', { name: organizationName }));
                     router.push('/dashboard/organizations');

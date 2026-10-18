@@ -19,20 +19,25 @@ export default function ObjectivesLayout() {
     const t = useTranslations('Objectives');
     // The filter lives only in the URL, so links that drop `status` also reset it.
     const status = parseObjectiveStatusFilter(useSearchParams().get('status') ?? undefined);
+
     const selectStatus = (next: ObjectiveStatusFilter) => {
         const url = new URL(window.location.href);
+
         if (next === 'all') {
             url.searchParams.delete('status');
         } else {
             url.searchParams.set('status', next);
         }
+
         window.history.replaceState(null, '', url);
     };
+
     const [searchInput, setSearchInput] = useState('');
     const [search, setSearch] = useState('');
     // Waits for a pause in typing so each keystroke doesn't restart the paginated query.
     useEffect(() => {
         const timer = setTimeout(() => setSearch(searchInput.trim()), SEARCH_DELAY_MS);
+
         return () => clearTimeout(timer);
     }, [searchInput]);
 

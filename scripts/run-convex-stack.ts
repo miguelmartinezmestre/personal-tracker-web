@@ -32,27 +32,33 @@ import {
 } from './lib/convex-stack';
 
 const COMPOSE_FILE = 'infrastructure/docker-compose.yml';
+
 const GENERATED_DIRECTORIES = [
     join('infrastructure', 'mysql-data'),
     join('infrastructure', 'data'),
 ] as const;
+
 // Where `convex dev` keeps a CLI-managed local deployment: its SQLite database, files and keys.
 const CLI_LOCAL_DEPLOYMENT_DIRECTORY = join('.convex', 'local', 'default');
 
 const CONVEX_PORT = process.env.CONVEX_PORT ?? process.env.PORT ?? '3210';
 const CONVEX_SITE_PORT = process.env.CONVEX_SITE_PORT ?? process.env.SITE_PROXY_PORT ?? '3211';
 const DASHBOARD_PORT = process.env.CONVEX_DASHBOARD_PORT ?? process.env.DASHBOARD_PORT ?? '6791';
+
 // Same variables MailDev reads, so `pnpm mail:local` and the backend agree on the ports.
 const MAILDEV_SMTP_PORT = process.env.MAILDEV_SMTP_PORT ?? '1025';
 const MAILDEV_WEB_PORT = process.env.MAILDEV_WEB_PORT ?? '1080';
 const CONVEX_URL = process.env.CONVEX_SELF_HOSTED_URL ?? `http://127.0.0.1:${CONVEX_PORT}`;
+
 const CONVEX_SITE_URL =
     process.env.NEXT_PUBLIC_CONVEX_SITE_URL ?? `http://127.0.0.1:${CONVEX_SITE_PORT}`;
+
 const APP_URL =
     process.env.NEXT_PUBLIC_SITE_URL ??
     process.env.SITE_URL ??
     process.env.BETTER_AUTH_URL ??
     'http://localhost:3000';
+
 const { values: flags } = parseArgs({
     // pnpm may insert a bare `--` before arguments passed to the script.
     args: process.argv.slice(2).filter(arg => arg !== '--'),
@@ -63,13 +69,18 @@ const { values: flags } = parseArgs({
         'no-docker': { type: 'boolean', default: false },
     },
 });
+
 const { reset: RESET, stop: STOP, 'no-docker': NO_DOCKER } = flags;
+
 if (RESET && STOP) {
     throw new Error('Choose stop or reset, not both');
 }
+
 if (RESET && !flags.confirm) throw new Error('Reset requires --confirm');
+
 const storedCredentials = readLocalStackCredentials(process.cwd());
 const savedCredentials = RESET ? undefined : storedCredentials;
+
 const MYSQL_ROOT_PASSWORD =
     savedCredentials?.mysqlRootPassword ??
     process.env.MYSQL_ROOT_PASSWORD ??
@@ -99,11 +110,14 @@ const { dockerCompose, dockerComposeCapture } = createDockerComposeHelpers({
 
 function cleanupGeneratedDirectories(relativePaths: ReadonlyArray<string>): void {
     const workspaceRoot = resolve(process.cwd());
+
     for (const relativePath of relativePaths) {
         const directoryPath = resolve(workspaceRoot, relativePath);
+
         if (!directoryPath.startsWith(`${workspaceRoot}${sep}`)) {
             throw new Error('Refusing to delete a path outside the workspace');
         }
+
         if (!existsSync(directoryPath)) {
             continue;
         }
@@ -133,6 +147,7 @@ function upsertEnvFile(
                 }
 
                 seenKeys.add(key);
+
                 return `${key}=${value}`;
             }
 
@@ -153,9 +168,12 @@ function upsertEnvFile(
 async function main(): Promise<void> {
     if (STOP) {
         await dockerCompose(['down', '--remove-orphans']);
+
         return;
     }
+
     getComposeEnv();
+
     if (RESET) {
         console.log('Resetting the local development database...');
         await dockerCompose(['down', '-v', '--remove-orphans']);
@@ -169,6 +187,7 @@ async function main(): Promise<void> {
             'Existing local data requires its MYSQL_ROOT_PASSWORD before adopting persistent credentials'
         );
     }
+
     writeLocalStackCredentials(process.cwd(), {
         ...savedCredentials,
         mysqlRootPassword: MYSQL_ROOT_PASSWORD,
@@ -189,15 +208,18 @@ async function main(): Promise<void> {
     await dockerCompose(['up', '-d', 'dashboard']);
 
     console.log('Generating Convex self-hosted admin key...');
+
     const { adminKey, betterAuthSecret, jwks } = await bootstrapConvexCredentials(
         dockerComposeCapture,
         savedCredentials
     );
+
     writeLocalStackCredentials(process.cwd(), {
         mysqlRootPassword: MYSQL_ROOT_PASSWORD,
         betterAuthSecret,
         jwks,
     });
+
     const commandEnv = buildConvexCommandEnv({
         deployment: { kind: 'self-hosted', adminKey },
         betterAuthSecret,
@@ -250,16 +272,20 @@ async function mainWithoutDocker(): Promise<void> {
         console.log(
             'The CLI-managed local deployment runs inside `pnpm dev`; stop that process to stop it.'
         );
+
         return;
     }
+
     if (await isListening(buildUrl(CONVEX_URL, '/version'))) {
         throw new Error(
             `Something is already listening on ${CONVEX_URL}. Stop \`pnpm dev\` or the Docker stack (\`pnpm convex:local:stop\`) first.`
         );
     }
+
     if (!(await isNodeSupportedByLocalBackend())) {
         throw new Error(UNSUPPORTED_NODE_MESSAGE);
     }
+
     if (RESET) {
         console.log('Resetting the CLI-managed local deployment...');
         cleanupGeneratedDirectories([CLI_LOCAL_DEPLOYMENT_DIRECTORY]);
@@ -309,6 +335,7 @@ async function mainWithoutDocker(): Promise<void> {
         betterAuthSecret,
         jwks,
     });
+
     const commandEnv = buildConvexCommandEnv({
         deployment: { kind: 'cli-local', deploymentName },
         betterAuthSecret,
@@ -326,6 +353,7 @@ async function mainWithoutDocker(): Promise<void> {
 
     console.log('Deploying Convex functions...');
     const { exitCode } = await convexDev;
+
     if (exitCode !== 0) {
         throw new Error(
             `convex dev failed to deploy the functions (exit=${exitCode ?? 'unknown'})`
@@ -351,17 +379,20 @@ async function mainWithoutDocker(): Promise<void> {
 }
 
 if (NO_DOCKER) {
-    mainWithoutDocker().catch(async (error: unknown) => {
+    mainWithoutDocker().catch(async error => {
         console.error('\nLocal Convex deployment setup failed.');
         console.error(error instanceof Error ? error.message : error);
+
         if (convexDev) {
             await stopProcess(convexDev);
         }
+
         process.exitCode = 1;
     });
 } else {
     main().catch(async error => {
         console.error('\nLocal Convex stack setup failed.');
+
         if (error instanceof Error) {
             console.error(error.message);
         } else {

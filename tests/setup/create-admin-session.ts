@@ -1,13 +1,9 @@
-import { mkdir } from 'node:fs/promises';
-import { dirname } from 'node:path';
 import { expect, type Page } from '@playwright/test';
 import {
     generateTestUserData,
     hasOrganizationSelectedInUI,
     type TestUserData,
 } from '../helpers/test-helpers';
-
-const ADMIN_USER_FILE = 'tests/.auth/admin-user.json';
 
 async function fillSetupInput(
     page: Page,
@@ -23,13 +19,16 @@ async function fillSetupInput(
         await input.fill('');
         await input.fill(value);
         const committed = await input.inputValue();
+
         if (committed !== value) {
             await input.click();
             await input.fill('');
             await input.pressSequentially(value, { delay: 15 });
         }
+
         await input.blur();
         await expect(input).toHaveValue(value);
+
         if (options?.untilNextEnabled) {
             await expect(nextButton).toBeEnabled({ timeout: 1_000 });
         }
@@ -55,6 +54,7 @@ async function completeSetupWizard(page: Page, userData: TestUserData): Promise<
     await page.goto('/setup', { waitUntil: 'domcontentloaded' });
 
     const setupSecret = process.env.SETUP_SECRET;
+
     if (setupSecret) {
         const unauthorizedSignUp = await page.request.post('/api/auth/sign-up/email', {
             data: {
@@ -63,6 +63,7 @@ async function completeSetupWizard(page: Page, userData: TestUserData): Promise<
                 password: userData.password,
             },
         });
+
         expect(unauthorizedSignUp.status()).toBe(403);
     }
 
@@ -73,9 +74,11 @@ async function completeSetupWizard(page: Page, userData: TestUserData): Promise<
     await fillSetupInput(page, 'setup-email', userData.email);
     await fillSetupInput(page, 'setup-password', userData.password);
     await fillSetupInput(page, 'setup-confirm-password', userData.password);
+
     if (setupSecret) {
         await fillSetupInput(page, 'setup-secret', setupSecret);
     }
+
     await clickSetupNext(page);
 
     await fillSetupInput(page, 'setup-org-name', 'Product Team', { untilNextEnabled: true });
@@ -95,7 +98,7 @@ async function completeSetupWizard(page: Page, userData: TestUserData): Promise<
     await page.waitForURL(/\/dashboard\/home(\?|$)/, { timeout: 30_000 });
 }
 
-export async function createAdminSession(page: Page): Promise<TestUserData> {
+export async function createAdminSession(page: Page): Promise<void> {
     const userData = generateTestUserData({ customUsername: 'Ana Martínez' });
 
     await completeSetupWizard(page, userData);
@@ -103,9 +106,4 @@ export async function createAdminSession(page: Page): Promise<TestUserData> {
     await expect(page.getByTestId('dashboard-home-stub')).toBeVisible({
         timeout: 10_000,
     });
-
-    await mkdir(dirname(ADMIN_USER_FILE), { recursive: true });
-    await page.context().storageState({ path: ADMIN_USER_FILE });
-
-    return userData;
 }

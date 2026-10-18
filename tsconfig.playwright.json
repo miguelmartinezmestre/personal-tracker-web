@@ -12,5 +12,5 @@
         "tests/manual/**/*.ts",
         "tests/**/*.ts"
     ],
-    "exclude": ["node_modules", "tests/.auth/**"]
+    "exclude": ["node_modules"]
 }

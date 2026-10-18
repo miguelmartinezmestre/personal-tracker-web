@@ -23,13 +23,16 @@ import {
     type OrganizationRoleValue,
 } from '../types/roles';
 import type { FunctionReturnType } from 'convex/server';
+
 type OrganizationMemberRaw = FunctionReturnType<
     typeof api.organizations.getOrganizationMembers
 >['page'][number];
+
 interface OrganizationMembersTableProps {
-    organizationId: string;
+    organizationId: Id<'organization'>;
     actorRole: OrganizationRoleValue;
 }
+
 export default function OrganizationMembersTable({
     organizationId,
     actorRole,
@@ -41,9 +44,11 @@ export default function OrganizationMembersTable({
     const currentUserId = session.data?.user?.id;
     const canManageMembers = isOrganizationAdminRole(actorRole);
     const canManageOwners = isOrganizationOwnerRole(actorRole);
+
     const membersQuery = usePaginatedList(api.organizations.getOrganizationMembers, {
-        organizationId: organizationId as Id<'organization'>,
+        organizationId,
     });
+
     const members: OrganizationMember[] = membersQuery.data.map(
         (member: OrganizationMemberRaw) => ({
             id: member.id,
@@ -54,6 +59,7 @@ export default function OrganizationMembersTable({
             createdAt: new Date(member.createdAt),
         })
     );
+
     const columns: ColumnDef<DataTableFeatures, OrganizationMember>[] = [
         {
             accessorKey: 'email',
@@ -78,10 +84,12 @@ export default function OrganizationMembersTable({
             cell: ({ row }) => {
                 const organizationMemberRow = row.original;
                 const isCurrentUser = organizationMemberRow.userId === currentUserId;
+
                 const canManageTarget =
                     canManageMembers &&
                     !isCurrentUser &&
                     (!isOrganizationOwnerRole(organizationMemberRow.role) || canManageOwners);
+
                 if (canManageTarget) {
                     return (
                         <OrganizationMemberEditFormModal
@@ -90,6 +98,7 @@ export default function OrganizationMembersTable({
                         />
                     );
                 }
+
                 return null;
             },
         },
@@ -98,12 +107,15 @@ export default function OrganizationMembersTable({
             id: 'delete',
             cell: ({ row }) => {
                 const isCurrentUser = row.original.userId === currentUserId;
+
                 const canManageTarget =
                     canManageMembers &&
                     (!isOrganizationOwnerRole(row.original.role) || canManageOwners);
+
                 if (isCurrentUser || !canManageTarget) {
                     return null;
                 }
+
                 return (
                     <DeleteConfirmationDialog
                         onConfirm={async () => {
@@ -132,6 +144,7 @@ export default function OrganizationMembersTable({
             },
         },
     ];
+
     return (
         <div data-testid="organization-members-table">
             <DataTable

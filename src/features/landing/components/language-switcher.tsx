@@ -1,4 +1,5 @@
 'use client';
+
 import { Check } from 'lucide-react';
 import { useTranslations, useLocale } from 'next-intl';
 import { Button } from '@/components/ui/button';

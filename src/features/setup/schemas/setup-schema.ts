@@ -4,8 +4,8 @@ import {
     isSetupSecretLengthValid,
     MAX_SETUP_SECRET_LENGTH,
     MIN_SETUP_SECRET_LENGTH,
-} from '@/convex/env';
-import { STRONG_PASSWORD_REGEX } from '@/convex/utils';
+} from '@/convex/shared/env';
+import { STRONG_PASSWORD_REGEX } from '@/convex/features/auth/passwordPolicy';
 
 export const platformConfigSchema = z.object({
     platformName: z.string().min(1).max(100),
@@ -70,7 +70,11 @@ export const registrationPolicySchema = z.object({
 });
 
 export type PlatformConfig = z.infer<typeof platformConfigSchema>;
+
 export type AdminAccount = z.infer<typeof adminAccountSchema>;
+
 export type OrganizationConfig = z.infer<typeof organizationSchema>;
+
 export type SetupCategory = z.infer<typeof setupCategorySchema>;
+
 export type RegistrationPolicy = z.infer<typeof registrationPolicySchema>;

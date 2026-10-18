@@ -5,7 +5,7 @@ import { Label } from '@/components/ui/label';
 import { useTranslations } from 'next-intl';
 import type { AdminAccount } from '../schemas/setup-schema';
 import { createAdminAccountSchema } from '../schemas/setup-schema';
-import { MAX_SETUP_SECRET_LENGTH, MIN_SETUP_SECRET_LENGTH } from '@/convex/env';
+import { MAX_SETUP_SECRET_LENGTH, MIN_SETUP_SECRET_LENGTH } from '@/convex/shared/env';
 
 interface StepAdminAccountProps {
     data: AdminAccount;
@@ -22,7 +22,9 @@ export default function StepAdminAccount({ data, onChange }: StepAdminAccountPro
             max: MAX_SETUP_SECRET_LENGTH,
         }),
     }).safeParse(data);
+
     let fieldErrors: Record<string, string>;
+
     if (!validation.success) {
         fieldErrors = Object.fromEntries(
             validation.error.issues.map(issue => [issue.path.join('.'), issue.message])

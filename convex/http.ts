@@ -4,7 +4,7 @@ import { HttpRouterWithHono } from 'kitcn/server';
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { getAuth } from './generated/auth';
-import { getEnvs } from './env';
+import { getEnvs } from './shared/env';
 
 const app = new Hono();
 

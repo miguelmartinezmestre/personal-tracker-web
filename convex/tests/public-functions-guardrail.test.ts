@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url';
 import { describe, expect, test } from 'vitest';
 import {
     findForbiddenQueries,
+    findMissingContracts,
     findRawPublicFunctions,
     listConvexSources,
     parseSource,
@@ -21,6 +22,7 @@ const ALLOWED_RAW_PUBLIC_FUNCTIONS = new Set([
 describe('public Convex function guardrail', () => {
     test('business functions at every directory depth require RLS or an explicit exception', () => {
         const root = fileURLToPath(new URL('../..', import.meta.url));
+
         const unexpected = listConvexSources(join(root, 'convex'))
             .flatMap(file =>
                 findRawPublicFunctions(parseSource(file)).map(
@@ -28,25 +30,42 @@ describe('public Convex function guardrail', () => {
                 )
             )
             .filter(key => !ALLOWED_RAW_PUBLIC_FUNCTIONS.has(key));
+
         expect(unexpected).toEqual([]);
     });
 
     test('database queries do not use filter or collect', () => {
         const root = fileURLToPath(new URL('../..', import.meta.url));
+
         const failures = listConvexSources(join(root, 'convex')).flatMap(file =>
             findForbiddenQueries(parseSource(file)).map(
                 failure =>
                     `${relative(root, file).replace(/\\/g, '/')}:${failure.line} ${failure.method}`
             )
         );
+
         expect(failures).toEqual([]);
+    });
+
+    test('registered functions declare args, returns and handler', () => {
+        const root = fileURLToPath(new URL('../..', import.meta.url));
+
+        const missing = listConvexSources(join(root, 'convex')).flatMap(file =>
+            findMissingContracts(parseSource(file)).map(
+                gap => `${relative(root, file).replace(/\\/g, '/')}:${gap.name} ${gap.property}`
+            )
+        );
+
+        expect(missing).toEqual([]);
     });
 });
 
 function listFiles(directory: string): string[] {
     return readdirSync(directory, { withFileTypes: true }).flatMap(entry => {
         const file = join(directory, entry.name);
+
         if (entry.isDirectory()) return listFiles(file);
+
         return entry.isFile() && entry.name.endsWith('.ts') ? [file] : [];
     });
 }
@@ -58,6 +77,7 @@ describe('Convex test files stay out of the function bundle', () => {
         const leaked = listFiles(join(root, 'convex', 'tests'))
             .map(file => relative(root, file).replace(/\\/g, '/'))
             .filter(file => (file.split('/').pop() ?? '').split('.').length < 3);
+
         expect(leaked).toEqual([]);
     });
 });

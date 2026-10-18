@@ -3,7 +3,7 @@
 import { v } from 'convex/values';
 import { internalAction } from './_generated/server';
 import nodemailer from 'nodemailer';
-import { getSmtpEmailConfig } from './email';
+import { getSmtpEmailConfig } from './features/email/smtpConfig';
 
 export const sendEmail = internalAction({
     args: {
@@ -15,6 +15,7 @@ export const sendEmail = internalAction({
     returns: v.object({ message: v.string() }),
     handler: async (_, args) => {
         const config = getSmtpEmailConfig();
+
         const transporter = nodemailer.createTransport({
             host: config.host,
             port: config.port,

@@ -6,13 +6,15 @@ import {
     createTestMember,
     createTestOrganization,
     createTestUser,
+    TIME,
     type TestUserData,
 } from './test.helpers';
 import { identityFor } from './test.identities';
 
-describe('objectives and progress', () => {
+const page = { numItems: 20, cursor: null };
+
+describe('objectives', () => {
     const t = initConvexTest();
-    const invalidValues = [['negative', -1, 'VALUE_NEGATIVE']] as const;
     let owner: TestUserData;
     let ownerIdentity: ReturnType<typeof t.withIdentity>;
     let organizationId: Id<'organization'>;
@@ -21,23 +23,63 @@ describe('objectives and progress', () => {
         return t.withIdentity(identityFor(user));
     }
 
-    beforeEach(async () => {
+    async function createUserInNewOrganization(prefix: string) {
         const suffix = Math.random().toString(36).slice(2, 10);
-        owner = await createTestUser(t, {
-            userId: `objective-owner-${suffix}`,
-            email: `objective-owner-${suffix}@example.com`,
-            name: 'Objective owner',
+
+        const user = await createTestUser(t, {
+            userId: `${prefix}-${suffix}`,
+            email: `${prefix}-${suffix}@example.com`,
+            name: prefix,
             role: 'user',
         });
-        organizationId = await createTestOrganization(t, {
-            name: `Objectives ${suffix}`,
-            slug: `objectives-${suffix}`,
+
+        const organization = await createTestOrganization(t, {
+            name: `${prefix} ${suffix}`,
+            slug: `${prefix}-${suffix}`,
         });
-        await createTestMember(t, { organizationId, userId: owner.docId, role: 'owner' });
+
+        await createTestMember(t, {
+            organizationId: organization,
+            userId: user.docId,
+            role: 'owner',
+        });
+
+        return { user, organization };
+    }
+
+    async function createCategory(name: string, organization = organizationId) {
+        return await t.run(ctx =>
+            ctx.db.insert('categories', {
+                organizationId: organization,
+                name,
+                color: '#22c55e',
+                createdAt: Date.now(),
+                updatedAt: Date.now(),
+            })
+        );
+    }
+
+    const create = (
+        title: string,
+        extra: Partial<{ startValue: number; targetValue: number }> = {}
+    ) =>
+        ownerIdentity.mutation(api.objectives.createObjective, {
+            title,
+            startValue: 0,
+            targetValue: 10,
+            ...extra,
+        });
+
+    const get = (id: Id<'objectives'>) => ownerIdentity.query(api.objectives.getObjective, { id });
+
+    beforeEach(async () => {
+        const created = await createUserInNewOrganization('objective-owner');
+        owner = created.user;
+        organizationId = created.organization;
         ownerIdentity = asUser(owner);
     });
 
-    test('creates an objective and lists it for the active organization', async () => {
+    test('creates an increasing objective by default and lists it as active @REQ-OBJETIVOS-001 @REQ-OBJETIVOS-002 @INH-OBJ-02', async () => {
         const objectiveId = await ownerIdentity.mutation(api.objectives.createObjective, {
             title: 'Run',
             startValue: 0,
@@ -47,642 +89,143 @@ describe('objectives and progress', () => {
 
         const listed = await ownerIdentity.query(api.objectives.listObjectives, {
             status: 'active',
-            paginationOpts: { numItems: 20, cursor: null },
+            paginationOpts: page,
         });
-        expect(listed.page.map(objective => objective.id)).toContain(objectiveId);
-        expect(listed.page[0]?.progressPercent).toBe(0);
-        expect(listed.page[0]?.canManage).toBe(true);
-    });
 
-    test.each(invalidValues)(
-        'rejects %s starting values on create and update',
-        async (_label, startValue, errorCode) => {
-            const objectiveId = await ownerIdentity.mutation(api.objectives.createObjective, {
-                title: 'Valid starting value',
-                startValue: 2,
-                targetValue: 10,
-            });
-            const before = await ownerIdentity.query(api.objectives.getObjective, {
+        expect(listed.page).toEqual([
+            expect.objectContaining({
                 id: objectiveId,
-            });
-
-            await expect(
-                ownerIdentity.mutation(api.objectives.createObjective, {
-                    title: 'Invalid starting value',
-                    startValue,
-                    targetValue: 10,
-                })
-            ).rejects.toThrow(errorCode);
-            await expect(
-                ownerIdentity.mutation(api.objectives.updateObjective, {
-                    id: objectiveId,
-                    title: 'Rejected edit',
-                    startValue,
-                })
-            ).rejects.toThrow(errorCode);
-
-            expect(
-                await ownerIdentity.query(api.objectives.getObjective, { id: objectiveId })
-            ).toEqual(before);
-            const listed = await ownerIdentity.query(api.objectives.listObjectives, {
-                paginationOpts: { numItems: 20, cursor: null },
-            });
-            expect(listed.page.map(objective => objective.id)).toEqual([objectiveId]);
-        }
-    );
-
-    test.each([['zero', 0, 'TARGET_TOO_SMALL']] as const)(
-        'rejects %s targets on create and update',
-        async (_label, targetValue, errorCode) => {
-            const objectiveId = await ownerIdentity.mutation(api.objectives.createObjective, {
-                title: 'Valid target',
-                startValue: 0,
-                targetValue: 10,
-            });
-            await ownerIdentity.mutation(api.objectives.createProgress, {
-                objectiveId,
-                updatedValue: 3,
-                updateDate: Date.UTC(2026, 0, 2),
-            });
-            const before = await ownerIdentity.query(api.objectives.getObjective, {
-                id: objectiveId,
-            });
-
-            await expect(
-                ownerIdentity.mutation(api.objectives.createObjective, {
-                    title: 'Invalid target',
-                    startValue: 0,
-                    targetValue,
-                })
-            ).rejects.toThrow(errorCode);
-            await expect(
-                ownerIdentity.mutation(api.objectives.updateObjective, {
-                    id: objectiveId,
-                    title: 'Rejected edit',
-                    targetValue,
-                })
-            ).rejects.toThrow(errorCode);
-
-            expect(
-                await ownerIdentity.query(api.objectives.getObjective, { id: objectiveId })
-            ).toEqual(before);
-            const listed = await ownerIdentity.query(api.objectives.listObjectives, {
-                paginationOpts: { numItems: 20, cursor: null },
-            });
-            expect(listed.page.map(objective => objective.id)).toEqual([objectiveId]);
-        }
-    );
-
-    test('keeps decimal totals free of floating-point drift', async () => {
-        const objectiveId = await ownerIdentity.mutation(api.objectives.createObjective, {
-            title: 'Decimal totals',
-            startValue: 0,
-            targetValue: 10,
-        });
-        const updateDate = Date.UTC(2026, 0, 2);
-        const first = await ownerIdentity.mutation(api.objectives.createProgress, {
-            objectiveId,
-            updatedValue: 0.1,
-            updateDate,
-        });
-        const second = await ownerIdentity.mutation(api.objectives.createProgress, {
-            objectiveId,
-            updatedValue: 0.2,
-            updateDate,
-        });
-        expect(
-            await ownerIdentity.query(api.objectives.getObjective, { id: objectiveId })
-        ).toMatchObject({ currentValue: 0.3 });
-
-        await ownerIdentity.mutation(api.objectives.createProgress, {
-            objectiveId,
-            updatedValue: 30,
-            updateDate,
-        });
-        await ownerIdentity.mutation(api.objectives.updateObjective, {
-            id: objectiveId,
-            startValue: 5,
-            targetValue: 50,
-        });
-        await ownerIdentity.mutation(api.objectives.updateProgress, {
-            id: first.id,
-            updatedValue: 0.7,
-            updateDate,
-        });
-        expect(
-            await ownerIdentity.query(api.objectives.getObjective, { id: objectiveId })
-        ).toMatchObject({ currentValue: 35.9 });
-
-        await ownerIdentity.mutation(api.objectives.deleteProgress, { id: second.id });
-        expect(
-            await ownerIdentity.query(api.objectives.getObjective, { id: objectiveId })
-        ).toMatchObject({ currentValue: 35.7 });
-        const history = await ownerIdentity.query(api.objectives.getProgressHistory, {
-            objectiveId,
-        });
-        expect(history.points.map(point => point.value)).toEqual([5.7, 35.7]);
-    });
-
-    test('rejects progress dated in the future on create and update', async () => {
-        const objectiveId = await ownerIdentity.mutation(api.objectives.createObjective, {
-            title: 'No future progress',
-            startValue: 0,
-            targetValue: 10,
-        });
-        const today = new Date();
-        const todayUtc = Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate());
-        const dayAfterTomorrow = todayUtc + 2 * 24 * 60 * 60 * 1000;
-        const progress = await ownerIdentity.mutation(api.objectives.createProgress, {
-            objectiveId,
-            updatedValue: 2,
-            updateDate: todayUtc,
-        });
-        const before = await ownerIdentity.query(api.objectives.getObjective, { id: objectiveId });
-
-        await expect(
-            ownerIdentity.mutation(api.objectives.createProgress, {
-                objectiveId,
-                updatedValue: 2,
-                updateDate: dayAfterTomorrow,
-            })
-        ).rejects.toThrow('FUTURE_DATE_NOT_ALLOWED');
-        await expect(
-            ownerIdentity.mutation(api.objectives.updateProgress, {
-                id: progress.id,
-                updatedValue: 2,
-                updateDate: dayAfterTomorrow,
-            })
-        ).rejects.toThrow('FUTURE_DATE_NOT_ALLOWED');
-
-        expect(await ownerIdentity.query(api.objectives.getObjective, { id: objectiveId })).toEqual(
-            before
-        );
-        const entries = await ownerIdentity.query(api.objectives.listProgress, {
-            objectiveId,
-            paginationOpts: { numItems: 20, cursor: null },
-        });
-        expect(entries.page.map(entry => entry.updateDate)).toEqual([todayUtc]);
-    });
-
-    test('paginates objectives within the active organization and status filter', async () => {
-        const first = await ownerIdentity.mutation(api.objectives.createObjective, {
-            title: 'First',
-            startValue: 0,
-            targetValue: 10,
-        });
-        const second = await ownerIdentity.mutation(api.objectives.createObjective, {
-            title: 'Second',
-            startValue: 0,
-            targetValue: 10,
-        });
-        const completed = await ownerIdentity.mutation(api.objectives.createObjective, {
-            title: 'Completed',
-            startValue: 0,
-            targetValue: 10,
-        });
-        await ownerIdentity.mutation(api.objectives.createProgress, {
-            objectiveId: completed,
-            updatedValue: 10,
-            updateDate: Date.UTC(2026, 0, 2),
-        });
-
-        const page = await ownerIdentity.query(api.objectives.listObjectives, {
-            status: 'active',
-            paginationOpts: { numItems: 1, cursor: null },
-        });
-        expect(page.page).toHaveLength(1);
-        expect(page.isDone).toBe(false);
-        expect(page).not.toHaveProperty('needsContinuation');
-        const next = await ownerIdentity.query(api.objectives.listObjectives, {
-            status: 'active',
-            paginationOpts: { numItems: 1, cursor: page.continueCursor },
-        });
-        expect(next.page).toHaveLength(1);
-        expect([first, second]).toContain(next.page[0]?.id);
-        expect(next.page[0]?.id).not.toBe(page.page[0]?.id);
-    });
-
-    test('a full last page reports isDone until a next page appears', async () => {
-        for (const title of ['One', 'Two']) {
-            await ownerIdentity.mutation(api.objectives.createObjective, {
-                title,
-                startValue: 0,
-                targetValue: 10,
-            });
-        }
-        const full = await ownerIdentity.query(api.objectives.listObjectives, {
-            paginationOpts: { numItems: 2, cursor: null },
-        });
-        expect(full.page).toHaveLength(2);
-        expect(full.isDone).toBe(true);
-
-        // Newest first, so an older objective lands right after the page.
-        await t.run(ctx =>
-            ctx.db.insert('objectives', {
-                organizationId,
-                createdBy: owner.docId,
-                title: 'Older',
-                startValue: 0,
-                currentValue: 0,
-                targetValue: 10,
+                direction: 'increase',
                 status: 'active',
-                createdAt: 1,
-                updatedAt: 1,
-            })
-        );
-        const again = await ownerIdentity.query(api.objectives.listObjectives, {
-            paginationOpts: { numItems: 2, cursor: null },
-        });
-        expect(again.isDone).toBe(false);
-        const last = await ownerIdentity.query(api.objectives.listObjectives, {
-            paginationOpts: { numItems: 2, cursor: again.continueCursor },
-        });
-        expect(last.page.map(objective => objective.title)).toEqual(['Older']);
-        expect(last.isDone).toBe(true);
-    });
-
-    test('searches objective titles within the active organization and status', async () => {
-        const morningRun = await ownerIdentity.mutation(api.objectives.createObjective, {
-            title: 'Morning run',
-            startValue: 0,
-            targetValue: 10,
-        });
-        const eveningRun = await ownerIdentity.mutation(api.objectives.createObjective, {
-            title: 'Evening run',
-            startValue: 0,
-            targetValue: 1,
-        });
-        await ownerIdentity.mutation(api.objectives.createProgress, {
-            objectiveId: eveningRun,
-            updatedValue: 1,
-            updateDate: Date.UTC(2026, 0, 2),
-        });
-        await ownerIdentity.mutation(api.objectives.createObjective, {
-            title: 'Read books',
-            startValue: 0,
-            targetValue: 10,
-        });
-        const suffix = Math.random().toString(36).slice(2, 10);
-        const otherUser = await createTestUser(t, {
-            userId: `objective-search-${suffix}`,
-            email: `objective-search-${suffix}@example.com`,
-            name: 'Other searcher',
-            role: 'user',
-        });
-        const otherOrg = await createTestOrganization(t, {
-            name: `Other search ${suffix}`,
-            slug: `other-search-${suffix}`,
-        });
-        await createTestMember(t, {
-            organizationId: otherOrg,
-            userId: otherUser.docId,
-            role: 'owner',
-        });
-        await asUser(otherUser).mutation(api.objectives.createObjective, {
-            title: 'Morning run',
-            startValue: 0,
-            targetValue: 10,
-        });
-
-        const search = async (status: 'all' | 'active') =>
-            (
-                await ownerIdentity.query(api.objectives.listObjectives, {
-                    status,
-                    search: ' run ',
-                    paginationOpts: { numItems: 20, cursor: null },
-                })
-            ).page.map(objective => objective.id);
-
-        expect((await search('all')).sort()).toEqual([morningRun, eveningRun].sort());
-        expect(await search('active')).toEqual([morningRun]);
-    });
-
-    test('does not expose another organization through a reused objective cursor', async () => {
-        const cursorObjective = await ownerIdentity.mutation(api.objectives.createObjective, {
-            title: 'Owner objective',
-            startValue: 0,
-            targetValue: 10,
-        });
-        await ownerIdentity.mutation(api.objectives.createObjective, {
-            title: 'Owner second objective',
-            startValue: 0,
-            targetValue: 10,
-        });
-        const cursorPage = await ownerIdentity.query(api.objectives.listObjectives, {
-            paginationOpts: { numItems: 1, cursor: null },
-        });
-        expect(cursorPage.page).toHaveLength(1);
-        expect(cursorPage.isDone).toBe(false);
-        expect([cursorObjective]).not.toContain(cursorPage.page[0]?.id);
-
-        const suffix = Math.random().toString(36).slice(2, 10);
-        const otherUser = await createTestUser(t, {
-            userId: `objective-tenant-${suffix}`,
-            email: `objective-tenant-${suffix}@example.com`,
-            name: 'Other tenant',
-            role: 'user',
-        });
-        const otherOrg = await createTestOrganization(t, {
-            name: `Other tenant ${suffix}`,
-            slug: `other-tenant-${suffix}`,
-        });
-        await createTestMember(t, {
-            organizationId: otherOrg,
-            userId: otherUser.docId,
-            role: 'owner',
-        });
-        const otherIdentity = asUser(otherUser);
-        const otherId = await otherIdentity.mutation(api.objectives.createObjective, {
-            title: 'Other objective',
-            startValue: 0,
-            targetValue: 10,
-        });
-        const otherFirstPage = await otherIdentity.query(api.objectives.listObjectives, {
-            paginationOpts: { numItems: 10, cursor: null },
-        });
-        expect(otherFirstPage.page.map(item => item.id)).toContain(otherId);
-        const reused = await otherIdentity.query(api.objectives.listObjectives, {
-            paginationOpts: { numItems: 10, cursor: cursorPage.continueCursor },
-        });
-        expect(reused.page.every(item => item.id === otherId)).toBe(true);
-    });
-
-    test('paginates progress entries and scopes reused cursors to the requested objective', async () => {
-        const firstObjective = await ownerIdentity.mutation(api.objectives.createObjective, {
-            title: 'First series',
-            startValue: 0,
-            targetValue: 10,
-        });
-        const secondObjective = await ownerIdentity.mutation(api.objectives.createObjective, {
-            title: 'Second series',
-            startValue: 0,
-            targetValue: 10,
-        });
-        for (let index = 1; index <= 3; index += 1) {
-            await ownerIdentity.mutation(api.objectives.createProgress, {
-                objectiveId: firstObjective,
-                updatedValue: index,
-                updateDate: Date.UTC(2026, 0, index),
-            });
-        }
-        await ownerIdentity.mutation(api.objectives.createProgress, {
-            objectiveId: secondObjective,
-            updatedValue: 1,
-            updateDate: Date.UTC(2026, 0, 1),
-        });
-
-        const firstPage = await ownerIdentity.query(api.objectives.listProgress, {
-            objectiveId: firstObjective,
-            paginationOpts: { numItems: 1, cursor: null },
-        });
-        expect(firstPage.page).toHaveLength(1);
-        expect(firstPage.isDone).toBe(false);
-        expect(firstPage.page[0]?.objectiveId).toBe(firstObjective);
-        const next = await ownerIdentity.query(api.objectives.listProgress, {
-            objectiveId: firstObjective,
-            paginationOpts: { numItems: 1, cursor: firstPage.continueCursor },
-        });
-        expect(next.page).toHaveLength(1);
-        expect(next.page[0]?.objectiveId).toBe(firstObjective);
-
-        const reused = await ownerIdentity.query(api.objectives.listProgress, {
-            objectiveId: secondObjective,
-            paginationOpts: { numItems: 10, cursor: firstPage.continueCursor },
-        });
-        expect(reused.page.every(entry => entry.objectiveId === secondObjective)).toBe(true);
-    });
-
-    test('returns the cumulative progress history in chronological order', async () => {
-        const objectiveId = await ownerIdentity.mutation(api.objectives.createObjective, {
-            title: 'History',
-            startValue: 5,
-            targetValue: 50,
-        });
-        for (const [day, increment, comment] of [
-            [3, 4, undefined],
-            [1, 2, 'first'],
-            [2, 1.5, undefined],
-        ] as const) {
-            await ownerIdentity.mutation(api.objectives.createProgress, {
-                objectiveId,
-                updatedValue: increment,
-                updateDate: Date.UTC(2026, 0, day),
-                ...(comment ? { comment } : {}),
-            });
-        }
-
-        const history = await ownerIdentity.query(api.objectives.getProgressHistory, {
-            objectiveId,
-        });
-
-        expect(
-            history.points.map(({ updateDate, value, delta, comment }) => ({
-                updateDate,
-                value,
-                delta,
-                comment,
-            }))
-        ).toEqual([
-            { updateDate: Date.UTC(2026, 0, 1), value: 7, delta: 2, comment: 'first' },
-            { updateDate: Date.UTC(2026, 0, 2), value: 8.5, delta: 1.5, comment: undefined },
-            { updateDate: Date.UTC(2026, 0, 3), value: 12.5, delta: 4, comment: undefined },
+                currentValue: 0,
+                progressPercent: 0,
+                unit: 'km',
+                canManage: true,
+            }),
         ]);
     });
 
-    test('rejects a starting value equal to or above the target on create and update', async () => {
-        for (const startValue of [5, 8]) {
+    test.each([
+        ['increase', 10, 10],
+        ['increase', 10, -5],
+        ['decrease', 10, 10],
+        ['decrease', -5, 3],
+    ] as const)(
+        'rejects a target that does not %s from %d to %d on create and update @INH-OBJ-03',
+        async (direction, startValue, targetValue) => {
+            const objectiveId = await create('Valid range', { startValue: 2, targetValue: 8 });
+            const before = await get(objectiveId);
+
             await expect(
                 ownerIdentity.mutation(api.objectives.createObjective, {
                     title: 'Invalid range',
+                    direction,
                     startValue,
-                    targetValue: 5,
+                    targetValue,
                 })
-            ).rejects.toThrow('START_AFTER_TARGET');
-        }
-
-        const objectiveId = await ownerIdentity.mutation(api.objectives.createObjective, {
-            title: 'Valid range',
-            startValue: 2,
-            targetValue: 10,
-        });
-        const before = await ownerIdentity.query(api.objectives.getObjective, { id: objectiveId });
-        await expect(
-            ownerIdentity.mutation(api.objectives.updateObjective, {
-                id: objectiveId,
-                startValue: 10,
-            })
-        ).rejects.toThrow('START_AFTER_TARGET');
-        await expect(
-            ownerIdentity.mutation(api.objectives.updateObjective, {
-                id: objectiveId,
-                targetValue: 1,
-            })
-        ).rejects.toThrow('START_AFTER_TARGET');
-
-        expect(await ownerIdentity.query(api.objectives.getObjective, { id: objectiveId })).toEqual(
-            before
-        );
-    });
-
-    test.each([...invalidValues, ['zero', 0, 'PROGRESS_NOT_POSITIVE']] as const)(
-        'rejects %s progress values without changing entries or totals',
-        async (_label, updatedValue, errorCode) => {
-            const objectiveId = await ownerIdentity.mutation(api.objectives.createObjective, {
-                title: 'Validated progress',
-                startValue: 0,
-                targetValue: 10,
-            });
-            const initial = await ownerIdentity.query(api.objectives.getObjective, {
-                id: objectiveId,
-            });
+            ).rejects.toThrow('TARGET_DIRECTION_MISMATCH');
             await expect(
-                ownerIdentity.mutation(api.objectives.createProgress, {
-                    objectiveId,
-                    updatedValue,
-                    updateDate: Date.UTC(2026, 0, 2),
+                ownerIdentity.mutation(api.objectives.updateObjective, {
+                    id: objectiveId,
+                    direction,
+                    startValue,
+                    targetValue,
                 })
-            ).rejects.toThrow(errorCode);
-            expect(
-                await ownerIdentity.query(api.objectives.getObjective, { id: objectiveId })
-            ).toEqual(initial);
-            const emptyProgress = await ownerIdentity.query(api.objectives.listProgress, {
-                objectiveId,
-                paginationOpts: { numItems: 20, cursor: null },
-            });
-            expect(emptyProgress.page).toEqual([]);
+            ).rejects.toThrow('TARGET_DIRECTION_MISMATCH');
 
-            const progress = await ownerIdentity.mutation(api.objectives.createProgress, {
-                objectiveId,
-                updatedValue: 10,
-                updateDate: Date.UTC(2026, 0, 2),
-                comment: 'Completed',
-            });
-            const completed = await ownerIdentity.query(api.objectives.getObjective, {
-                id: objectiveId,
-            });
-            const originalEntry = await t.run(ctx => ctx.db.get('progressUpdates', progress.id));
-            await expect(
-                ownerIdentity.mutation(api.objectives.updateProgress, {
-                    id: progress.id,
-                    updatedValue,
-                    updateDate: Date.UTC(2026, 0, 3),
-                    comment: 'Rejected edit',
-                })
-            ).rejects.toThrow(errorCode);
-            expect(
-                await ownerIdentity.query(api.objectives.getObjective, { id: objectiveId })
-            ).toEqual(completed);
-            expect(await t.run(ctx => ctx.db.get('progressUpdates', progress.id))).toEqual(
-                originalEntry
-            );
+            expect(await get(objectiveId)).toEqual(before);
         }
     );
 
-    test('progress completes the objective and deleting it reopens the objective', async () => {
-        const objectiveId = await ownerIdentity.mutation(api.objectives.createObjective, {
-            title: 'Read',
-            startValue: 0,
-            targetValue: 10,
+    test('accepts negative values and rejects values beyond the metric limit @INH-OBJ-01 @INH-OBJ-03', async () => {
+        const debt = await ownerIdentity.mutation(api.objectives.createObjective, {
+            title: 'Pay off the debt',
+            direction: 'increase',
+            startValue: -500,
+            targetValue: 0,
         });
-        const progress = await ownerIdentity.mutation(api.objectives.createProgress, {
-            objectiveId,
-            updatedValue: 10,
-            updateDate: Date.UTC(2026, 0, 2),
-            comment: 'Finished',
-        });
-        const completed = await ownerIdentity.query(api.objectives.getObjective, {
-            id: objectiveId,
-        });
-        expect(completed?.status).toBe('completed');
-        expect(completed?.currentValue).toBe(10);
 
-        await expect(
-            ownerIdentity.mutation(api.objectives.createProgress, {
-                objectiveId,
-                updatedValue: 1,
-                updateDate: Date.UTC(2026, 0, 3),
-            })
-        ).rejects.toThrow('OBJECTIVE_ALREADY_COMPLETED');
+        expect(await get(debt)).toMatchObject({ startValue: -500, targetValue: 0 });
 
-        await ownerIdentity.mutation(api.objectives.deleteProgress, { id: progress.id });
-        const reopened = await ownerIdentity.query(api.objectives.getObjective, {
-            id: objectiveId,
-        });
-        expect(reopened?.status).toBe('active');
-        expect(reopened?.currentValue).toBe(0);
+        await expect(create('Too large start', { startValue: -2e9 })).rejects.toThrow(
+            'VALUE_TOO_LARGE'
+        );
+        await expect(create('Too large target', { targetValue: 2e9 })).rejects.toThrow(
+            'TARGET_TOO_LARGE'
+        );
     });
 
-    test('editing progress and the target recalculates completion without changing the entry total', async () => {
-        const objectiveId = await ownerIdentity.mutation(api.objectives.createObjective, {
-            title: 'Adjustable',
-            startValue: 2,
-            targetValue: 10,
-        });
-        const progress = await ownerIdentity.mutation(api.objectives.createProgress, {
+    test('completes an objective whose new target or direction is already reached @REQ-OBJETIVOS-003 @INH-OBJ-08', async () => {
+        const objectiveId = await create('Adjustable', { startValue: 2, targetValue: 10 });
+
+        await ownerIdentity.mutation(api.progress.createProgress, {
             objectiveId,
-            updatedValue: 3,
+            updatedValue: 6,
             updateDate: Date.UTC(2026, 0, 2),
         });
 
-        await ownerIdentity.mutation(api.objectives.updateProgress, {
-            id: progress.id,
-            updatedValue: 8,
-            updateDate: Date.UTC(2026, 0, 2),
-        });
-        const completed = await ownerIdentity.query(api.objectives.getObjective, {
-            id: objectiveId,
-        });
-        expect(completed).toMatchObject({ currentValue: 10, status: 'completed' });
-        expect(completed?.completedAt).toBeDefined();
+        expect(
+            await ownerIdentity.mutation(api.objectives.updateObjective, {
+                id: objectiveId,
+                targetValue: 12,
+            })
+        ).toMatchObject({ currentValue: 8, status: 'active', progressPercent: 60 });
 
-        const reopened = await ownerIdentity.mutation(api.objectives.updateObjective, {
+        const completed = await ownerIdentity.mutation(api.objectives.updateObjective, {
             id: objectiveId,
-            targetValue: 12,
+            targetValue: 8,
         });
-        expect(reopened).toMatchObject({ currentValue: 10, status: 'active', progressPercent: 80 });
-        expect(reopened.completedAt).toBeUndefined();
+
+        expect(completed).toMatchObject({
+            currentValue: 8,
+            status: 'completed',
+            progressPercent: 100,
+        });
+        expect(completed.completedAt).toBeTypeOf('number');
+
+        const flipped = await create('Flipped', { startValue: 5, targetValue: 10 });
+
+        expect(
+            await ownerIdentity.mutation(api.objectives.updateObjective, {
+                id: flipped,
+                direction: 'decrease',
+                targetValue: 5,
+                startValue: 6,
+            })
+        ).toMatchObject({ direction: 'decrease', currentValue: 6, status: 'active' });
     });
 
-    test('rejects a new deadline in the past but keeps one that has already passed', async () => {
-        const pastDeadline = Date.UTC(2020, 0, 1);
-        await expect(
-            ownerIdentity.mutation(api.objectives.createObjective, {
-                title: 'Late',
-                startValue: 0,
-                targetValue: 10,
-                deadline: pastDeadline,
-            })
-        ).rejects.toThrow('DEADLINE_TOO_OLD');
+    test('a completed objective is closed to edits @REQ-OBJETIVOS-003 @INH-OBJ-07', async () => {
+        const objectiveId = await create('Finished', { targetValue: 1 });
 
-        const objectiveId = await ownerIdentity.mutation(api.objectives.createObjective, {
-            title: 'Overdue',
-            startValue: 0,
-            targetValue: 10,
+        await ownerIdentity.mutation(api.progress.createProgress, {
+            objectiveId,
+            updatedValue: 1,
+            updateDate: Date.UTC(2026, 0, 2),
         });
+
+        const completed = await get(objectiveId);
+
         await expect(
             ownerIdentity.mutation(api.objectives.updateObjective, {
                 id: objectiveId,
-                deadline: pastDeadline,
+                title: 'New',
             })
-        ).rejects.toThrow('DEADLINE_TOO_OLD');
+        ).rejects.toThrow('OBJECTIVE_ALREADY_COMPLETED');
+        await expect(
+            ownerIdentity.mutation(api.objectives.updateObjective, {
+                id: objectiveId,
+                targetValue: 5,
+            })
+        ).rejects.toThrow('OBJECTIVE_ALREADY_COMPLETED');
 
-        // The deadline passed while the objective was still open.
-        await t.run(ctx => ctx.db.patch('objectives', objectiveId, { deadline: pastDeadline }));
-        const renamed = await ownerIdentity.mutation(api.objectives.updateObjective, {
-            id: objectiveId,
-            title: 'Overdue, renamed',
-            deadline: pastDeadline,
-        });
-        expect(renamed).toMatchObject({ title: 'Overdue, renamed', deadline: pastDeadline });
+        expect(await get(objectiveId)).toEqual(completed);
     });
 
-    test('preserves recorded progress when the starting value changes', async () => {
-        const objectiveId = await ownerIdentity.mutation(api.objectives.createObjective, {
-            title: 'Changing baseline',
-            startValue: 2,
-            targetValue: 10,
-        });
-        const progress = await ownerIdentity.mutation(api.objectives.createProgress, {
+    test('moves the recorded progress with a new starting value @INH-OBJ-09', async () => {
+        const objectiveId = await create('Changing baseline', { startValue: 2, targetValue: 10 });
+
+        await ownerIdentity.mutation(api.progress.createProgress, {
             objectiveId,
             updatedValue: 3,
             updateDate: Date.UTC(2026, 0, 2),
@@ -691,93 +234,360 @@ describe('objectives and progress', () => {
         expect(
             await ownerIdentity.mutation(api.objectives.updateObjective, {
                 id: objectiveId,
-                startValue: 4,
+                startValue: -1,
             })
-        ).toMatchObject({ startValue: 4, currentValue: 7, status: 'active' });
-        const completed = await ownerIdentity.mutation(api.objectives.updateObjective, {
-            id: objectiveId,
-            startValue: 7,
-        });
-        expect(completed).toMatchObject({ currentValue: 10, status: 'completed' });
-        expect(completed.completedAt).toBeDefined();
-        const reopened = await ownerIdentity.mutation(api.objectives.updateObjective, {
-            id: objectiveId,
-            startValue: 1,
-        });
-        expect(reopened).toMatchObject({ currentValue: 4, status: 'active' });
-        expect(reopened.completedAt).toBeUndefined();
+        ).toMatchObject({ startValue: -1, currentValue: 2, status: 'active' });
 
-        await ownerIdentity.mutation(api.objectives.deleteProgress, { id: progress.id });
         expect(
-            await ownerIdentity.query(api.objectives.getObjective, { id: objectiveId })
-        ).toMatchObject({ startValue: 1, currentValue: 1, progressPercent: 0 });
-    });
-
-    test('rejects objective changes from a member and allows an admin', async () => {
-        const suffix = Math.random().toString(36).slice(2, 10);
-        const member = await createTestUser(t, {
-            userId: `objective-member-${suffix}`,
-            email: `objective-member-${suffix}@example.com`,
-            name: 'Member',
-            role: 'user',
-        });
-        const admin = await createTestUser(t, {
-            userId: `objective-admin-${suffix}`,
-            email: `objective-admin-${suffix}@example.com`,
-            name: 'Admin',
-            role: 'user',
-        });
-        await createTestMember(t, { organizationId, userId: member.docId, role: 'member' });
-        await createTestMember(t, { organizationId, userId: admin.docId, role: 'admin' });
-        const objectiveId = await ownerIdentity.mutation(api.objectives.createObjective, {
-            title: 'Shared',
-            startValue: 0,
-            targetValue: 4,
-        });
-
-        await expect(
-            asUser(member).mutation(api.objectives.updateObjective, {
+            await ownerIdentity.mutation(api.objectives.updateObjective, {
                 id: objectiveId,
-                title: 'Nope',
+                startValue: 7,
             })
-        ).rejects.toThrow('NOT_AUTHORIZED_OBJECTIVE');
-
-        const progress = await asUser(member).mutation(api.objectives.createProgress, {
-            objectiveId,
-            updatedValue: 1,
-            updateDate: Date.UTC(2026, 0, 4),
-        });
-        expect(progress.canEdit).toBe(true);
-
-        const updated = await asUser(admin).mutation(api.objectives.updateObjective, {
-            id: objectiveId,
-            title: 'Shared title',
-        });
-        expect(updated.title).toBe('Shared title');
+        ).toMatchObject({ currentValue: 10, status: 'completed' });
     });
 
-    test('assigns, changes and clears the category, only within the organization', async () => {
-        const suffix = Math.random().toString(36).slice(2, 10);
-        const otherOrganizationId = await createTestOrganization(t, {
-            name: `Other ${suffix}`,
-            slug: `other-${suffix}`,
+    test('accepts a deadline from the earliest current day on Earth and keeps one already passed @REQ-OBJETIVOS-005 @INH-OBJ-10', async () => {
+        const today = Date.UTC(2026, 0, 10);
+        const yesterday = today - TIME.DAY_MS;
+        vi.useFakeTimers({ toFake: ['Date'] });
+
+        try {
+            // At 05:00 UTC it is still yesterday from UTC-12 onwards.
+            vi.setSystemTime(today + 5 * 60 * 60 * 1000);
+            await expect(
+                ownerIdentity.mutation(api.objectives.createObjective, {
+                    title: 'Due yesterday in UTC',
+                    startValue: 0,
+                    targetValue: 10,
+                    deadline: yesterday,
+                })
+            ).resolves.toBeTypeOf('string');
+
+            vi.setSystemTime(today + 13 * 60 * 60 * 1000);
+            await expect(
+                ownerIdentity.mutation(api.objectives.createObjective, {
+                    title: 'Too late',
+                    startValue: 0,
+                    targetValue: 10,
+                    deadline: yesterday,
+                })
+            ).rejects.toThrow('DEADLINE_TOO_OLD');
+            await expect(
+                ownerIdentity.mutation(api.objectives.createObjective, {
+                    title: 'Not a calendar day',
+                    startValue: 0,
+                    targetValue: 10,
+                    deadline: today + 1,
+                })
+            ).rejects.toThrow('VALIDATION_ERROR');
+
+            const objectiveId = await ownerIdentity.mutation(api.objectives.createObjective, {
+                title: 'Due today',
+                startValue: 0,
+                targetValue: 10,
+                deadline: today,
+            });
+
+            vi.setSystemTime(today + 3 * TIME.DAY_MS);
+            await expect(
+                ownerIdentity.mutation(api.objectives.updateObjective, {
+                    id: objectiveId,
+                    deadline: today + TIME.DAY_MS,
+                })
+            ).rejects.toThrow('DEADLINE_TOO_OLD');
+
+            expect(
+                await ownerIdentity.mutation(api.objectives.updateObjective, {
+                    id: objectiveId,
+                    title: 'Overdue, renamed',
+                })
+            ).toMatchObject({ title: 'Overdue, renamed', deadline: today });
+        } finally {
+            vi.useRealTimers();
+        }
+    });
+
+    test('keeps a due-soon warning of 1 to 365 days only while there is a deadline @INH-OBJ-19', async () => {
+        const deadline = Date.UTC(2099, 0, 1);
+
+        const objectiveId = await ownerIdentity.mutation(api.objectives.createObjective, {
+            title: 'With deadline',
+            startValue: 0,
+            targetValue: 10,
+            deadline,
         });
-        const [health, study, foreign] = await t.run(async ctx => {
-            const now = Date.now();
-            const category = (organization: Id<'organization'>, name: string) =>
-                ctx.db.insert('categories', {
-                    organizationId: organization,
-                    name,
-                    color: '#22c55e',
-                    createdAt: now,
-                    updatedAt: now,
+
+        expect(await get(objectiveId)).toMatchObject({ deadline, dueSoonDays: 7 });
+
+        expect(
+            await ownerIdentity.mutation(api.objectives.updateObjective, {
+                id: objectiveId,
+                dueSoonDays: 30,
+            })
+        ).toMatchObject({ dueSoonDays: 30 });
+
+        for (const dueSoonDays of [0, 366, 1.5]) {
+            await expect(
+                ownerIdentity.mutation(api.objectives.updateObjective, {
+                    id: objectiveId,
+                    dueSoonDays,
+                })
+            ).rejects.toThrow('VALIDATION_ERROR');
+        }
+
+        const cleared = await ownerIdentity.mutation(api.objectives.updateObjective, {
+            id: objectiveId,
+            deadline: null,
+        });
+
+        expect(cleared.deadline).toBeUndefined();
+        expect(cleared.dueSoonDays).toBeUndefined();
+    });
+
+    test('paginates objectives within the active organization and status filter', async () => {
+        const first = await create('First');
+        const second = await create('Second');
+        const completed = await create('Completed');
+
+        await ownerIdentity.mutation(api.progress.createProgress, {
+            objectiveId: completed,
+            updatedValue: 10,
+            updateDate: Date.UTC(2026, 0, 2),
+        });
+
+        const firstPage = await ownerIdentity.query(api.objectives.listObjectives, {
+            status: 'active',
+            paginationOpts: { numItems: 1, cursor: null },
+        });
+
+        expect(firstPage.page).toHaveLength(1);
+        expect(firstPage.isDone).toBe(false);
+
+        const next = await ownerIdentity.query(api.objectives.listObjectives, {
+            status: 'active',
+            paginationOpts: { numItems: 1, cursor: firstPage.continueCursor },
+        });
+
+        expect([first, second]).toContain(next.page[0]?.id);
+        expect(next.page[0]?.id).not.toBe(firstPage.page[0]?.id);
+    });
+
+    test('a full last page reports isDone until a next page appears', async () => {
+        await create('One');
+        await create('Two');
+
+        const full = await ownerIdentity.query(api.objectives.listObjectives, {
+            paginationOpts: { numItems: 2, cursor: null },
+        });
+
+        expect(full.isDone).toBe(true);
+
+        // Newest first, so an older objective lands right after the page.
+        await t.run(ctx =>
+            ctx.db.insert('objectives', {
+                organizationId,
+                createdBy: owner.docId,
+                title: 'Older',
+                direction: 'increase',
+                memberCanView: true,
+                memberCanEdit: false,
+                startValue: 0,
+                currentValue: 0,
+                targetValue: 10,
+                status: 'active',
+                createdAt: 1,
+                updatedAt: 1,
+            })
+        );
+
+        const again = await ownerIdentity.query(api.objectives.listObjectives, {
+            paginationOpts: { numItems: 2, cursor: null },
+        });
+
+        expect(again.isDone).toBe(false);
+
+        const last = await ownerIdentity.query(api.objectives.listObjectives, {
+            paginationOpts: { numItems: 2, cursor: again.continueCursor },
+        });
+
+        expect(last.page.map(objective => objective.title)).toEqual(['Older']);
+        expect(last.isDone).toBe(true);
+    });
+
+    test('searches titles combined with the status and category filters @REQ-OBJETIVOS-008', async () => {
+        const health = await createCategory('Health');
+        const morningRun = await create('Morning run');
+
+        const eveningRun = await ownerIdentity.mutation(api.objectives.createObjective, {
+            title: 'Evening run',
+            startValue: 0,
+            targetValue: 1,
+            categoryId: health,
+        });
+
+        await ownerIdentity.mutation(api.progress.createProgress, {
+            objectiveId: eveningRun,
+            updatedValue: 1,
+            updateDate: Date.UTC(2026, 0, 2),
+        });
+        await create('Read books');
+        const other = await createUserInNewOrganization('objective-search');
+        await asUser(other.user).mutation(api.objectives.createObjective, {
+            title: 'Morning run',
+            startValue: 0,
+            targetValue: 10,
+        });
+
+        const search = async (filters: { status?: 'active'; categoryId?: string }) =>
+            (
+                await ownerIdentity.query(api.objectives.listObjectives, {
+                    ...filters,
+                    search: ' run ',
+                    paginationOpts: page,
+                })
+            ).page.map(objective => objective.id);
+
+        expect((await search({})).sort()).toEqual([morningRun, eveningRun].sort());
+        expect(await search({ status: 'active' })).toEqual([morningRun]);
+        expect(await search({ categoryId: health })).toEqual([eveningRun]);
+    });
+
+    test('filters by category and status, and a malformed category matches nothing @REQ-OBJETIVOS-004', async () => {
+        const health = await createCategory('Health');
+        const study = await createCategory('Study');
+
+        const run = await ownerIdentity.mutation(api.objectives.createObjective, {
+            title: 'Run',
+            startValue: 0,
+            targetValue: 1,
+            categoryId: health,
+        });
+
+        const swim = await ownerIdentity.mutation(api.objectives.createObjective, {
+            title: 'Swim',
+            startValue: 0,
+            targetValue: 10,
+            categoryId: health,
+        });
+
+        await ownerIdentity.mutation(api.objectives.createObjective, {
+            title: 'Read',
+            startValue: 0,
+            targetValue: 10,
+            categoryId: study,
+        });
+
+        await ownerIdentity.mutation(api.progress.createProgress, {
+            objectiveId: run,
+            updatedValue: 1,
+            updateDate: Date.UTC(2026, 0, 2),
+        });
+
+        const list = async (filters: { status?: 'completed'; categoryId: string }) =>
+            (
+                await ownerIdentity.query(api.objectives.listObjectives, {
+                    ...filters,
+                    paginationOpts: page,
+                })
+            ).page.map(objective => objective.id);
+
+        expect(await list({ categoryId: health })).toEqual([swim, run]);
+        expect(await list({ categoryId: health, status: 'completed' })).toEqual([run]);
+        expect(await list({ categoryId: 'not-an-id' })).toEqual([]);
+    });
+
+    test("filters by deadline relative to the user's day, soonest first @INH-OBJ-15", async () => {
+        const today = Date.UTC(2026, 0, 10);
+        vi.useFakeTimers({ toFake: ['Date'] });
+        vi.setSystemTime(today - 12 * 60 * 60 * 1000);
+
+        try {
+            const health = await createCategory('Health');
+
+            const createDue = (title: string, deadline?: number, categoryId?: Id<'categories'>) =>
+                ownerIdentity.mutation(api.objectives.createObjective, {
+                    title,
+                    startValue: 0,
+                    targetValue: 1,
+                    deadline,
+                    categoryId,
                 });
-            return await Promise.all([
-                category(organizationId, 'Health'),
-                category(organizationId, 'Study'),
-                category(otherOrganizationId, 'Foreign'),
-            ]);
+
+            const overdue = await createDue('Overdue', today - TIME.DAY_MS);
+            const dueToday = await createDue('Due today', today);
+            const dueInWeek = await createDue('Due in five days', today + 5 * TIME.DAY_MS, health);
+            const dueThisMonth = await createDue('Due this month', today + 15 * TIME.DAY_MS);
+            await createDue('Due next month', Date.UTC(2026, 1, 2));
+            await createDue('No deadline');
+            const completedLate = await createDue('Completed late', today - TIME.DAY_MS);
+
+            await ownerIdentity.mutation(api.progress.createProgress, {
+                objectiveId: completedLate,
+                updatedValue: 1,
+                updateDate: today - TIME.DAY_MS,
+            });
+
+            const list = (
+                filter: 'overdue' | 'today' | 'week' | 'month',
+                extra: { status?: 'completed'; categoryId?: string; search?: string } = {},
+                numItems = 20
+            ) =>
+                ownerIdentity.query(api.objectives.listObjectives, {
+                    ...extra,
+                    deadline: { filter, today },
+                    paginationOpts: { numItems, cursor: null },
+                });
+
+            const ids = async (...args: Parameters<typeof list>) =>
+                (await list(...args)).page.map(objective => objective.id);
+
+            expect(await ids('overdue')).toEqual([overdue]);
+            expect(await ids('today')).toEqual([dueToday]);
+            expect(await ids('week')).toEqual([dueToday, dueInWeek]);
+            expect(await ids('month')).toEqual([dueToday, dueInWeek, dueThisMonth]);
+            expect(await ids('overdue', { status: 'completed' })).toEqual([]);
+            expect(await ids('month', { categoryId: health })).toEqual([dueInWeek]);
+            expect((await ids('week', { search: 'due' })).sort()).toEqual(
+                [dueToday, dueInWeek].sort()
+            );
+            // The objective due next month follows in the index but is outside the range.
+            expect((await list('month', {}, 3)).isDone).toBe(true);
+        } finally {
+            vi.useRealTimers();
+        }
+    });
+
+    test('does not expose another organization through a reused objective cursor', async () => {
+        await create('Owner objective');
+        await create('Owner second objective');
+
+        const cursorPage = await ownerIdentity.query(api.objectives.listObjectives, {
+            paginationOpts: { numItems: 1, cursor: null },
         });
+
+        expect(cursorPage.isDone).toBe(false);
+
+        const other = await createUserInNewOrganization('objective-tenant');
+
+        const otherId = await asUser(other.user).mutation(api.objectives.createObjective, {
+            title: 'Other objective',
+            startValue: 0,
+            targetValue: 10,
+        });
+
+        const reused = await asUser(other.user).query(api.objectives.listObjectives, {
+            paginationOpts: { numItems: 10, cursor: cursorPage.continueCursor },
+        });
+
+        expect(reused.page.every(item => item.id === otherId)).toBe(true);
+    });
+
+    test('assigns, changes and clears the category, only within the organization @REQ-OBJETIVOS-004', async () => {
+        const other = await createUserInNewOrganization('objective-category');
+        const health = await createCategory('Health');
+        const study = await createCategory('Study');
+        const foreign = await createCategory('Foreign', other.organization);
+
         const objectiveId = await ownerIdentity.mutation(api.objectives.createObjective, {
             title: 'Categorised',
             startValue: 0,
@@ -785,11 +595,12 @@ describe('objectives and progress', () => {
             categoryId: health,
         });
 
-        const changed = await ownerIdentity.mutation(api.objectives.updateObjective, {
-            id: objectiveId,
-            categoryId: study,
-        });
-        expect(changed).toMatchObject({ categoryId: study, categoryName: 'Study' });
+        expect(
+            await ownerIdentity.mutation(api.objectives.updateObjective, {
+                id: objectiveId,
+                categoryId: study,
+            })
+        ).toMatchObject({ categoryId: study, categoryName: 'Study' });
 
         await expect(
             ownerIdentity.mutation(api.objectives.updateObjective, {
@@ -810,98 +621,26 @@ describe('objectives and progress', () => {
             id: objectiveId,
             categoryId: null,
         });
+
         expect(cleared.categoryId).toBeUndefined();
         expect(cleared.categoryName).toBeUndefined();
     });
 
     test('hides objectives from another organization', async () => {
-        const suffix = Math.random().toString(36).slice(2, 10);
-        const outsider = await createTestUser(t, {
-            userId: `objective-outsider-${suffix}`,
-            email: `objective-outsider-${suffix}@example.com`,
-            name: 'Outsider',
-            role: 'user',
-        });
-        const otherOrganizationId = await createTestOrganization(t, {
-            name: `Other ${suffix}`,
-            slug: `other-${suffix}`,
-        });
-        await createTestMember(t, {
-            organizationId: otherOrganizationId,
-            userId: outsider.docId,
-            role: 'owner',
-        });
-        const objectiveId = await ownerIdentity.mutation(api.objectives.createObjective, {
-            title: 'Private to org',
-            startValue: 0,
-            targetValue: 3,
-        });
+        const outsider = await createUserInNewOrganization('objective-outsider');
+        const objectiveId = await create('Private to org', { targetValue: 3 });
 
         expect(
-            await asUser(outsider).query(api.objectives.getObjective, { id: objectiveId })
+            await asUser(outsider.user).query(api.objectives.getObjective, { id: objectiveId })
         ).toBeNull();
         await expect(
-            asUser(outsider).mutation(api.objectives.updateObjective, {
+            asUser(outsider.user).mutation(api.objectives.updateObjective, {
                 id: objectiveId,
                 title: 'Stolen',
             })
         ).rejects.toThrow('OBJECTIVE_NOT_FOUND');
         await expect(
-            asUser(outsider).query(api.objectives.getProgressHistory, { objectiveId })
+            asUser(outsider.user).query(api.progress.getProgressHistory, { objectiveId })
         ).rejects.toThrow('OBJECTIVE_NOT_FOUND');
-    });
-
-    test('deletes the objective and its progress', async () => {
-        const objectiveId = await ownerIdentity.mutation(api.objectives.createObjective, {
-            title: 'Temporary',
-            startValue: 0,
-            targetValue: 20,
-        });
-        const progress = await ownerIdentity.mutation(api.objectives.createProgress, {
-            objectiveId,
-            updatedValue: 2,
-            updateDate: Date.UTC(2026, 0, 5),
-        });
-        await ownerIdentity.mutation(api.objectives.deleteObjective, { id: objectiveId });
-
-        expect(
-            await ownerIdentity.query(api.objectives.getObjective, { id: objectiveId })
-        ).toBeNull();
-        await t.run(async ctx => {
-            expect(await ctx.db.get('progressUpdates', progress.id)).toBeNull();
-            expect(await ctx.db.get('objectives', objectiveId)).toBeNull();
-        });
-    });
-
-    test('continues deleting when progress exceeds one batch', async () => {
-        const now = Date.now();
-        vi.useFakeTimers();
-        vi.setSystemTime(now);
-        try {
-            const objectiveId = await ownerIdentity.mutation(api.objectives.createObjective, {
-                title: 'Long series',
-                startValue: 0,
-                targetValue: 1000,
-            });
-            const updateDate = Date.UTC(
-                new Date(now).getUTCFullYear(),
-                new Date(now).getUTCMonth(),
-                new Date(now).getUTCDate()
-            );
-            for (let index = 0; index < 51; index += 1) {
-                await ownerIdentity.mutation(api.objectives.createProgress, {
-                    objectiveId,
-                    updatedValue: 1,
-                    updateDate,
-                });
-            }
-            await ownerIdentity.mutation(api.objectives.deleteObjective, { id: objectiveId });
-            await t.finishAllScheduledFunctions(() => vi.runAllTimers());
-            expect(
-                await ownerIdentity.query(api.objectives.getObjective, { id: objectiveId })
-            ).toBeNull();
-        } finally {
-            vi.useRealTimers();
-        }
     });
 });

@@ -28,6 +28,7 @@ export default function StepCategories({ data, onChange }: StepCategoriesProps) 
     const tCommon = useTranslations('Common');
     const [newName, setNewName] = useState('');
     const nextCategoryKey = useRef(data.length);
+
     const [categoryKeys, setCategoryKeys] = useState(() =>
         data.map((_, index) => `setup-category-${index}`)
     );
@@ -36,6 +37,7 @@ export default function StepCategories({ data, onChange }: StepCategoriesProps) 
         const updated = data.map((category, categoryIndex) =>
             categoryIndex === index ? { ...category, ...updates } : category
         );
+
         onChange(updated);
     };
 
@@ -53,6 +55,7 @@ export default function StepCategories({ data, onChange }: StepCategoriesProps) 
         if (!newName.trim()) {
             return;
         }
+
         onChange([...data, { name: newName.trim(), color: '#6366F1', icon: 'tag' }]);
         const nextKey = `setup-category-${nextCategoryKey.current++}`;
         setCategoryKeys(keys => [...keys, nextKey]);
@@ -91,6 +94,7 @@ export default function StepCategories({ data, onChange }: StepCategoriesProps) 
                             value={category.icon ?? 'tag'}
                             onValueChange={value => {
                                 const parsed = categoryIconSchema.safeParse(value);
+
                                 if (parsed.success) {
                                     updateCategory(index, { icon: parsed.data });
                                 }

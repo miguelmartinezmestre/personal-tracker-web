@@ -2,7 +2,7 @@ import { describe, expect, test } from 'vitest';
 import { api } from '../_generated/api';
 import { initConvexTest } from './test.helper';
 import { createTestUser, createTestOrganization, ensureTestUserAuth } from './test.helpers';
-import { TIME } from '../constants';
+import { TIME } from './test.helpers';
 import type { GenericMutationCtx } from 'convex/server';
 import type { DataModel } from '../_generated/dataModel';
 
@@ -11,15 +11,18 @@ describe('convex invitations (better-auth)', () => {
 
     test('public invitation status exposes only validity and the organization name', async () => {
         const now = Date.now();
+
         const inviter = await createTestUser(t, {
             userId: `public-inviter-${now}`,
             email: `public-inviter-${now}@example.com`,
             name: 'Public invitation inviter',
         });
+
         const organizationId = await createTestOrganization(t, {
             name: `Public invitation org ${now}`,
             slug: `public-invitation-org-${now}`,
         });
+
         const invitationId = await t.run(async ctx => {
             return await ctx.db.insert('invitation', {
                 organizationId,
@@ -63,6 +66,7 @@ describe('convex invitations (better-auth)', () => {
             name: 'Expired invitation inviter',
             role: 'globalAdmin',
         });
+
         const target = await createTestUser(t, {
             userId: `expired-target-${randomSuffix}`,
             email: targetEmail,
@@ -70,6 +74,7 @@ describe('convex invitations (better-auth)', () => {
             role: 'user',
             emailVerified: true,
         });
+
         const organizationId = await createTestOrganization(t, {
             name: `Expired Client Time Org ${randomSuffix}`,
             slug: `expired-client-time-org-${randomSuffix}`,
@@ -88,6 +93,7 @@ describe('convex invitations (better-auth)', () => {
         });
 
         await ensureTestUserAuth(t, target.docId);
+
         const targetIdentity = t.withIdentity({
             subject: target.docId,
             role: 'user',
@@ -110,21 +116,25 @@ describe('convex invitations (better-auth)', () => {
     test('an unverified account sees no invitations addressed to its email', async () => {
         const suffix = Math.random().toString(36).substring(2, 10);
         const email = `unverified-${suffix}@example.com`;
+
         const inviter = await createTestUser(t, {
             userId: `unverified-inviter-${suffix}`,
             email: `unverified-inviter-${suffix}@example.com`,
             name: 'Inviter',
         });
+
         const claimant = await createTestUser(t, {
             userId: `unverified-claimant-${suffix}`,
             email,
             name: 'Claimant',
             emailVerified: false,
         });
+
         const organizationId = await createTestOrganization(t, {
             name: `Unverified org ${suffix}`,
             slug: `unverified-org-${suffix}`,
         });
+
         await t.run(async ctx => {
             const now = Date.now();
             await ctx.db.insert('invitation', {
@@ -138,6 +148,7 @@ describe('convex invitations (better-auth)', () => {
             });
         });
         await ensureTestUserAuth(t, claimant.docId);
+
         const identity = t.withIdentity({
             subject: claimant.docId,
             email,
@@ -150,6 +161,7 @@ describe('convex invitations (better-auth)', () => {
                 paginationOpts: { numItems: 20, cursor: null },
             })
             .then(result => result.page);
+
         expect(invitations).toEqual([]);
     });
 });

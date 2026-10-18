@@ -1,7 +1,9 @@
 export type ErrorLocale = 'en' | 'es';
+
 type ErrorDictionary = {
     generic: string;
 } & Record<string, string>;
+
 const EN: ErrorDictionary = {
     USER_ALREADY_EXISTS_USE_ANOTHER_EMAIL: 'An account with this email already exists.',
     INVALID_EMAIL_OR_PASSWORD: 'The email or password is incorrect.',
@@ -61,6 +63,7 @@ const EN: ErrorDictionary = {
     DEADLINE_TOO_OLD: 'The deadline cannot be in the past.',
     START_AFTER_TARGET: 'The starting value must be lower than the target value.',
 };
+
 const ES: ErrorDictionary = {
     USER_ALREADY_EXISTS_USE_ANOTHER_EMAIL: 'Ya existe una cuenta con este correo.',
     INVALID_EMAIL_OR_PASSWORD: 'El correo o la contraseña no son correctos.',
@@ -120,35 +123,45 @@ const ES: ErrorDictionary = {
     DEADLINE_TOO_OLD: 'La fecha límite no puede estar en el pasado.',
     START_AFTER_TARGET: 'El valor inicial debe ser menor que el valor objetivo.',
 };
+
 const DICTIONARIES: Record<ErrorLocale, ErrorDictionary> = { en: EN, es: ES };
+
 type ErrorTraversalNode = {
     data?: unknown;
     code?: unknown;
     message?: unknown;
     cause?: unknown;
 };
+
 function codeFromMessage(message: string): string | undefined {
     const trimmed = message.trim();
+
     if (/^[A-Z][A-Z0-9_]+$/.test(trimmed)) {
         return trimmed;
     }
+
     return trimmed.match(/ConvexError:\s*([A-Z][A-Z0-9_]+)/)?.[1];
 }
 
 export function extractErrorCode(error: unknown): string | undefined {
     const seen = new Set<object>();
+
     function visit(value: unknown, depth: number): string | undefined {
         if (typeof value === 'string') {
             return codeFromMessage(value);
         }
+
         if (typeof value !== 'object' || value === null || Array.isArray(value)) {
             return undefined;
         }
+
         if (depth > 8 || seen.has(value)) {
             return undefined;
         }
+
         seen.add(value);
-        const node = value as ErrorTraversalNode;
+        const node: ErrorTraversalNode = value;
+
         return (
             visit(node.data, depth + 1) ??
             visit(node.code, depth + 1) ??
@@ -156,6 +169,7 @@ export function extractErrorCode(error: unknown): string | undefined {
             visit(node.cause, depth + 1)
         );
     }
+
     return visit(error, 0);
 }
 
@@ -166,6 +180,7 @@ export function resolveErrorMessage(
 ): string {
     const dictionary = DICTIONARIES[locale];
     const code = extractErrorCode(error);
+
     return (code ? dictionary[code] : undefined) ?? fallback ?? dictionary.generic;
 }
 
@@ -174,5 +189,6 @@ export function getErrorLocale(): ErrorLocale {
     if (!('document' in globalThis)) {
         return 'en';
     }
+
     return document.documentElement.lang === 'es' ? 'es' : 'en';
 }

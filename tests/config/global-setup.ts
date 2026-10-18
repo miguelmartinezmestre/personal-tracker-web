@@ -3,13 +3,17 @@ import { chromium } from '@playwright/test';
 
 async function globalSetup(config: FullConfig) {
     let baseURL = 'http://localhost:3000';
+
     for (const project of config.projects) {
         const projectBaseURL = project.use.baseURL;
+
         if (projectBaseURL) {
             baseURL = projectBaseURL;
         }
+
         break;
     }
+
     const browser = await chromium.launch();
     const context = await browser.newContext();
     const page = await context.newPage();

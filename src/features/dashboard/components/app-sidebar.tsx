@@ -1,4 +1,5 @@
 'use client';
+
 import { Goal, Home, Mail, Target, Users } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import {
@@ -17,11 +18,13 @@ import { useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
+
 type ProjectNavItem = {
     name: string;
     url: Route;
     icon: LucideIcon;
 };
+
 const baseProjects: ProjectNavItem[] = [
     {
         name: 'home',
@@ -44,6 +47,7 @@ const baseProjects: ProjectNavItem[] = [
         icon: Users,
     },
 ];
+
 export function AppSidebar() {
     const t = useTranslations('Sidebar');
     const pathname = usePathname();
@@ -53,6 +57,7 @@ export function AppSidebar() {
             setOpenMobile(false);
         }
     }, [pathname, isMobile, setOpenMobile]);
+
     return (
         <Sidebar data-testid="app-sidebar">
             <SidebarHeader>
@@ -71,6 +76,7 @@ export function AppSidebar() {
                         <SidebarMenu data-testid="sidebar-menu">
                             {baseProjects.map(item => {
                                 let isActive: boolean;
+
                                 if (item.url === '/dashboard/objectives') {
                                     isActive =
                                         pathname === item.url ||
@@ -78,6 +84,7 @@ export function AppSidebar() {
                                 } else {
                                     isActive = pathname === item.url;
                                 }
+
                                 return (
                                     <SidebarMenuItem key={item.name}>
                                         <SidebarMenuButton

@@ -1,4 +1,5 @@
 'use client';
+
 import { Pencil } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from '@/components/ui/field';
@@ -14,6 +15,7 @@ import {
 } from '@/features/organizations/hooks/use-organizations';
 import FormModal from '@/components/forms/form-modal';
 import { getFieldErrors } from '@/components/forms/form-utils';
+
 export default function EditOrganizationFormModal({
     defaultValues,
 }: {
@@ -23,6 +25,7 @@ export default function EditOrganizationFormModal({
     const tCommon = useTranslationsCommon('Common');
     const updateOrganization = useUpdateOrganization();
     const savedOrganizationSchema = useSavedOrganizationFormSchema();
+
     return (
         <FormModal<SavedOrganization>
             trigger={
@@ -64,10 +67,8 @@ export default function EditOrganizationFormModal({
                         {field => {
                             const errors = getFieldErrors(form, field);
                             const isInvalid = !!errors.length;
-                            let value = '';
-                            if (typeof field.state.value === 'string') {
-                                value = field.state.value;
-                            }
+                            const value = field.state.value;
+
                             return (
                                 <Field data-invalid={isInvalid}>
                                     <FieldLabel htmlFor={field.name}>{t('name')}</FieldLabel>
@@ -94,10 +95,8 @@ export default function EditOrganizationFormModal({
                         {field => {
                             const errors = getFieldErrors(form, field);
                             const isInvalid = !!errors.length;
-                            let value = '';
-                            if (typeof field.state.value === 'string') {
-                                value = field.state.value;
-                            }
+                            const value = field.state.value;
+
                             return (
                                 <Field data-invalid={isInvalid}>
                                     <FieldLabel htmlFor={field.name}>

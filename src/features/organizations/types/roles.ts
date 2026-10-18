@@ -4,4 +4,4 @@ export {
     isOrganizationRoleValue,
     ORGANIZATION_ROLE as OrganizationRole,
     type OrganizationRole as OrganizationRoleValue,
-} from '@/convex/utils';
+} from '@/convex/features/organizations/roles';

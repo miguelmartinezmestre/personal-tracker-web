@@ -22,17 +22,20 @@ export interface RunCommandOptions {
 
 export function overlayEnv(overrides: NodeJS.ProcessEnv = {}): NodeJS.ProcessEnv {
     const env: NodeJS.ProcessEnv = {};
+
     for (const [key, value] of Object.entries({ ...process.env, ...overrides })) {
         if (value !== undefined) {
             env[key] = value;
         }
     }
+
     return env;
 }
 
-function truncatedLogFile(logFile: string): { file: string; append: true } {
+function truncatedLogFile(logFile: string) {
     mkdirSync(dirname(logFile), { recursive: true });
     writeFileSync(logFile, '');
+
     // Both streams append to the same file, so neither overwrites the other.
     return { file: logFile, append: true };
 }
@@ -67,6 +70,7 @@ export async function runCommandCapture(
     options: RunCommandOptions = {}
 ): Promise<string> {
     const result = await execa(command, args, { ...commandOptions(options), all: true });
+
     return String(result.all ?? '');
 }
 
@@ -86,6 +90,7 @@ export function startProcess(
     } = {}
 ): LongRunningProcess {
     const output = options.logFile ? truncatedLogFile(options.logFile) : (options.output ?? 'pipe');
+
     return execa(command, args, {
         env: options.env,
         stdin: 'ignore',
@@ -102,6 +107,7 @@ export function startProcess(
 
 function exitStatus(subprocess: LongRunningProcess): string | null {
     const { exitCode, signalCode } = subprocess.nodeChildProcess;
+
     return exitCode === null ? signalCode : String(exitCode);
 }
 
@@ -109,6 +115,7 @@ export async function stopProcess(subprocess: LongRunningProcess): Promise<void>
     if (exitStatus(subprocess) !== null) {
         return;
     }
+
     if (process.platform === 'win32' && subprocess.pid !== undefined) {
         // Windows signals do not reach the process tree behind a .cmd shim.
         await runCommand('taskkill.exe', ['/PID', String(subprocess.pid), '/T', '/F'], {
@@ -117,6 +124,7 @@ export async function stopProcess(subprocess: LongRunningProcess): Promise<void>
     } else {
         subprocess.kill();
     }
+
     await subprocess;
 }
 
@@ -131,6 +139,7 @@ export async function fetchWithTimeout(url: string): Promise<Response> {
 export async function isListening(url: string): Promise<boolean> {
     try {
         await fetchWithTimeout(url);
+
         return true;
     } catch {
         return false;
@@ -153,22 +162,28 @@ export async function waitForHttp(
 
     for (let attempt = 1; Date.now() - start < timeoutMs; attempt += 1) {
         const exit = options.process ? exitStatus(options.process) : null;
+
         if (exit !== null) {
             throw new Error(`Process exited before ${url} was ready (exit=${exit})`);
         }
+
         try {
             const response = await fetchWithTimeout(url);
+
             if (isReady(response)) {
                 return;
             }
+
             lastAttempt = `last status=${response.status}`;
         } catch (error) {
             lastAttempt = `last error=${error instanceof Error ? error.message : String(error)}`;
         }
+
         if (attempt % 5 === 0) {
             const elapsedSeconds = Math.floor((Date.now() - start) / 1000);
             console.log(`Still waiting for ${url} (${elapsedSeconds}s elapsed, ${lastAttempt})`);
         }
+
         await sleep(POLL_INTERVAL_MS);
     }
 

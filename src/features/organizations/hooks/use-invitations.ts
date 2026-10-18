@@ -29,6 +29,7 @@ export interface Invitation {
 
 export function usePendingInvitations() {
     const pagination = usePaginatedList(api.organizations.getUserInvitations, {});
+
     const invitations: Invitation[] = pagination.data.map(rawInvitation => ({
         id: rawInvitation.id,
         email: rawInvitation.email,
@@ -62,15 +63,17 @@ export function useRejectInvitation() {
             const result = await authClient.organization.rejectInvitation({
                 invitationId,
             });
+
             throwIfAuthClientError(result);
+
             return result.data;
         },
     });
 }
 
-export function usePendingOrganizationInvitations(organizationId: string) {
+export function usePendingOrganizationInvitations(organizationId: Id<'organization'>) {
     return usePaginatedList(api.organizations.getOrganizationPendingInvitations, {
-        organizationId: organizationId as Id<'organization'>,
+        organizationId,
     });
 }
 
@@ -80,6 +83,7 @@ export function useCancelInvitation() {
         mutationFn: async (invitationId: string) => {
             const result = await authClient.organization.cancelInvitation({ invitationId });
             throwIfAuthClientError(result);
+
             return result.data;
         },
     });

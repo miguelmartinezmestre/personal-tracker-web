@@ -3,10 +3,14 @@
 ## Project Structure & Module Organization
 
 `src/` contains the Next.js app and shared frontend code. Use `src/app/` for routes, `src/features/`
-for domain modules such as `auth`, `sessions`, and `objectives`, `src/components/` for reusable UI,
-and `src/lib/`, `src/hooks/`, `src/i18n/`, and `src/styles/` for shared utilities. `convex/`
-contains backend functions, workflows, helpers, and backend tests. End-to-end coverage lives in
-`tests/e2e/` and smoke checks in `tests/smoke/`. Manual Playwright flows are under `tests/manual/`.
+for domain modules such as `auth`, `organizations`, and `objectives`, `src/components/` for reusable UI,
+and `src/lib/`, `src/hooks/`, `src/i18n/`, and `src/styles/` for shared utilities. The root of
+`convex/` only holds files that register Convex functions (queries, mutations, actions) and the files
+Convex needs there (`schema.ts`, `http.ts`, `httpPolyfills.ts`, `convex.config.ts`,
+`auth.config.ts`). Everything else goes in `convex/features/<feature>/` (`validators.ts` for `v`
+validators, topic files for logic), or in `convex/shared/` when it is small and feature-agnostic;
+`shared/` never imports from `features/`. Backend tests live in `convex/tests/`. End-to-end coverage lives in
+`tests/e2e/`. Manual Playwright flows are under `tests/manual/`.
 Infrastructure files and Docker Compose stacks live in `infrastructure/`.
 
 ## Build, Test, and Development Commands
@@ -14,10 +18,13 @@ Infrastructure files and Docker Compose stacks live in `infrastructure/`.
 Use `pnpm` with Node `>=24.19.0`.
 
 - `pnpm build` / `pnpm start`: build and serve production output.
-- `pnpm lint`: run ESLint across the repo.
+- `pnpm lint`: type-aware oxlint across the repo, with the project rule `tfg/require-readable-spacing`
+  from `tools/oxlint/`, then ESLint on `convex/`.
 - `pnpm check-types`: `check-types:frontend-tests`, `check-types:app`, `check-types:tests`,
-  `check-types:playwright`, and `check-types:scripts`.
+  `check-types:playwright`, `check-types:scripts`, and `check-types:tools`.
 - `pnpm test`: `test:backend` then `test:frontend`.
+- `pnpm run checks`: `checks:static` (format, types, lint, Knip, translations, and peer
+  dependencies) then `pnpm test`.
 - `pnpm test:coverage`: both Vitest suites with coverage.
 - `pnpm test:e2e`: run Playwright against the local Docker e2e stack through
   `scripts/run-e2e-stack.ts`. `pnpm test:e2e:no-docker` runs the same suite with the Convex backend
@@ -41,7 +48,10 @@ in `camelCase` with a `use` prefix, and tests as `*.test.ts` or `*.spec.ts`. Use
 Vitest covers backend logic in `convex/tests/**/*.test.ts`; Playwright covers UI and integration
 flows in `tests/e2e/**/*.spec.ts`. Add or update tests alongside behavior changes. Run `pnpm test`
 for backend work and `pnpm test:e2e` for user-facing flows. Husky runs `format:check` and `lint`
-before commit. CI also checks types and executes both suites with coverage.
+before commit.
+
+Tag each test with the `@REQ-…`/`@INH-…` identifiers it covers (`{ tag: [...] }` in Playwright, the
+test name in Vitest).
 
 ## Security & Configuration Tips
 
@@ -63,7 +73,7 @@ Convex agent skills for common tasks can be installed by running `npx convex ai-
 
 <!-- BEGIN:nextjs-agent-rules -->
 
-# This is NOT the Next.js you know
+## This is NOT the Next.js you know
 
 This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
 

@@ -37,6 +37,7 @@ test.describe('Command Palette', () => {
             const organizationsItem = isolatedAuthenticatedPage.getByTestId(
                 'command-item-organizations'
             );
+
             await expect(organizationsItem).toBeVisible();
             await organizationsItem.click();
 

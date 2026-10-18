@@ -28,6 +28,7 @@ function getBrowserLocale(): SupportedLocale {
     if (localeCookie === 'es' || localeCookie === 'en') {
         return localeCookie;
     }
+
     return navigator.language.toLowerCase().startsWith('es') ? 'es' : 'en';
 }
 

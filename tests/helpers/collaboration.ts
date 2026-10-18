@@ -25,6 +25,7 @@ export async function setupCollaboratorInOrganization(
     const collaboratorUser = await createTestUser(page, {
         usePresentableName: true,
     });
+
     await page.goto('about:blank');
 
     await createOrganization(ownerPage, { name: organizationName });

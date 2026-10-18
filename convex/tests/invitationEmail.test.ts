@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { buildInvitationEmail, resolveEmailLocale } from '../utils';
+import { buildInvitationEmail, resolveEmailLocale } from '../features/email/templates';
 
 describe('invitation email helpers', () => {
     test('builds a transactional invitation email payload', () => {
@@ -35,6 +35,7 @@ describe('invitation email helpers', () => {
             role: 'member',
             locale: 'es',
         });
+
         expect(email.subject).toBe('Te han invitado a unirte a Acme');
         expect(email.text).toContain('Maria te ha invitado a unirte a Acme como miembro.');
         expect(email.text).toContain('https://app.example.com/invitations/invite_123');
@@ -44,6 +45,7 @@ describe('invitation email helpers', () => {
         const withCookie = new Request('https://app.example.com', {
             headers: { cookie: 'theme=dark; locale=es; other=1' },
         });
+
         expect(resolveEmailLocale(withCookie, 'en')).toBe('es');
         expect(resolveEmailLocale(new Request('https://app.example.com'), 'es')).toBe('es');
         expect(resolveEmailLocale(undefined, undefined)).toBe('en');

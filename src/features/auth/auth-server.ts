@@ -12,25 +12,32 @@ const { createContext, createCaller, handler } = convexBetterAuth({
     convexSiteUrl: NEXT_PUBLIC_CONVEX_SITE_URL,
     convexUrl: NEXT_PUBLIC_CONVEX_URL,
 });
+
 const createRSCContext = cache(async () =>
     createContext({
         headers: await headers(),
     })
 );
+
 const caller = createCaller(createRSCContext);
 const AUTH_REQUIRED_ERROR = 'AUTH_REQUIRED';
+
 export function isAuthRequiredError(error: unknown): boolean {
     return extractErrorCode(error) === AUTH_REQUIRED_ERROR;
 }
+
 async function withAuthOptions<Func extends FunctionReference<'query' | 'mutation'>>(
     args: ArgsAndOptions<Func, NextjsOptions>
 ): Promise<ArgsAndOptions<Func, NextjsOptions>> {
     const token = await getToken();
+
     if (!token) {
         throw new Error(AUTH_REQUIRED_ERROR);
     }
+
     const functionArgs = args[0] ?? {};
     const existingOptions = args[1];
+
     const nextArgs: ArgsAndOptions<Func, NextjsOptions> = [
         functionArgs,
         {
@@ -39,13 +46,17 @@ async function withAuthOptions<Func extends FunctionReference<'query' | 'mutatio
             url: NEXT_PUBLIC_CONVEX_URL,
         },
     ];
+
     return nextArgs;
 }
+
 export const getToken = () => caller.getToken();
+
 export async function fetchAuthQuery<Query extends FunctionReference<'query'>>(
     query: Query,
     ...args: ArgsAndOptions<Query, NextjsOptions>
 ): Promise<FunctionReturnType<Query>> {
     return fetchQuery(query, ...(await withAuthOptions(args)));
 }
+
 export { handler };

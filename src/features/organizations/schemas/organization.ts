@@ -22,4 +22,5 @@ export function savedOrganizationSchema(message: (key: OrganizationValidationKey
 }
 
 export type CreateOrganization = z.infer<ReturnType<typeof organizationSchema>>;
+
 export type SavedOrganization = z.infer<ReturnType<typeof savedOrganizationSchema>>;

@@ -42,10 +42,8 @@
         ".next-e2e-authenticated/dev/types/**/*.ts",
         ".next-e2e-setup/types/**/*.ts",
         ".next-e2e-setup/dev/types/**/*.ts",
-        ".next-e2e-admin/types/**/*.ts",
-        ".next-e2e-admin/dev/types/**/*.ts",
-        ".next-e2e-auth-and-smoke/types/**/*.ts",
-        ".next-e2e-auth-and-smoke/dev/types/**/*.ts"
+        ".next-e2e-auth/types/**/*.ts",
+        ".next-e2e-auth/dev/types/**/*.ts"
     ],
     "exclude": [
         "node_modules",

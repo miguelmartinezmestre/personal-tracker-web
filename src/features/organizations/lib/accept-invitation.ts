@@ -46,6 +46,7 @@ export async function acceptInvitationAndActivateOrganization(
     const acceptResult = await authClient.organization.acceptInvitation({
         invitationId: params.invitationId,
     });
+
     throwIfAuthClientError(acceptResult);
 
     const organizationId = resolveOrganizationIdAfterAccept(
@@ -55,6 +56,7 @@ export async function acceptInvitationAndActivateOrganization(
 
     try {
         await activateAcceptedOrganization(organizationId);
+
         return { status: 'acceptedAndActivated', organizationId };
     } catch {
         return {

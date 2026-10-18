@@ -89,8 +89,10 @@ export function SetupWizardActions({
     const t = useTranslations('Setup');
 
     let action: React.ReactNode;
+
     if (isLastStep) {
         let completeLabel: React.ReactNode;
+
         if (isSubmitting) {
             completeLabel = (
                 <>
@@ -101,6 +103,7 @@ export function SetupWizardActions({
         } else {
             completeLabel = t('navigation.complete');
         }
+
         action = (
             <Button
                 onClick={onComplete}

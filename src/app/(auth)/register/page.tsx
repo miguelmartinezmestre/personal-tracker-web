@@ -30,6 +30,7 @@ export default async function Register({ searchParams }: RegisterProps) {
     const settings = await client.query(api.setup.getPublicPlatformSettings);
     const registrationRequiresInvitation = settings?.registrationPolicy !== 'open';
     let invitationStatus = null;
+
     if (registrationRequiresInvitation && params.invitation) {
         invitationStatus = await client.query(api.organizations.getPublicInvitationStatus, {
             invitationId: params.invitation,
@@ -40,6 +41,7 @@ export default async function Register({ searchParams }: RegisterProps) {
         const invalidInvitation = Boolean(params.invitation);
         let invitationTitle: string;
         let invitationMessage: string;
+
         if (invalidInvitation) {
             invitationTitle = tSetup('registrationPolicy.invalidInvitation');
             invitationMessage = tSetup('registrationPolicy.invalidInvitationMessage');

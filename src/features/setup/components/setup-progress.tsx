@@ -20,16 +20,21 @@ export default function SetupProgress({ currentStep, isStepValid }: SetupProgres
             <ol className="flex items-center justify-between">
                 {stepLabels.map((label, index) => {
                     const stepName = SETUP_STEPS[index];
+
                     if (stepName === undefined) {
                         return null;
                     }
+
                     const isCompleted = index < currentStep && isStepValid(stepName);
                     const isCurrent = index === currentStep;
                     let stepLabelClassName = 'text-muted-foreground';
+
                     if (isCurrent) {
                         stepLabelClassName = 'font-medium text-foreground';
                     }
+
                     let connectorClassName = 'bg-muted-foreground/20';
+
                     if (index < currentStep) {
                         connectorClassName = 'bg-primary';
                     }

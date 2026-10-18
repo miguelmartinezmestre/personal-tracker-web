@@ -10,6 +10,7 @@ export function securityHeaders(options: {
     websocket.protocol = backend.protocol === 'https:' ? 'wss:' : 'ws:';
     const localWebsocket = new URL(site);
     localWebsocket.protocol = site.protocol === 'https:' ? 'wss:' : 'ws:';
+
     const directives = [
         "default-src 'self'",
         `script-src 'self' 'nonce-${options.nonce}' 'strict-dynamic'${options.development ? " 'unsafe-eval'" : ''}`,
@@ -22,9 +23,11 @@ export function securityHeaders(options: {
         "form-action 'self'",
         "frame-ancestors 'none'",
     ];
+
     if (site.protocol === 'https:' && !options.development) {
         directives.push('upgrade-insecure-requests');
     }
+
     return {
         'Content-Security-Policy': directives.join('; '),
         'X-Content-Type-Options': 'nosniff',

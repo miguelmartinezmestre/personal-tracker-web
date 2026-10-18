@@ -15,10 +15,12 @@ export const dynamic = 'force-dynamic';
 export default async function InvitationPage({ params }: InvitationPageProps) {
     const { token } = await params;
     const client = new ConvexHttpClient(NEXT_PUBLIC_CONVEX_URL);
+
     const { isValid, organizationName } = await client.query(
         api.organizations.getPublicInvitationStatus,
         { invitationId: token }
     );
+
     return (
         <InvitationContent
             token={token}

@@ -1,11 +1,12 @@
 import { describe, expect, test } from 'vitest';
-import { isSetupSecretLengthValid, isSetupSecretValid } from '../env';
+import { isSetupSecretLengthValid } from '../shared/env';
+import { isSetupSecretValid } from '../features/setup/secret';
 import {
     getAuthRouteRedirect,
     getInvitationCallbackPath,
     getInvitationIdFromCallbackPath,
     getSafeCallbackPath,
-} from '../utils';
+} from '../features/auth/redirects';
 
 describe('safe auth callbacks', () => {
     test.each([

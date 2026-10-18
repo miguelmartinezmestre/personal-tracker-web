@@ -44,6 +44,7 @@ export const test = base.extend<TestFixtures>({
             colorScheme,
             baseURL,
         });
+
         const page = await context.newPage();
         attachPageDiagnostics(page, 'isolated-session');
         const user = await createTestUser(page);

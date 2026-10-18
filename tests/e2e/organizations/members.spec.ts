@@ -9,6 +9,7 @@ async function openOrganizationDetail(page: Page, organizationName?: string): Pr
     await page.waitForURL(/\/dashboard\/organizations(?:\?|$)/, { timeout: 15000 });
 
     let orgRow;
+
     if (organizationName) {
         orgRow = page.getByTestId('table-row').filter({ hasText: organizationName }).first();
     } else {
@@ -39,6 +40,7 @@ test.describe('Organization Members', () => {
         { tag: ['@REQ-EQUIPOS-004'] },
         async ({ page, browser }) => {
             const collaborator = await setupCollaboratorInOrganization(browser, page);
+
             try {
                 await openOrganizationDetail(collaborator.page, collaborator.organizationName);
                 await collaborator.page.getByTestId('organization-leave').click();
@@ -72,6 +74,7 @@ test.describe('Organization Members', () => {
                 .getByTestId('table-row')
                 .filter({ hasText: collaborator.user.email })
                 .first();
+
             await expect(memberRow).toBeVisible({ timeout: 15000 });
 
             await memberRow.getByRole('button', { name: /^(delete|eliminar)$/i }).click();
@@ -96,6 +99,7 @@ test.describe('Organization Members', () => {
                 .getByTestId('table-row')
                 .filter({ hasText: collaborator.user.email })
                 .first();
+
             await expect(memberRow).toBeVisible({ timeout: 15000 });
 
             await memberRow.getByTestId('organization-member-edit-open').click();
@@ -117,6 +121,7 @@ test.describe('Organization Members', () => {
                 .getByTestId('table-row')
                 .filter({ hasText: /owner|propietario/i })
                 .first();
+
             await expect(ownerRow).toBeVisible({ timeout: 10000 });
             await expect(
                 ownerRow.getByRole('button', { name: /^(delete|eliminar)$/i })
@@ -156,10 +161,12 @@ test.describe('Organization Members', () => {
 
             try {
                 await openOrganizationDetail(page, collaborator.organizationName);
+
                 const memberRow = page
                     .getByTestId('table-row')
                     .filter({ hasText: collaborator.user.email })
                     .first();
+
                 await memberRow.getByTestId('organization-member-edit-open').click();
                 await page.getByTestId('organization-member-edit-role-select').click();
                 await page.getByRole('option', { name: /^(admin|administrador)$/i }).click();
@@ -189,10 +196,12 @@ test.describe('Organization Members', () => {
                 await collaborator.page.keyboard.press('Escape');
 
                 await collaborator.page.goto('/dashboard/organizations');
+
                 const organizationRow = collaborator.page
                     .getByTestId('table-row')
                     .filter({ hasText: collaborator.organizationName })
                     .first();
+
                 await expect(organizationRow).toBeVisible({ timeout: 10000 });
                 await expect(organizationRow.getByTestId('organization-edit-open')).toBeVisible();
                 await expect(organizationRow.getByTestId('organization-delete-button')).toHaveCount(

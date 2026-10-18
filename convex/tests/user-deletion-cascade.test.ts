@@ -15,20 +15,24 @@ describe('user deletion cascade', () => {
 
     test('removes memberships, deletes personal orgs and preserves a tombstone', async () => {
         const suffix = Math.random().toString(36).slice(2, 10);
+
         const owner = await createTestUser(t, {
             userId: `deleted-owner-${suffix}`,
             email: `deleted-owner-${suffix}@example.com`,
             name: 'Deleted owner',
         });
+
         const editor = await createTestUser(t, {
             userId: `successor-${suffix}`,
             email: `successor-${suffix}@example.com`,
             name: 'Successor',
         });
+
         const sharedOrganizationId = await createTestOrganization(t, {
             name: `Shared organization ${suffix}`,
             slug: `shared-organization-${suffix}`,
         });
+
         const personalOrganizationId = await createTestOrganization(t, {
             name: `Personal organization ${suffix}`,
             slug: `personal-organization-${suffix}`,
@@ -71,6 +75,7 @@ describe('user deletion cascade', () => {
                 .first(),
             tombstone: await ctx.db.get('user', owner.docId),
         }));
+
         expect(result.personalOrganization).toBeNull();
         expect(result.sharedOrganization).not.toBeNull();
         expect(result.ownerMembership).toBeNull();
@@ -81,6 +86,7 @@ describe('user deletion cascade', () => {
 
     test('promotes nobody when the organization keeps another owner', async () => {
         const suffix = Math.random().toString(36).slice(2, 10);
+
         const [deleted, olderMember, otherOwner] = await Promise.all(
             ['deleted', 'older', 'other'].map(label =>
                 createTestUser(t, {
@@ -90,17 +96,21 @@ describe('user deletion cascade', () => {
                 })
             )
         );
+
         const organizationId = await createTestOrganization(t, {
             name: `Two owners ${suffix}`,
             slug: `two-owners-${suffix}`,
         });
+
         await createTestMember(t, { organizationId, userId: deleted.docId, role: 'owner' });
+
         // Joined before the second owner, so the oldest remaining member is not an owner.
         const olderMembershipId = await createTestMember(t, {
             organizationId,
             userId: olderMember.docId,
             role: 'member',
         });
+
         await createTestMember(t, { organizationId, userId: otherOwner.docId, role: 'owner' });
 
         await t.mutation(internal.cascades.cascadeUserDeletionInternal, { userId: deleted.docId });

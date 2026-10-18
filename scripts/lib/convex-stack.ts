@@ -59,7 +59,9 @@ export type LocalStackCredentials = z.infer<typeof credentialsSchema>;
 
 export function readLocalStackCredentials(root: string): LocalStackCredentials | undefined {
     const path = join(root, '.local-stack', 'credentials.json');
+
     if (!existsSync(path)) return undefined;
+
     try {
         return credentialsSchema.parse(JSON.parse(readFileSync(path, 'utf8')));
     } catch {
@@ -85,6 +87,7 @@ function stripAnsi(value: string): string {
 
     while (index < value.length) {
         const currentCharCode = value.charCodeAt(index);
+
         if (currentCharCode === 27 && value[index + 1] === '[') {
             index += 2;
 
@@ -148,11 +151,14 @@ function extractAdminKey(rawOutput: string): string {
 async function preserveDeveloperEnv<T>(operation: () => Promise<T>): Promise<T> {
     const files = ['.env', '.env.local'].map(name => {
         const path = resolve(name);
+
         if (existsSync(path) && !lstatSync(path).isFile()) {
             throw new Error(`Expected a regular local environment file: ${name}`);
         }
+
         return { path, before: existsSync(path) ? readFileSync(path) : null };
     });
+
     try {
         return await operation();
     } finally {
@@ -170,12 +176,10 @@ export function createDockerComposeHelpers(config: {
     composeFile: string;
     projectName?: string;
     getComposeEnv: (extra?: NodeJS.ProcessEnv) => NodeJS.ProcessEnv;
-}): {
-    dockerCompose: (args: Array<string>, options?: RunCommandOptions) => Promise<void>;
-    dockerComposeCapture: (args: Array<string>, options?: RunCommandOptions) => Promise<string>;
-} {
+}) {
     function composeArgs(args: Array<string>): Array<string> {
         const base = ['compose', '-f', config.composeFile];
+
         if (config.projectName) {
             base.push('-p', config.projectName);
         }
@@ -230,6 +234,7 @@ export async function bootstrapConvexCredentials(
         'backend',
         './generate_admin_key.sh',
     ]);
+
     const adminKey = extractAdminKey(adminKeyOutput);
 
     return { adminKey, ...(await generateAuthSecrets(previous)) };
@@ -278,7 +283,7 @@ export function buildConvexCommandEnv(params: {
         JWKS: params.jwks,
         NEXT_PUBLIC_CONVEX_SITE_URL: params.convexSiteUrl,
         NEXT_PUBLIC_CONVEX_URL: params.convexUrl,
-        ...(params.allowLocalHttp ? { NEXT_PUBLIC_E2E_ALLOW_LOCAL_HTTP: 'true' } : {}),
+        NEXT_PUBLIC_E2E_ALLOW_LOCAL_HTTP: params.allowLocalHttp ? 'true' : undefined,
         NEXT_PUBLIC_SITE_URL: params.siteUrl,
         SITE_URL: params.siteUrl,
         ...smtpCaptureEnv(params.smtp ?? DOCKER_MAILDEV_SMTP),
@@ -301,7 +306,7 @@ function convexEnvValues(
     siteUrl: string,
     options?: { setupSecret?: string }
 ): Record<string, string> {
-    const values: Record<string, string | undefined> = {
+    const values = {
         SITE_URL: siteUrl,
         BETTER_AUTH_URL: siteUrl,
         SETUP_SECRET: options?.setupSecret,
@@ -309,6 +314,7 @@ function convexEnvValues(
         JWKS: commandEnv.JWKS,
         ...Object.fromEntries(SMTP_CAPTURE_KEYS.map(key => [key, commandEnv[key]])),
     };
+
     return Object.fromEntries(
         Object.entries(values).filter((entry): entry is [string, string] => entry[1] !== undefined)
     );
@@ -337,9 +343,11 @@ export async function configureConvexEnvAtOnce(
             if (/['\r\n]/.test(value)) {
                 throw new Error(`Cannot pass ${key} through a dotenv file`);
             }
+
             return `${key}='${value}'`;
         }
     );
+
     await runCommand(PNPM_COMMAND, ['exec', 'convex', 'env', 'set', '--force'], {
         env: commandEnv,
         input: `${lines.join('\n')}\n`,

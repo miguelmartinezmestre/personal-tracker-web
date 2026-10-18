@@ -40,13 +40,17 @@ function VerificationAlert({
 }) {
     const t = useTranslations('Invitations');
     let message = t('verificationRequiredDescription');
+
     if (verificationSent) {
         message = t('verificationEmailSent');
     }
+
     let buttonLabel = t('sendVerificationEmail');
+
     if (isPending) {
         buttonLabel = t('sendingVerificationEmail');
     }
+
     return (
         <Alert data-testid="invitation-verification-required">
             <ShieldCheck className="h-4 w-4" />
@@ -79,6 +83,7 @@ export function InvitationsList() {
     const [actionError, setActionError] = useState('');
     const [pendingOrganization, setPendingOrganization] = useState<string | null>(null);
     const router = useRouter();
+
     const activation = useMutation({
         mutationFn: activateAcceptedOrganization,
         onSuccess: () => {
@@ -86,6 +91,7 @@ export function InvitationsList() {
             router.refresh();
         },
     });
+
     const [verificationSent, setVerificationSent] = useState(false);
     const currentUser = session.data?.user;
     const requiresEmailVerification = Boolean(currentUser && !currentUser.emailVerified);
@@ -100,6 +106,7 @@ export function InvitationsList() {
                 email: currentUser.email,
                 callbackURL: '/dashboard/invitations',
             });
+
             throwIfAuthClientError(result);
         },
         onSuccess: () => {
@@ -114,8 +121,10 @@ export function InvitationsList() {
 
     async function handleAccept(invitationId: string, organizationId: string) {
         setActionError('');
+
         try {
             const result = await acceptInvitation.mutateAsync({ invitationId, organizationId });
+
             if (result.status === 'acceptedActivationPending') {
                 setPendingOrganization(result.organizationId);
             }
@@ -126,6 +135,7 @@ export function InvitationsList() {
 
     async function handleReject(invitationId: string) {
         setActionError('');
+
         try {
             await rejectInvitation.mutateAsync(invitationId);
         } catch {
@@ -150,6 +160,7 @@ export function InvitationsList() {
             </Alert>
         );
     }
+
     if (isLoading) {
         return (
             <div className="text-center py-8" data-testid="invitations-loading">
@@ -190,6 +201,7 @@ export function InvitationsList() {
     }
 
     let actionErrorAlert = null;
+
     if (actionError) {
         actionErrorAlert = (
             <Alert variant="destructive" data-testid="invitation-action-error">

@@ -18,11 +18,13 @@ describe('backend registration policy', () => {
 
     test('allows arbitrary email registration when policy is open', async () => {
         const t = initConvexTest();
+
         const setupUser = await createTestUser(t, {
             userId: 'registration-policy-open-setup-user',
             email: 'open-setup@example.com',
             name: 'Open policy setup user',
         });
+
         await t.run(async ctx => {
             await ctx.db.insert('platformSettings', {
                 platformName: 'Open platform',
@@ -44,11 +46,13 @@ describe('backend registration policy', () => {
     test('requires the exact active invitation for the same email', async () => {
         const t = initConvexTest();
         const now = Date.now();
+
         const inviter = await createTestUser(t, {
             userId: 'registration-policy-inviter',
             email: 'inviter@example.com',
             name: 'Inviter',
         });
+
         const organizationId = await createTestOrganization(t, {
             name: 'Invitation organization',
             slug: 'invitation-organization',
@@ -61,6 +65,7 @@ describe('backend registration policy', () => {
                 registrationPolicy: 'invitation-only',
                 setupCompletedBy: inviter.docId,
             });
+
             const active = await ctx.db.insert('invitation', {
                 organizationId,
                 email: 'invited@example.com',
@@ -70,6 +75,7 @@ describe('backend registration policy', () => {
                 createdAt: now,
                 inviterId: inviter.docId,
             });
+
             const otherEmail = await ctx.db.insert('invitation', {
                 organizationId,
                 email: 'other@example.com',
@@ -79,6 +85,7 @@ describe('backend registration policy', () => {
                 createdAt: now,
                 inviterId: inviter.docId,
             });
+
             const expired = await ctx.db.insert('invitation', {
                 organizationId,
                 email: 'expired@example.com',
@@ -88,6 +95,7 @@ describe('backend registration policy', () => {
                 createdAt: now,
                 inviterId: inviter.docId,
             });
+
             const cancelled = await ctx.db.insert('invitation', {
                 organizationId,
                 email: 'cancelled@example.com',

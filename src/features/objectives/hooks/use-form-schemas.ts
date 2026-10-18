@@ -6,10 +6,12 @@ import { objectiveFormSchema, progressFormSchema } from '@/features/objectives/s
 
 export function useObjectiveFormSchema(keptDeadline?: string) {
     const t = useTranslations('Objectives.validation');
+
     return useMemo(() => objectiveFormSchema(key => t(key), keptDeadline), [t, keptDeadline]);
 }
 
 export function useProgressFormSchema() {
     const t = useTranslations('UpdateProgress.validation');
+
     return useMemo(() => progressFormSchema(key => t(key)), [t]);
 }

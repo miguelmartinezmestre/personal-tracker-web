@@ -6,7 +6,7 @@ import { Textarea } from '@/components/ui/textarea';
 import type { TanStackFormApi } from '@/components/forms/form-types';
 import { getFieldErrors } from '@/components/forms/form-utils';
 import { todayDateInput } from '@/features/objectives/lib/dates';
-import { PROGRESS_COMMENT_MAX_LENGTH } from '@/convex/constants';
+import { PROGRESS_COMMENT_MAX_LENGTH } from '@/convex/features/objectives/constants';
 import { type ProgressFormValues } from '@/features/objectives/schemas/objective';
 import { useTranslations } from 'next-intl';
 
@@ -35,6 +35,7 @@ export function ProgressFields({
                     const errors = getFieldErrors(form, field);
                     const isInvalid = errors.length > 0;
                     const value = Number.isFinite(field.state.value) ? field.state.value : '';
+
                     return (
                         <Field data-invalid={isInvalid}>
                             <FieldLabel htmlFor={`${idPrefix}${field.name}`}>
@@ -69,6 +70,7 @@ export function ProgressFields({
                 {field => {
                     const errors = getFieldErrors(form, field);
                     const isInvalid = errors.length > 0;
+
                     return (
                         <Field data-invalid={isInvalid}>
                             <FieldLabel htmlFor={`${idPrefix}${field.name}`}>
@@ -94,6 +96,7 @@ export function ProgressFields({
                 {field => {
                     const errors = getFieldErrors(form, field);
                     const isInvalid = errors.length > 0;
+
                     return (
                         <Field data-invalid={isInvalid}>
                             <FieldLabel htmlFor={`${idPrefix}${field.name}`}>

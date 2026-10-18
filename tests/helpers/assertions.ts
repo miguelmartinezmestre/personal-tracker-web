@@ -13,6 +13,7 @@ export async function expectErrorAlert(page: Page, message?: string | RegExp): P
     // Only the destructive Alert variant: every Button and Input carries `aria-invalid:ring-destructive`.
     const errorAlert = page.locator('[data-slot="alert"][class*="text-destructive"]').first();
     await expect(errorAlert).toBeVisible();
+
     if (message) {
         await expect(errorAlert).toContainText(message);
     }

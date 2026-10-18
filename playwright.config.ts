@@ -46,19 +46,13 @@ export default defineConfig({
             dependencies: ['setup'],
             use: chromeProjectUse,
             testMatch: ['**/e2e/**'],
-            testIgnore: ['**/e2e/auth/**', '**/e2e/admin/**', '**/e2e/security/**'],
+            testIgnore: ['**/e2e/auth/**', '**/e2e/security/**'],
         },
         {
-            name: 'auth-and-smoke',
+            name: 'auth',
             dependencies: ['setup'],
             use: chromeProjectUse,
-            testMatch: ['**/e2e/auth/**', '**/e2e/security/**', '**/smoke/**'],
-        },
-        {
-            name: 'admin',
-            dependencies: ['setup'],
-            use: chromeProjectUse,
-            testMatch: ['**/e2e/admin/**'],
+            testMatch: ['**/e2e/auth/**', '**/e2e/security/**'],
         },
     ],
 

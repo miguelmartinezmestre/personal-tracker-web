@@ -5,7 +5,7 @@ import { adminClient } from 'better-auth/client/plugins';
 import { organizationClient } from 'better-auth/client/plugins';
 import { createAuthMutations } from 'kitcn/react';
 import { NEXT_PUBLIC_SITE_URL } from '@/lib/env';
-import { platformRoles } from '@/convex/utils';
+import { platformRoles } from '@/convex/features/auth/roles';
 
 const accountDeletionClient = () =>
     ({
@@ -16,9 +16,11 @@ const accountDeletionClient = () =>
                     method: 'POST',
                     body: { password },
                 });
+
                 if (!result.error) {
                     $store.notify('$sessionSignal');
                 }
+
                 return result;
             },
         }),

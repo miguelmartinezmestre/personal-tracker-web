@@ -25,15 +25,19 @@ export default function CategoryChart({ categories }: { categories: readonly Cat
     const t = useTranslations('DashboardHome.charts');
     const locale = useLocale();
     const categoryLabel = useCategoryLabel();
+
     const definition = useMemo(() => {
         const formatNumber = new Intl.NumberFormat(locale);
+
         const rows = categories.map(category => ({
             ...category,
             label: category.name === null ? t('uncategorized') : categoryLabel(category.name),
         }));
+
         // Counts are whole numbers, so the axis only offers integer ticks.
         const maxTotal = Math.max(1, ...rows.map(row => row.total));
         const step = Math.ceil(maxTotal / MAX_TICKS);
+
         const tickValues = Array.from(
             { length: Math.ceil(maxTotal / step) + 1 },
             (_, index) => index * step
@@ -67,9 +71,11 @@ export default function CategoryChart({ categories }: { categories: readonly Cat
                 use: tooltip,
                 content: ([point]) => {
                     const row = point?.datum;
+
                     if (!row) {
                         return { rows: [] };
                     }
+
                     return {
                         title: row.label,
                         color: row.color ?? FALLBACK_COLOR,

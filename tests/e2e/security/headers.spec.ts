@@ -15,11 +15,13 @@ test(
         expect(headers['x-content-type-options']).toBe('nosniff');
         expect(headers['referrer-policy']).toBe('strict-origin-when-cross-origin');
         expect(headers['permissions-policy']).toBeTruthy();
+
         const nonces = await page
             .locator('script[nonce]')
             .evaluateAll(scripts =>
                 scripts.map(script => (script instanceof HTMLScriptElement ? script.nonce : ''))
             );
+
         expect(nonces.length).toBeGreaterThan(0);
         expect(nonces.every(nonce => nonce.length > 0 && csp.includes(`'nonce-${nonce}'`))).toBe(
             true

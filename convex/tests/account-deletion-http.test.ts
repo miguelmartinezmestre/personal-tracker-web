@@ -6,23 +6,22 @@ import { createTestMember, createTestOrganization, createTestUser } from './test
 const ORIGIN = 'http://localhost:3000';
 const PASSWORD = 'ValidDeletionPassword123';
 
-function jsonRequest(body: Record<string, unknown>, cookie?: string): RequestInit {
-    return {
-        method: 'POST',
-        headers: {
-            'content-type': 'application/json',
-            origin: ORIGIN,
-            ...(cookie ? { cookie } : {}),
-        },
-        body: JSON.stringify(body),
-    };
+function jsonRequest(body: Record<string, string>, cookie?: string): RequestInit {
+    const headers = new Headers({ 'content-type': 'application/json', origin: ORIGIN });
+
+    if (cookie) headers.set('cookie', cookie);
+
+    return { method: 'POST', headers, body: JSON.stringify(body) };
 }
 
 function extractCookie(response: Response): string {
     const setCookie = response.headers.get('set-cookie');
+
     if (!setCookie) throw new Error('Expected Better Auth to set a session cookie');
     const cookie = setCookie.split(';', 1)[0];
+
     if (!cookie) throw new Error('Expected a non-empty Better Auth session cookie');
+
     return cookie;
 }
 
@@ -31,6 +30,7 @@ describe('soft-delete Better Auth endpoint', () => {
 
     async function createCredentialUser(role: 'user' | 'globalAdmin' = 'user') {
         const suffix = Math.random().toString(36).slice(2, 10);
+
         const user = await createTestUser(t, {
             userId: `http-delete-${suffix}`,
             email: `http-delete-${suffix}@example.com`,
@@ -38,10 +38,12 @@ describe('soft-delete Better Auth endpoint', () => {
             role,
             emailVerified: true,
         });
+
         const organizationId = await createTestOrganization(t, {
             name: `HTTP deletion org ${suffix}`,
             slug: `http-deletion-org-${suffix}`,
         });
+
         await createTestMember(t, {
             organizationId,
             userId: user.docId,
@@ -68,7 +70,9 @@ describe('soft-delete Better Auth endpoint', () => {
             '/api/auth/sign-in/email',
             jsonRequest({ email, password: PASSWORD })
         );
+
         expect(response.status, await response.clone().text()).toBe(200);
+
         return extractCookie(response);
     }
 
@@ -136,6 +140,7 @@ describe('soft-delete Better Auth endpoint', () => {
         expect(retainedUser?.deletedAt).toBeUndefined();
         await t.run(async ctx => {
             const settings = await ctx.db.query('platformSettings').first();
+
             if (settings) await ctx.db.delete('platformSettings', settings._id);
         });
     });

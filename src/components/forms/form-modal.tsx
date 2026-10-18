@@ -54,6 +54,7 @@ export default function FormModal<TFormValues extends object>({
         if (!nextOpen) {
             form.reset();
         }
+
         setOpenState(nextOpen);
     };
 
@@ -66,6 +67,7 @@ export default function FormModal<TFormValues extends object>({
                 // The mutation cache already reports the error; keep the dialog open to retry.
                 return;
             }
+
             setOpen(false);
         },
         onSubmitInvalid: () => focusFirstInvalidField(formRef.current),

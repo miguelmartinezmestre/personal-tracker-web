@@ -1,4 +1,5 @@
 'use client';
+
 import { PlusCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from '@/components/ui/field';
@@ -11,16 +12,13 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
-import {
-    OrganizationRole,
-    isOrganizationRoleValue,
-    type OrganizationRoleValue,
-} from '../types/roles';
+import { OrganizationRole, isOrganizationRoleValue } from '../types/roles';
 import { useTranslations } from 'next-intl';
 import { useTranslations as useTranslationsCommon } from 'next-intl';
 import { useUpdateOrganizationMember } from '@/features/organizations/hooks/use-organization-members';
 import FormModal from '@/components/forms/form-modal';
 import { getFieldErrors } from '@/components/forms/form-utils';
+
 export default function OrganizationMemberEditFormModal({
     defaultValues,
     canAssignOwner,
@@ -30,12 +28,15 @@ export default function OrganizationMemberEditFormModal({
 }) {
     const t = useTranslations('OrganizationMembers');
     const tCommon = useTranslationsCommon('Common');
+
     const roleOptions = [
         ...(canAssignOwner ? [{ value: OrganizationRole.OWNER, label: t('roles.owner') }] : []),
         { value: OrganizationRole.ADMIN, label: t('roles.admin') },
         { value: OrganizationRole.MEMBER, label: t('roles.member') },
     ];
+
     const updateOrganizationMember = useUpdateOrganizationMember();
+
     return (
         <FormModal<OrganizationMember>
             trigger={
@@ -57,6 +58,7 @@ export default function OrganizationMemberEditFormModal({
                 if (!isOrganizationRoleValue(values.role)) {
                     return;
                 }
+
                 await updateOrganizationMember.mutateAsync({
                     memberId: values.id,
                     organizationId: values.organizationId,
@@ -76,10 +78,8 @@ export default function OrganizationMemberEditFormModal({
                         {field => {
                             const errors = getFieldErrors(form, field);
                             const isInvalid = !!errors.length;
-                            let value = '';
-                            if (typeof field.state.value === 'string') {
-                                value = field.state.value;
-                            }
+                            const value = field.state.value;
+
                             return (
                                 <Field data-invalid={isInvalid}>
                                     <FieldLabel htmlFor={field.name}>{t('email')}</FieldLabel>
@@ -102,21 +102,16 @@ export default function OrganizationMemberEditFormModal({
                         {field => {
                             const errors = getFieldErrors(form, field);
                             const isInvalid = !!errors.length;
-                            let value = 'member';
-                            if (typeof field.state.value === 'string') {
-                                value = field.state.value;
-                            }
+                            const value = field.state.value;
+
                             return (
                                 <Field data-invalid={isInvalid}>
                                     <FieldLabel htmlFor={field.name}>{t('role')}</FieldLabel>
                                     <Select
                                         name={field.name}
                                         onValueChange={value => {
-                                            if (
-                                                typeof value === 'string' &&
-                                                isOrganizationRoleValue(value)
-                                            ) {
-                                                field.handleChange(value as OrganizationRoleValue);
+                                            if (value !== null && isOrganizationRoleValue(value)) {
+                                                field.handleChange(value);
                                             }
                                         }}
                                         value={value}

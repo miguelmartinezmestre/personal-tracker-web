@@ -1,230 +1,79 @@
-import { paginationOptsValidator, paginationResultValidator } from 'convex/server';
 import { ConvexError, v } from 'convex/values';
-import { internal } from './_generated/api';
-import type { Doc, Id } from './_generated/dataModel';
-import type { MutationCtx, QueryCtx } from './_generated/server';
-import { internalMutation } from './objectiveStats';
-import { mutationWithRLS, queryWithRLS } from './rls/wrappers';
-import { ERROR_CODES } from './constants';
+import { paginationOptsValidator } from 'convex/server';
+import { ERROR_CODES } from './shared/errorCodes';
 import {
-    canEditProgress,
-    canManageObjective,
-    completedAtWhenFinished,
-    currentValueAfterProgressChange,
-    measurementAfterBoundsChange,
+    measurement,
     objectiveTextFields,
-    progressComment,
-    progressHistoryPoints,
+    requireObjective,
     requireOrganizationId,
     resolvedObjectiveFields,
     roundStoredValue,
+    toObjectiveSummaries,
     toObjectiveSummary,
-    toProgressEntry,
-    type ObjectiveActor,
-} from './objectiveRecords';
-import { withPaginationLimits } from './utils';
-import { withNextPageCheck } from './pagination';
-
-const OBJECTIVE_DELETION_BATCH_SIZE = 50;
-// Progress dates are the UTC midnight of the user's local day, which can be up to UTC+14.
-const MAX_UTC_OFFSET_MS = 14 * 60 * 60 * 1000;
-const DAY_MS = 24 * 60 * 60 * 1000;
-
-function validateProgressDate(updateDate: number, now: number) {
-    if (updateDate > now + MAX_UTC_OFFSET_MS) {
-        throw new ConvexError(ERROR_CODES.FUTURE_DATE_NOT_ALLOWED);
-    }
-}
-
-// Deadlines are also the UTC midnight of a local day; the user's local date can trail the UTC
-// date by one day, so only dates before yesterday in UTC are certainly in the past.
-function validateDeadline(deadline: number, now: number) {
-    const startOfUtcDay = now - (now % DAY_MS);
-    if (deadline < startOfUtcDay - DAY_MS) {
-        throw new ConvexError(ERROR_CODES.DEADLINE_TOO_OLD);
-    }
-}
-
-function validateNonNegativeValue(value: number) {
-    if (!Number.isFinite(value)) {
-        throw new ConvexError(ERROR_CODES.VALUE_NOT_FINITE);
-    }
-    if (value < 0) {
-        throw new ConvexError(ERROR_CODES.VALUE_NEGATIVE);
-    }
-}
-
-// A progress entry of zero adds nothing to the objective.
-function validateProgressValue(value: number) {
-    validateNonNegativeValue(value);
-    if (value === 0) {
-        throw new ConvexError(ERROR_CODES.PROGRESS_NOT_POSITIVE);
-    }
-}
-
-function validateObjectiveValues(startValue: number, targetValue: number) {
-    validateNonNegativeValue(startValue);
-    if (!Number.isFinite(targetValue)) {
-        throw new ConvexError(ERROR_CODES.TARGET_NOT_FINITE);
-    }
-    if (targetValue < 0.001) {
-        throw new ConvexError(ERROR_CODES.TARGET_TOO_SMALL);
-    }
-    // An objective that starts at its target is born completed with nothing left to log.
-    if (startValue >= targetValue) {
-        throw new ConvexError(ERROR_CODES.START_AFTER_TARGET);
-    }
-}
-
-async function requireObjectiveInOrganization(
-    ctx: QueryCtx | MutationCtx,
-    objectiveId: Id<'objectives'>,
-    organizationId: Id<'organization'>
-): Promise<Doc<'objectives'>> {
-    const objective = await ctx.db.get('objectives', objectiveId);
-    if (!objective || objective.organizationId !== organizationId) {
-        throw new ConvexError(ERROR_CODES.OBJECTIVE_NOT_FOUND);
-    }
-    return objective;
-}
-
-function statusFromCurrentValue(currentValue: number, targetValue: number): 'active' | 'completed' {
-    if (currentValue >= targetValue) {
-        return 'completed';
-    }
-    return 'active';
-}
-
-const objectiveStatusValidator = v.union(v.literal('active'), v.literal('completed'));
-
-const objectiveSummaryValidator = v.object({
-    id: v.id('objectives'),
-    title: v.string(),
-    description: v.optional(v.string()),
-    categoryId: v.optional(v.id('categories')),
-    categoryName: v.optional(v.string()),
-    unit: v.optional(v.string()),
-    deadline: v.optional(v.number()),
-    startValue: v.number(),
-    currentValue: v.number(),
-    targetValue: v.number(),
-    status: objectiveStatusValidator,
-    completedAt: v.optional(v.number()),
-    progressPercent: v.number(),
-    createdAt: v.number(),
-    updatedAt: v.number(),
-    canManage: v.boolean(),
-});
-
-const progressEntryValidator = v.object({
-    id: v.id('progressUpdates'),
-    objectiveId: v.id('objectives'),
-    updatedValue: v.number(),
-    updateDate: v.number(),
-    comment: v.optional(v.string()),
-    createdAt: v.number(),
-    canEdit: v.boolean(),
-});
-
-const progressHistoryValidator = v.object({
-    points: v.array(
-        v.object({
-            id: v.id('progressUpdates'),
-            updateDate: v.number(),
-            value: v.number(),
-            delta: v.number(),
-            comment: v.optional(v.string()),
-        })
-    ),
-});
-
-const objectiveListValidator = paginationResultValidator(objectiveSummaryValidator);
-
-const progressListValidator = paginationResultValidator(progressEntryValidator);
-
-async function toObjectiveSummaries(
-    db: QueryCtx['db'],
-    actor: ObjectiveActor,
-    objectives: Doc<'objectives'>[]
-) {
-    const categoryNames = new Map<Id<'categories'>, string>();
-    for (const objective of objectives) {
-        if (objective.categoryId && !categoryNames.has(objective.categoryId)) {
-            const category = await db.get('categories', objective.categoryId);
-            if (category) {
-                categoryNames.set(objective.categoryId, category.name);
-            }
-        }
-    }
-    return objectives.map(objective => {
-        const categoryName = objective.categoryId
-            ? categoryNames.get(objective.categoryId)
-            : undefined;
-        return toObjectiveSummary(objective, categoryName, actor);
-    });
-}
+    validateCategory,
+} from './features/objectives/records';
+import { memberAccessFields, objectiveAccess } from './features/objectives/access';
+import { replaceUserGrants } from './features/objectives/grants';
+import { mutationWithRLS, queryWithRLS } from './features/authorization/wrappers';
+import {
+    accessLevelValidator,
+    deadlineFilterValidator,
+    objectiveDirectionValidator,
+    objectiveListValidator,
+    objectiveSummaryValidator,
+    userGrantValidator,
+} from './features/objectives/validators';
+import {
+    deadlineRange,
+    dueSoonDaysFor,
+    validateDeadline,
+    validateObjectiveValues,
+} from './features/objectives/rules';
+import { paginateObjectives, searchObjectives } from './features/objectives/listing';
 
 export const listObjectives = queryWithRLS({
     args: {
         status: v.optional(v.union(v.literal('all'), v.literal('active'), v.literal('completed'))),
+        // The category comes from the URL, so a malformed one just matches nothing.
+        categoryId: v.optional(v.string()),
+        deadline: v.optional(v.object({ filter: deadlineFilterValidator, today: v.number() })),
         search: v.optional(v.string()),
         paginationOpts: paginationOptsValidator,
     },
     returns: objectiveListValidator,
     handler: async (ctx, args) => {
         const organizationId = requireOrganizationId(ctx.organizationId);
-        const status = args.status ?? 'all';
+        const categoryId = args.categoryId && ctx.db.normalizeId('categories', args.categoryId);
+        let status = args.status ?? 'all';
+
+        // Only active objectives can be overdue.
+        if (args.deadline?.filter === 'overdue') {
+            if (status === 'completed') {
+                return { page: [], isDone: true, continueCursor: '' };
+            }
+
+            status = 'active';
+        }
+
+        if (categoryId === null) {
+            return { page: [], isDone: true, continueCursor: '' };
+        }
+
+        const filters = {
+            status,
+            categoryId: categoryId || undefined,
+            deadlineRange:
+                args.deadline && deadlineRange(args.deadline.filter, args.deadline.today),
+        };
+
         const search = args.search?.trim();
-        if (search) {
-            // Matches come by relevance, so the next-page check of the date indexes doesn't apply.
-            const result = await ctx.db
-                .query('objectives')
-                .withSearchIndex('search_title', q => {
-                    const inOrganization = q
-                        .search('title', search)
-                        .eq('organizationId', organizationId);
-                    return status === 'all' ? inOrganization : inOrganization.eq('status', status);
-                })
-                .paginate(withPaginationLimits(args.paginationOpts));
-            return { ...result, page: await toObjectiveSummaries(ctx.db, ctx, result.page) };
-        }
-        let indexed;
-        if (status === 'all') {
-            indexed = ctx.db
-                .query('objectives')
-                .withIndex('by_organization_createdAt', q =>
-                    q.eq('organizationId', organizationId)
-                );
-        } else {
-            indexed = ctx.db
-                .query('objectives')
-                .withIndex('by_organization_status_createdAt', q =>
-                    q.eq('organizationId', organizationId).eq('status', status)
-                );
-        }
-        const result = await indexed
-            .order('desc')
-            .paginate(withPaginationLimits(args.paginationOpts));
-        return await withNextPageCheck(
-            ctx.db,
-            status === 'all'
-                ? {
-                      table: 'objectives',
-                      index: 'by_organization_createdAt',
-                      prefix: [organizationId],
-                      indexKey: doc => [doc.organizationId, doc.createdAt],
-                      paginationOpts: args.paginationOpts,
-                  }
-                : {
-                      table: 'objectives',
-                      index: 'by_organization_status_createdAt',
-                      prefix: [organizationId, status],
-                      indexKey: doc => [doc.organizationId, doc.status, doc.createdAt],
-                      paginationOpts: args.paginationOpts,
-                  },
-            result,
-            await toObjectiveSummaries(ctx.db, ctx, result.page)
-        );
+
+        // Matches come by relevance, so the next-page check of the indexes doesn't apply.
+        const result = search
+            ? await searchObjectives(ctx.db, organizationId, search, filters, args.paginationOpts)
+            : await paginateObjectives(ctx.db, organizationId, filters, args.paginationOpts);
+
+        return { ...result, page: await toObjectiveSummaries(ctx.db, ctx, result.page) };
     },
 });
 
@@ -235,17 +84,31 @@ export const getObjective = queryWithRLS({
     handler: async (ctx, args) => {
         const organizationId = requireOrganizationId(ctx.organizationId);
         const objectiveId = ctx.db.normalizeId('objectives', args.id);
+
         if (!objectiveId) {
             return null;
         }
+
+        // Objectives the user may not see are filtered out by row-level security.
         const objective = await ctx.db.get('objectives', objectiveId);
-        if (!objective || objective.organizationId !== organizationId) {
+
+        if (
+            !objective ||
+            objective.organizationId !== organizationId ||
+            objective.deletedAt !== undefined
+        ) {
             return null;
         }
+
         const category = objective.categoryId
             ? await ctx.db.get('categories', objective.categoryId)
             : null;
-        return toObjectiveSummary(objective, category?.name, ctx);
+
+        return toObjectiveSummary(
+            objective,
+            category?.name,
+            await objectiveAccess(ctx.db, ctx, objective)
+        );
     },
 });
 
@@ -256,45 +119,57 @@ export const createObjective = mutationWithRLS({
         categoryId: v.optional(v.id('categories')),
         unit: v.optional(v.string()),
         deadline: v.optional(v.number()),
+        dueSoonDays: v.optional(v.number()),
+        direction: v.optional(objectiveDirectionValidator),
         startValue: v.number(),
         targetValue: v.number(),
+        // By default every member can see the objective but not edit it (decision 3).
+        memberAccess: v.optional(accessLevelValidator),
+        users: v.optional(v.array(userGrantValidator)),
     },
     returns: v.id('objectives'),
     handler: async (ctx, args) => {
         const organizationId = requireOrganizationId(ctx.organizationId);
+
         if (!(await ctx.db.get('organization', organizationId))) {
             throw new ConvexError(ERROR_CODES.NO_ACTIVE_ORG);
         }
-        const now = Date.now();
-        const { title, description, unit } = objectiveTextFields(args);
-        if (
-            args.categoryId &&
-            (await ctx.db.get('categories', args.categoryId))?.organizationId !== organizationId
-        ) {
-            throw new ConvexError(ERROR_CODES.CATEGORY_NOT_FOUND);
-        }
 
-        validateObjectiveValues(args.startValue, args.targetValue);
+        const now = Date.now();
+        const direction = args.direction ?? 'increase';
+        const { title, description, unit } = objectiveTextFields(args);
+        await validateCategory(ctx.db, args.categoryId, organizationId);
+        validateObjectiveValues(direction, args.startValue, args.targetValue);
+
         if (args.deadline !== undefined) {
             validateDeadline(args.deadline, now);
         }
-        const status = statusFromCurrentValue(args.startValue, args.targetValue);
-        return await ctx.db.insert('objectives', {
+
+        const objectiveId = await ctx.db.insert('objectives', {
             organizationId,
             createdBy: ctx.userId,
             title,
-            ...(description !== undefined ? { description } : {}),
-            ...(args.categoryId !== undefined ? { categoryId: args.categoryId } : {}),
-            ...(unit !== undefined ? { unit } : {}),
-            ...(args.deadline !== undefined ? { deadline: args.deadline } : {}),
+            description,
+            categoryId: args.categoryId,
+            unit,
+            deadline: args.deadline,
+            dueSoonDays: dueSoonDaysFor(args.deadline, args.dueSoonDays),
+            direction,
+            ...memberAccessFields(args.memberAccess ?? 'view'),
             startValue: args.startValue,
             currentValue: args.startValue,
             targetValue: args.targetValue,
-            status,
-            ...(status === 'completed' ? { completedAt: now } : {}),
+            status: 'active',
             createdAt: now,
             updatedAt: now,
         });
+
+        if (args.users?.length) {
+            const { objective } = await requireObjective(ctx.db, ctx, objectiveId);
+            await replaceUserGrants(ctx.db, objective, args.users, ctx.userId, now);
+        }
+
+        return objectiveId;
     },
 });
 
@@ -306,318 +181,81 @@ export const updateObjective = mutationWithRLS({
         categoryId: v.optional(v.union(v.id('categories'), v.null())),
         unit: v.optional(v.union(v.string(), v.null())),
         deadline: v.optional(v.union(v.number(), v.null())),
+        dueSoonDays: v.optional(v.number()),
+        direction: v.optional(objectiveDirectionValidator),
         startValue: v.optional(v.number()),
         targetValue: v.optional(v.number()),
     },
     returns: objectiveSummaryValidator,
     handler: async (ctx, args) => {
-        const organizationId = requireOrganizationId(ctx.organizationId);
-        const existing = await requireObjectiveInOrganization(ctx, args.id, organizationId);
-        if (!canManageObjective(ctx, existing)) {
+        requireOrganizationId(ctx.organizationId);
+        const { objective: existing, access } = await requireObjective(ctx.db, ctx, args.id);
+
+        if (!access.canEdit) {
             throw new ConvexError(ERROR_CODES.NOT_AUTHORIZED_OBJECTIVE);
         }
+
+        if (existing.status === 'completed') {
+            throw new ConvexError(ERROR_CODES.OBJECTIVE_ALREADY_COMPLETED);
+        }
+
         const now = Date.now();
-        const { title, description, unit, categoryId, deadline, startValue, targetValue } =
-            resolvedObjectiveFields(existing, args);
-        validateObjectiveValues(startValue, targetValue);
+        const fields = resolvedObjectiveFields(existing, args);
+        validateObjectiveValues(fields.direction, fields.startValue, fields.targetValue);
+
         // An objective whose deadline already passed can still be edited without moving it.
-        if (deadline !== undefined && deadline !== existing.deadline) {
-            validateDeadline(deadline, now);
+        if (fields.deadline !== undefined && fields.deadline !== existing.deadline) {
+            validateDeadline(fields.deadline, now);
         }
-        if (
-            categoryId &&
-            (await ctx.db.get('categories', categoryId))?.organizationId !== organizationId
-        ) {
-            throw new ConvexError(ERROR_CODES.CATEGORY_NOT_FOUND);
-        }
+
+        await validateCategory(ctx.db, fields.categoryId, existing.organizationId);
+
+        // A new start moves the recorded progress with it; the new bounds may already be reached.
+        const current = measurement(
+            fields,
+            roundStoredValue(existing.currentValue - existing.startValue + fields.startValue),
+            now
+        );
 
         await ctx.db.replace('objectives', args.id, {
             organizationId: existing.organizationId,
             createdBy: existing.createdBy,
-            title,
-            ...(description !== undefined ? { description } : {}),
-            ...(categoryId !== undefined ? { categoryId } : {}),
-            ...(unit !== undefined ? { unit } : {}),
-            ...(deadline !== undefined ? { deadline } : {}),
-            startValue,
-            currentValue: existing.currentValue,
-            targetValue,
-            status: existing.status,
-            ...(existing.completedAt !== undefined ? { completedAt: existing.completedAt } : {}),
+            memberCanView: existing.memberCanView,
+            memberCanEdit: existing.memberCanEdit,
+            ...fields,
+            dueSoonDays: dueSoonDaysFor(fields.deadline, fields.dueSoonDays),
+            ...current,
             createdAt: existing.createdAt,
             updatedAt: now,
         });
-        const measurement = measurementAfterBoundsChange(existing, startValue, targetValue, now);
-        if (measurement) {
-            await ctx.db.patch('objectives', args.id, {
-                currentValue: measurement.currentValue,
-                status: measurement.status,
-                updatedAt: now,
-                completedAt: measurement.completedAt,
-            });
-        }
-        const updated = await ctx.db.get('objectives', args.id);
-        if (!updated) {
-            throw new ConvexError(ERROR_CODES.OBJECTIVE_NOT_FOUND);
-        }
-        const category = updated.categoryId
-            ? await ctx.db.get('categories', updated.categoryId)
+
+        const updated = await requireObjective(ctx.db, ctx, args.id);
+
+        const category = updated.objective.categoryId
+            ? await ctx.db.get('categories', updated.objective.categoryId)
             : null;
-        return toObjectiveSummary(updated, category?.name, ctx);
+
+        return toObjectiveSummary(updated.objective, category?.name, updated.access);
     },
 });
 
+// Deleting moves the objective to the trash, where it keeps its data (INH-PAP-01).
 export const deleteObjective = mutationWithRLS({
     args: { id: v.id('objectives') },
     returns: v.null(),
     handler: async (ctx, args) => {
-        const organizationId = requireOrganizationId(ctx.organizationId);
-        const objective = await requireObjectiveInOrganization(ctx, args.id, organizationId);
-        if (!canManageObjective(ctx, objective)) {
+        requireOrganizationId(ctx.organizationId);
+        const { access } = await requireObjective(ctx.db, ctx, args.id);
+
+        if (!access.canManage) {
             throw new ConvexError(ERROR_CODES.NOT_AUTHORIZED_OBJECTIVE);
         }
-        const rows = await ctx.db
-            .query('progressUpdates')
-            .withIndex('by_objective_date', q => q.eq('objective', args.id))
-            .take(OBJECTIVE_DELETION_BATCH_SIZE);
-        for (const row of rows) {
-            await ctx.db.delete('progressUpdates', row._id);
-        }
-        if (rows.length === OBJECTIVE_DELETION_BATCH_SIZE) {
-            await ctx.scheduler.runAfter(0, internal.objectives.continueDeleteObjective, {
-                objectiveId: args.id,
-            });
-        } else {
-            await ctx.db.delete('objectives', args.id);
-        }
-        return null;
-    },
-});
 
-export const continueDeleteObjective = internalMutation({
-    args: { objectiveId: v.id('objectives') },
-    returns: v.null(),
-    handler: async (ctx, args) => {
-        const rows = await ctx.db
-            .query('progressUpdates')
-            .withIndex('by_objective_date', q => q.eq('objective', args.objectiveId))
-            .take(OBJECTIVE_DELETION_BATCH_SIZE);
-        for (const row of rows) {
-            await ctx.db.delete('progressUpdates', row._id);
-        }
-        if (rows.length === OBJECTIVE_DELETION_BATCH_SIZE) {
-            await ctx.scheduler.runAfter(0, internal.objectives.continueDeleteObjective, {
-                objectiveId: args.objectiveId,
-            });
-        } else {
-            const objective = await ctx.db.get('objectives', args.objectiveId);
-            if (objective) {
-                await ctx.db.delete('objectives', args.objectiveId);
-            }
-        }
-        return null;
-    },
-});
-
-export const listProgress = queryWithRLS({
-    args: {
-        objectiveId: v.id('objectives'),
-        paginationOpts: paginationOptsValidator,
-    },
-    returns: progressListValidator,
-    handler: async (ctx, args) => {
-        const organizationId = requireOrganizationId(ctx.organizationId);
-        const objective = await requireObjectiveInOrganization(
-            ctx,
-            args.objectiveId,
-            organizationId
-        );
-        const result = await ctx.db
-            .query('progressUpdates')
-            .withIndex('by_objective_date', q => q.eq('objective', objective._id))
-            .order('desc')
-            .paginate(withPaginationLimits(args.paginationOpts));
-        return await withNextPageCheck(
-            ctx.db,
-            {
-                table: 'progressUpdates',
-                index: 'by_objective_date',
-                prefix: [objective._id],
-                indexKey: doc => [doc.objective, doc.updateDate],
-                paginationOpts: args.paginationOpts,
-            },
-            result,
-            result.page.map(entry =>
-                toProgressEntry(
-                    entry,
-                    entry.createdBy === ctx.userId || canManageObjective(ctx, objective)
-                )
-            )
-        );
-    },
-});
-
-export const getProgressHistory = queryWithRLS({
-    args: { objectiveId: v.id('objectives') },
-    returns: progressHistoryValidator,
-    handler: async (ctx, args) => {
-        const organizationId = requireOrganizationId(ctx.organizationId);
-        const objective = await requireObjectiveInOrganization(
-            ctx,
-            args.objectiveId,
-            organizationId
-        );
-        const newestFirst: Doc<'progressUpdates'>[] = [];
-        for await (const entry of ctx.db
-            .query('progressUpdates')
-            .withIndex('by_objective_date', q => q.eq('objective', objective._id))
-            .order('desc')) {
-            newestFirst.push(entry);
-        }
-        return { points: progressHistoryPoints(objective, newestFirst) };
-    },
-});
-
-export const createProgress = mutationWithRLS({
-    args: {
-        objectiveId: v.id('objectives'),
-        updatedValue: v.number(),
-        updateDate: v.number(),
-        comment: v.optional(v.string()),
-    },
-    returns: progressEntryValidator,
-    handler: async (ctx, args) => {
-        const organizationId = requireOrganizationId(ctx.organizationId);
-        const objective = await requireObjectiveInOrganization(
-            ctx,
-            args.objectiveId,
-            organizationId
-        );
-        const now = Date.now();
-
-        if (objective.status === 'completed') {
-            throw new ConvexError(ERROR_CODES.OBJECTIVE_ALREADY_COMPLETED);
-        }
-
-        validateProgressValue(args.updatedValue);
-        validateProgressDate(args.updateDate, now);
-        const currentValue = currentValueAfterProgressChange(objective, null, args.updatedValue);
-        const comment = progressComment(args.comment);
-        const progressId = await ctx.db.insert('progressUpdates', {
-            objective: objective._id,
-            organizationId,
-            createdBy: ctx.userId,
-            updatedValue: args.updatedValue,
-            updateDate: args.updateDate,
-            ...(comment !== undefined ? { comment } : {}),
-            createdAt: now,
-            updatedAt: now,
+        await ctx.db.patch('objectives', args.id, {
+            deletedAt: Date.now(),
+            deletedBy: ctx.userId,
         });
-        const status = statusFromCurrentValue(currentValue, objective.targetValue);
-        await ctx.db.patch('objectives', objective._id, {
-            currentValue,
-            status,
-            updatedAt: now,
-            completedAt: completedAtWhenFinished(status, now, objective),
-        });
-        const created = await ctx.db.get('progressUpdates', progressId);
-        if (!created) {
-            throw new ConvexError(ERROR_CODES.PROGRESS_NOT_FOUND);
-        }
-        return toProgressEntry(created, true);
-    },
-});
 
-export const updateProgress = mutationWithRLS({
-    args: {
-        id: v.id('progressUpdates'),
-        updatedValue: v.number(),
-        updateDate: v.number(),
-        comment: v.optional(v.union(v.string(), v.null())),
-    },
-    returns: progressEntryValidator,
-    handler: async (ctx, args) => {
-        const organizationId = requireOrganizationId(ctx.organizationId);
-        const existing = await ctx.db.get('progressUpdates', args.id);
-        if (!existing || existing.organizationId !== organizationId) {
-            throw new ConvexError(ERROR_CODES.PROGRESS_NOT_FOUND);
-        }
-        const objective = await requireObjectiveInOrganization(
-            ctx,
-            existing.objective,
-            organizationId
-        );
-        if (!canEditProgress(ctx, existing, objective)) {
-            throw new ConvexError(ERROR_CODES.NOT_AUTHORIZED_PROGRESS);
-        }
-        validateProgressValue(args.updatedValue);
-        const now = Date.now();
-        validateProgressDate(args.updateDate, now);
-        const currentValue = currentValueAfterProgressChange(
-            objective,
-            existing.updatedValue,
-            args.updatedValue
-        );
-        let comment: string | undefined;
-        if (args.comment === undefined) {
-            comment = existing.comment;
-        } else {
-            comment = progressComment(args.comment);
-        }
-        await ctx.db.replace('progressUpdates', args.id, {
-            objective: existing.objective,
-            organizationId: existing.organizationId,
-            createdBy: existing.createdBy,
-            updatedValue: args.updatedValue,
-            updateDate: args.updateDate,
-            ...(comment !== undefined ? { comment } : {}),
-            createdAt: existing.createdAt,
-            updatedAt: now,
-        });
-        const status = statusFromCurrentValue(currentValue, objective.targetValue);
-        await ctx.db.patch('objectives', objective._id, {
-            currentValue,
-            status,
-            updatedAt: now,
-            completedAt: completedAtWhenFinished(status, now, objective),
-        });
-        const updated = await ctx.db.get('progressUpdates', args.id);
-        if (!updated) {
-            throw new ConvexError(ERROR_CODES.PROGRESS_NOT_FOUND);
-        }
-        return toProgressEntry(updated, true);
-    },
-});
-
-export const deleteProgress = mutationWithRLS({
-    args: { id: v.id('progressUpdates') },
-    returns: v.null(),
-    handler: async (ctx, args) => {
-        const organizationId = requireOrganizationId(ctx.organizationId);
-        const existing = await ctx.db.get('progressUpdates', args.id);
-        if (!existing || existing.organizationId !== organizationId) {
-            throw new ConvexError(ERROR_CODES.PROGRESS_NOT_FOUND);
-        }
-        const objective = await requireObjectiveInOrganization(
-            ctx,
-            existing.objective,
-            organizationId
-        );
-        if (!canEditProgress(ctx, existing, objective)) {
-            throw new ConvexError(ERROR_CODES.NOT_AUTHORIZED_PROGRESS);
-        }
-        await ctx.db.delete('progressUpdates', args.id);
-        const now = Date.now();
-        const currentValue = roundStoredValue(
-            Math.max(objective.startValue, objective.currentValue - existing.updatedValue)
-        );
-        const status = statusFromCurrentValue(currentValue, objective.targetValue);
-        await ctx.db.patch('objectives', objective._id, {
-            currentValue,
-            status,
-            updatedAt: now,
-            completedAt: completedAtWhenFinished(status, now, objective),
-        });
         return null;
     },
 });

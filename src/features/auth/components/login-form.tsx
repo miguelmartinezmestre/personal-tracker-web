@@ -17,16 +17,18 @@ import { authClient } from '@/features/auth/client';
 import { useSignOutMutationOptions } from '@/features/auth/client';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { useFormSubmit } from '@/hooks/use-form-submit';
-import { getSafeCallbackPath } from '@/convex/utils';
+import { getSafeCallbackPath } from '@/convex/features/auth/redirects';
 import { useHydrated } from '@/hooks/use-hydrated';
 import { getFieldErrors } from '@/components/forms/form-utils';
 import { api } from '@/convex/_generated/api';
 import { convexQuery } from '@convex-dev/react-query';
 import { resolveErrorMessage } from '@/lib/error-messages';
+
 interface LoginFormProps {
     showPasswordResetSuccess?: boolean;
     callbackUrl?: string;
 }
+
 export default function LoginForm({
     showPasswordResetSuccess = false,
     callbackUrl,
@@ -36,17 +38,21 @@ export default function LoginForm({
     const locale = useLocale() === 'es' ? 'es' : 'en';
     const t = useTranslations('HomePage');
     const tCommon = useTranslations('Common');
+
     const loginSchema = createLoginSchema({
         invalidEmail: tCommon('validation.invalidEmail'),
         shortPassword: tCommon('validation.minimumCharacters', { count: 8 }),
     });
+
     const [loginError, setLoginError] = useState('');
     const session = useQuery(convexQuery(api.organizations.getCurrentSession, {}));
     const signOutMutation = useMutation(useSignOutMutationOptions());
+
     const loginDefaultValues: LoginFormValues = {
         email: '',
         password: '',
     };
+
     const form = useForm({
         defaultValues: loginDefaultValues,
         validators: {
@@ -57,10 +63,12 @@ export default function LoginForm({
             await onSubmit(value);
         },
     });
+
     async function handleSignIn(values: LoginFormValues) {
         if (session.data?.user) {
             await signOutMutation.mutateAsync();
         }
+
         setLoginError('');
         await authClient.signIn.email(
             {
@@ -77,7 +85,9 @@ export default function LoginForm({
             }
         );
     }
+
     const { submit: onSubmit, isSubmitting } = useFormSubmit(handleSignIn);
+
     return (
         <form
             action={() => {
@@ -105,6 +115,7 @@ export default function LoginForm({
                 {field => {
                     const errors = getFieldErrors(form, field);
                     const isInvalid = !!errors.length;
+
                     return (
                         <Field data-invalid={isInvalid}>
                             <FieldLabel htmlFor={field.name} className="text-foreground">
@@ -133,6 +144,7 @@ export default function LoginForm({
                 {field => {
                     const errors = getFieldErrors(form, field);
                     const isInvalid = !!errors.length;
+
                     return (
                         <Field data-invalid={isInvalid}>
                             <FieldLabel htmlFor={field.name} className="text-foreground">

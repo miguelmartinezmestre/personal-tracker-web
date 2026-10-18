@@ -123,9 +123,11 @@ const stepValidators: Record<SetupStep, (data: SetupData) => boolean> = {
     organization: data => organizationSchema.safeParse(data.organization).success,
     categories: data => {
         const categories = data.categories;
+
         if (!Array.isArray(categories) || categories.length === 0) {
             return false;
         }
+
         return categories.every(category => setupCategorySchema.safeParse(category).success);
     },
     registration: data => registrationPolicySchema.safeParse(data.registration).success,
@@ -134,9 +136,11 @@ const stepValidators: Record<SetupStep, (data: SetupData) => boolean> = {
 
 function readSetupStep(index: number): SetupStep {
     const step = SETUP_STEPS[index];
+
     if (step === undefined) {
         throw new Error('Invalid setup step index');
     }
+
     return step;
 }
 
@@ -162,18 +166,23 @@ export function useSetupWizard() {
             | [step: 'registration', data: Partial<RegistrationPolicy>]
     ) {
         const [step, data] = args;
+
         switch (step) {
             case 'platform':
                 dispatch({ type: 'UPDATE_PLATFORM', data });
+
                 return;
             case 'admin':
                 dispatch({ type: 'UPDATE_ADMIN', data });
+
                 return;
             case 'organization':
                 dispatch({ type: 'UPDATE_ORGANIZATION', data });
+
                 return;
             case 'categories':
                 dispatch({ type: 'UPDATE_CATEGORIES', data });
+
                 return;
             case 'registration':
                 dispatch({ type: 'UPDATE_REGISTRATION', data });

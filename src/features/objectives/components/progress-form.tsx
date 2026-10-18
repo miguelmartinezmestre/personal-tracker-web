@@ -21,7 +21,7 @@ export default function ProgressForm({
     targetValue,
     unit,
 }: {
-    objectiveId: string;
+    objectiveId: Id<'objectives'>;
     currentValue: number;
     targetValue: number;
     unit?: string | undefined;
@@ -30,9 +30,11 @@ export default function ProgressForm({
     const tCommon = useTranslations('Common');
     const formSchema = useProgressFormSchema();
     const formRef = useRef<HTMLFormElement>(null);
+
     const createProgress = useMutation({
         mutationFn: useConvexMutation(api.objectives.createProgress),
     });
+
     const form = useForm({
         defaultValues: {
             updatedValue: 1,
@@ -45,24 +47,27 @@ export default function ProgressForm({
         },
         onSubmit: async ({ value, formApi }) => {
             const updateDate = dateInputToUtcTimestamp(value.updateDate);
+
             if (updateDate === undefined) {
                 return;
             }
-            const comment = value.comment.trim();
+
             try {
                 await createProgress.mutateAsync({
-                    objectiveId: objectiveId as Id<'objectives'>,
+                    objectiveId,
                     updatedValue: value.updatedValue,
                     updateDate,
-                    ...(comment ? { comment } : {}),
+                    comment: value.comment.trim() || undefined,
                 });
             } catch {
                 // The mutation cache already reports the error; keep the values to retry.
                 return;
             }
+
             // Same 15-digit rounding as the stored total, so 0.7 + 0.1 reaches a target of 0.8.
             const reachedTarget =
                 Number((currentValue + value.updatedValue).toPrecision(15)) >= targetValue;
+
             toast.success(reachedTarget ? t('toast.completed') : t('toast.created'));
             formApi.reset();
         },

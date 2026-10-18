@@ -41,6 +41,7 @@ export default function OrganizationsTable() {
             id: 'update-organization',
             cell: ({ row }) => {
                 const organizationRow = row.original;
+
                 if (organizationRow.isPersonal || !isOrganizationAdminRole(organizationRow.role)) {
                     return null;
                 }
@@ -53,6 +54,7 @@ export default function OrganizationsTable() {
             id: 'delete',
             cell: ({ row }) => {
                 const organizationRow = row.original;
+
                 if (organizationRow.isPersonal || !isOrganizationOwnerRole(organizationRow.role)) {
                     return null;
                 }

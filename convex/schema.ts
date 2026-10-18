@@ -1,6 +1,6 @@
 import { defineSchema, defineTable } from 'convex/server';
 import { v } from 'convex/values';
-import authSchema from './authSchema';
+import authSchema from './features/auth/authSchema';
 
 const auditPrimitive = v.union(v.string(), v.number(), v.boolean(), v.null());
 

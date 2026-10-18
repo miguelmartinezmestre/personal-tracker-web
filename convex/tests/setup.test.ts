@@ -2,7 +2,7 @@ import { describe, expect, test } from 'vitest';
 import { api } from '../_generated/api';
 import { initConvexTest } from './test.helper';
 import { createTestUser, createTestOrganization, createTestMember } from './test.helpers';
-import { ERROR_CODES } from '../constants';
+import { ERROR_CODES } from '../shared/errorCodes';
 
 describe('convex setup', () => {
     describe('getPublicPlatformSettings', () => {
@@ -231,18 +231,22 @@ describe('convex setup', () => {
             const updatedUser = await t.run(async ctx => {
                 return await ctx.db.get('user', user.docId);
             });
+
             expect(updatedUser?.role).toBe('globalAdmin');
 
             // The existing non-personal organization is renamed, not replaced.
             expect(result.organizationId).toBe(orgId);
+
             const organization = await t.run(async ctx => {
                 return await ctx.db.get('organization', result.organizationId);
             });
+
             expect(organization?.name).toBe('My Company');
 
             const categories = await t.run(async ctx => {
                 return await ctx.db.query('categories').collect();
             });
+
             expect(categories).toHaveLength(2);
             expect(categories.map(category => category.name)).toContain('Health');
             expect(categories.map(category => category.name)).toContain('Career');
@@ -250,6 +254,7 @@ describe('convex setup', () => {
             const settings = await t.run(async ctx => {
                 return await ctx.db.query('platformSettings').first();
             });
+
             expect(settings?.platformName).toBe('My Platform');
             expect(settings?.defaultLanguage).toBe('es');
             expect(settings?.registrationPolicy).toBe('invitation-only');
@@ -258,16 +263,19 @@ describe('convex setup', () => {
 
         test('creates a team organization without converting the protected personal one', async () => {
             const t = initConvexTest();
+
             const user = await createTestUser(t, {
                 userId: 'setup-personal-workspace-user',
                 email: 'personal-setup@example.com',
                 name: 'Personal Setup Admin',
             });
+
             const personalOrganizationId = await createTestOrganization(t, {
                 name: 'Personal Organization',
                 slug: 'personal-workspace',
                 description: JSON.stringify({ type: 'personal', ownerUserId: user.docId }),
             });
+
             await createTestMember(t, {
                 organizationId: personalOrganizationId,
                 userId: user.docId,
@@ -300,10 +308,12 @@ describe('convex setup', () => {
             await t.run(async ctx => {
                 const personal = await ctx.db.get('organization', personalOrganizationId);
                 const team = await ctx.db.get('organization', result.organizationId);
+
                 const memberships = await ctx.db
                     .query('member')
                     .withIndex('userId', q => q.eq('userId', user.docId))
                     .collect();
+
                 const session = await ctx.db
                     .query('session')
                     .withIndex('userId', q => q.eq('userId', user.docId))

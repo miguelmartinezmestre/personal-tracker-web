@@ -11,23 +11,31 @@ import { redirect } from 'next/navigation';
 import { isPlatformSetUp } from '@/features/setup/server';
 import { getTranslations } from 'next-intl/server';
 import { SkipToContent } from '@/components/skip-to-content';
+
 export const dynamic = 'force-dynamic';
+
 export default async function Layout({ children }: { children: React.ReactNode }) {
     const t = await getTranslations('Common');
+
     if (!(await isPlatformSetUp())) {
         redirect('/setup');
     }
+
     let dashboardContext: Awaited<ReturnType<typeof fetchDashboardContext>>;
+
     try {
         dashboardContext = await fetchDashboardContext();
     } catch (error) {
         if (isAuthRequiredError(error)) {
             redirect('/login');
         }
+
         throw error;
     }
+
     const { organizationId: activeOrganizationId } = dashboardContext;
     const dashboardScopeKey = activeOrganizationId ?? 'no-active-organization';
+
     return (
         <SidebarProvider>
             <SkipToContent targetId="dashboard-main" label={t('skipToContent')} />
@@ -60,6 +68,7 @@ export default async function Layout({ children }: { children: React.ReactNode }
         </SidebarProvider>
     );
 }
+
 async function fetchDashboardContext() {
     return await fetchAuthQuery(api.auth.getDashboardContext);
 }

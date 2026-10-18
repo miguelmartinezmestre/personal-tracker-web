@@ -36,6 +36,7 @@ const getValidLocale = cache(async () => {
     }
 
     const platformDefault = await fetchPlatformDefaultLocale();
+
     if (platformDefault) {
         return platformDefault;
     }

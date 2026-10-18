@@ -12,6 +12,7 @@ interface QueryErrorFallbackProps {
 
 export function QueryErrorFallback({ onRetry, className }: QueryErrorFallbackProps) {
     const t = useTranslations('Common');
+
     return (
         <div
             role="alert"

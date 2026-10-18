@@ -10,6 +10,7 @@ test('rejects duplicate objects which would silently hide translation keys', () 
         )
     ).toContain('duplicate translation key "trash"');
 });
+
 test('allows the same key in different namespaces', () => {
     expect(
         findDuplicateTranslationKey('{"A":{"title":"A"},"B":{"title":"B"}}', 'en.json')
