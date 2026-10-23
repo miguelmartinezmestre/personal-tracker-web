@@ -182,21 +182,12 @@ export function organizationTableRules(helpers: RlsHelpers) {
                 );
             },
         },
-        objectives: {
-            read: (_ctx: QueryLike, objective: Doc<'objectives'>) =>
-                rlsWhen(isActiveOrganization(objective.organizationId)),
-            insert: (_ctx: QueryLike, objective: RlsInsertDoc<'objectives'>) =>
-                rlsWhen(isActiveOrganization(objective.organizationId)),
-            modify: (_ctx: QueryLike, objective: Doc<'objectives'>) =>
-                rlsWhen(isActiveOrganization(objective.organizationId)),
-        },
-        progressUpdates: {
-            read: (_ctx: QueryLike, progressUpdate: Doc<'progressUpdates'>) =>
-                rlsWhen(isActiveOrganization(progressUpdate.organizationId)),
-            insert: (_ctx: QueryLike, progressUpdate: RlsInsertDoc<'progressUpdates'>) =>
-                rlsWhen(isActiveOrganization(progressUpdate.organizationId)),
-            modify: (_ctx: QueryLike, progressUpdate: Doc<'progressUpdates'>) =>
-                rlsWhen(isActiveOrganization(progressUpdate.organizationId)),
+        // Append-only: entries are written by the functions they describe and never changed or
+        // deleted (decision 15); only the global admin reads them.
+        auditLogs: {
+            read: () => rlsWhen(isGlobalAdmin),
+            insert: rlsAllow,
+            modify: rlsDeny,
         },
         platformSettings: {
             read: () => rlsWhen(isGlobalAdmin),

@@ -5,9 +5,9 @@ export const ORGANIZATION_DELETION_BATCH_SIZE = 50;
 
 export type OrganizationDeletionPhase =
     | 'progressUpdates'
+    | 'objectivePermissions'
     | 'objectives'
     | 'categories'
-    | 'audit'
     | 'invitations'
     | 'memberships'
     | 'sessions'
@@ -24,11 +24,27 @@ export async function deleteOrganizationProgressUpdatesBatch(
 ): Promise<number> {
     const rows = await ctx.db
         .query('progressUpdates')
-        .withIndex('by_organization', q => q.eq('organizationId', organizationId))
+        .withIndex('by_organization_date', q => q.eq('organizationId', organizationId))
         .take(ORGANIZATION_DELETION_BATCH_SIZE);
 
     for (const row of rows) {
         await ctx.db.delete('progressUpdates', row._id);
+    }
+
+    return rows.length;
+}
+
+export async function deleteOrganizationObjectivePermissionsBatch(
+    ctx: MutationCtx,
+    organizationId: Id<'organization'>
+): Promise<number> {
+    const rows = await ctx.db
+        .query('objectivePermissions')
+        .withIndex('by_organization', q => q.eq('organizationId', organizationId))
+        .take(ORGANIZATION_DELETION_BATCH_SIZE);
+
+    for (const row of rows) {
+        await ctx.db.delete('objectivePermissions', row._id);
     }
 
     return rows.length;
@@ -40,7 +56,9 @@ export async function deleteOrganizationObjectivesBatch(
 ): Promise<number> {
     const rows = await ctx.db
         .query('objectives')
-        .withIndex('by_organization_createdAt', q => q.eq('organizationId', organizationId))
+        .withIndex('by_organization_deletedAt_createdAt', q =>
+            q.eq('organizationId', organizationId)
+        )
         .take(ORGANIZATION_DELETION_BATCH_SIZE);
 
     for (const row of rows) {
@@ -61,22 +79,6 @@ export async function deleteOrganizationCategoriesBatch(
 
     for (const row of rows) {
         await ctx.db.delete('categories', row._id);
-    }
-
-    return rows.length;
-}
-
-export async function deleteOrganizationAuditLogsBatch(
-    ctx: MutationCtx,
-    organizationId: Id<'organization'>
-): Promise<number> {
-    const rows = await ctx.db
-        .query('auditLogs')
-        .withIndex('by_organization', q => q.eq('organizationId', organizationId))
-        .take(ORGANIZATION_DELETION_BATCH_SIZE);
-
-    for (const row of rows) {
-        await ctx.db.delete('auditLogs', row._id);
     }
 
     return rows.length;
@@ -125,18 +127,20 @@ export async function findOrganizationResiduePhase(
             .first(),
         ctx.db
             .query('progressUpdates')
+            .withIndex('by_organization_date', q => q.eq('organizationId', organizationId))
+            .first(),
+        ctx.db
+            .query('objectivePermissions')
             .withIndex('by_organization', q => q.eq('organizationId', organizationId))
             .first(),
         ctx.db
             .query('objectives')
-            .withIndex('by_organization_createdAt', q => q.eq('organizationId', organizationId))
+            .withIndex('by_organization_deletedAt_createdAt', q =>
+                q.eq('organizationId', organizationId)
+            )
             .first(),
         ctx.db
             .query('categories')
-            .withIndex('by_organization', q => q.eq('organizationId', organizationId))
-            .first(),
-        ctx.db
-            .query('auditLogs')
             .withIndex('by_organization', q => q.eq('organizationId', organizationId))
             .first(),
         ctx.db
@@ -152,9 +156,9 @@ export async function findOrganizationResiduePhase(
     const phases: OrganizationDeletionPhase[] = [
         'sessions',
         'progressUpdates',
+        'objectivePermissions',
         'objectives',
         'categories',
-        'audit',
         'invitations',
         'memberships',
     ];

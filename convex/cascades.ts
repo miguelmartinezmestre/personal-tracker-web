@@ -2,10 +2,10 @@ import {
     ORGANIZATION_DELETION_BATCH_SIZE,
     type OrganizationDeletionPhase,
     type OrganizationDeletionResult,
-    deleteOrganizationAuditLogsBatch,
     deleteOrganizationCategoriesBatch,
     deleteOrganizationInvitationsBatch,
     deleteOrganizationMembershipsBatch,
+    deleteOrganizationObjectivePermissionsBatch,
     deleteOrganizationObjectivesBatch,
     deleteOrganizationProgressUpdatesBatch,
     findOrganizationResiduePhase,
@@ -17,6 +17,7 @@ import {
     anonymizeUser,
     deleteUserAccountsBatch,
     deleteUserMembershipsBatch,
+    deleteUserObjectivePermissionsBatch,
     deleteUserSessionsBatch,
 } from './features/cascades/userDeletion';
 import { internal } from './_generated/api';
@@ -69,6 +70,20 @@ export const continueUserDeletionCascade = internalMutation({
 
             case 'accounts': {
                 const rowCount = await deleteUserAccountsBatch(ctx, args.userId);
+
+                const nextPhase =
+                    rowCount === USER_DELETION_BATCH_SIZE ? phase : 'objectivePermissions';
+
+                await ctx.scheduler.runAfter(0, internal.cascades.continueUserDeletionCascade, {
+                    userId: args.userId,
+                    phase: nextPhase,
+                });
+
+                return { status: 'in_progress', phase: nextPhase };
+            }
+
+            case 'objectivePermissions': {
+                const rowCount = await deleteUserObjectivePermissionsBatch(ctx, args.userId);
                 const nextPhase = rowCount === USER_DELETION_BATCH_SIZE ? phase : 'memberships';
                 await ctx.scheduler.runAfter(0, internal.cascades.continueUserDeletionCascade, {
                     userId: args.userId,
@@ -133,6 +148,24 @@ export const continueOrganizationDeletionCascade = internalMutation({
                 const rowCount = await deleteOrganizationProgressUpdatesBatch(ctx, organizationId);
 
                 const nextPhase =
+                    rowCount === ORGANIZATION_DELETION_BATCH_SIZE ? phase : 'objectivePermissions';
+
+                await ctx.scheduler.runAfter(
+                    0,
+                    internal.cascades.continueOrganizationDeletionCascade,
+                    { organizationId, phase: nextPhase }
+                );
+
+                return { status: 'in_progress', phase: nextPhase };
+            }
+
+            case 'objectivePermissions': {
+                const rowCount = await deleteOrganizationObjectivePermissionsBatch(
+                    ctx,
+                    organizationId
+                );
+
+                const nextPhase =
                     rowCount === ORGANIZATION_DELETION_BATCH_SIZE ? phase : 'objectives';
 
                 await ctx.scheduler.runAfter(
@@ -161,18 +194,6 @@ export const continueOrganizationDeletionCascade = internalMutation({
 
             case 'categories': {
                 const rowCount = await deleteOrganizationCategoriesBatch(ctx, organizationId);
-                const nextPhase = rowCount === ORGANIZATION_DELETION_BATCH_SIZE ? phase : 'audit';
-                await ctx.scheduler.runAfter(
-                    0,
-                    internal.cascades.continueOrganizationDeletionCascade,
-                    { organizationId, phase: nextPhase }
-                );
-
-                return { status: 'in_progress', phase: nextPhase };
-            }
-
-            case 'audit': {
-                const rowCount = await deleteOrganizationAuditLogsBatch(ctx, organizationId);
 
                 const nextPhase =
                     rowCount === ORGANIZATION_DELETION_BATCH_SIZE ? phase : 'invitations';

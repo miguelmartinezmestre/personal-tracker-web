@@ -3,12 +3,22 @@
 import type { FunctionReturnType } from 'convex/server';
 import { usePaginatedList } from '@/components/data-table/hooks/use-paginated-list';
 import { api } from '@/convex/_generated/api';
-import type { ObjectiveStatusFilter } from '@/features/objectives/lib/status-filter';
+import { todayTimestamp } from '@/features/objectives/lib/dates';
+import { ALL_CATEGORIES, type ObjectiveListFilters } from '@/features/objectives/lib/list-filters';
 
 export type ObjectiveSummary = FunctionReturnType<
     typeof api.objectives.listObjectives
 >['page'][number];
 
-export function useObjectives(status: ObjectiveStatusFilter, search: string) {
-    return usePaginatedList(api.objectives.listObjectives, { status, search });
+export function useObjectives(
+    { status, deadline, category }: ObjectiveListFilters,
+    search: string
+) {
+    return usePaginatedList(api.objectives.listObjectives, {
+        status,
+        search,
+        categoryId: category === ALL_CATEGORIES ? undefined : category,
+        // The deadline filter is relative to the user's own day, which only the client knows.
+        deadline: deadline === 'all' ? undefined : { filter: deadline, today: todayTimestamp() },
+    });
 }

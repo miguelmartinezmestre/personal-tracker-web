@@ -10,7 +10,7 @@ const PAGE_SIZE = 20;
 
 export function usePaginatedList<Query extends PaginatedQueryReference>(
     query: Query,
-    args: PaginatedQueryArgs<Query>
+    args: PaginatedQueryArgs<Query> | 'skip'
 ) {
     const pagination = usePaginatedQuery(query, args, { initialNumItems: PAGE_SIZE });
     const isFetching = pagination.status === 'LoadingMore';

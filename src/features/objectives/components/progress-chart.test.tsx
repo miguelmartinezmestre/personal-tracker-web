@@ -38,12 +38,13 @@ function renderWithHistory(
 
     // SAFETY: Convex ids are opaque strings and these only key seeded queries, never the backend.
     queryClient.setQueryData(
-        convexQuery(api.objectives.getProgressHistory, { objectiveId }).queryKey,
+        convexQuery(api.progress.getProgressHistory, { objectiveId }).queryKey,
         {
             points: points.map((point, index) => ({
                 id: `progress-${index}` as Id<'progressUpdates'>,
                 ...point,
             })),
+            isTruncated: false,
         }
     );
 

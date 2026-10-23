@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, test } from 'vitest';
+import { beforeEach, describe, expect, test, vi } from 'vitest';
 import { api } from '../_generated/api';
 import type { Id } from '../_generated/dataModel';
 import { initConvexTest } from './test.helper';
@@ -6,6 +6,7 @@ import {
     createTestMember,
     createTestOrganization,
     createTestUser,
+    TIME,
     type TestUserData,
 } from './test.helpers';
 import { identityFor } from './test.identities';
@@ -77,7 +78,7 @@ describe('dashboard stats', () => {
             categoryId: health,
         });
 
-        await ownerIdentity.mutation(api.objectives.createProgress, {
+        await ownerIdentity.mutation(api.progress.createProgress, {
             objectiveId: swim,
             updatedValue: 4,
             updateDate: Date.UTC(2026, 0, 1),
@@ -90,7 +91,7 @@ describe('dashboard stats', () => {
             categoryId: career,
         });
 
-        await ownerIdentity.mutation(api.objectives.createProgress, {
+        await ownerIdentity.mutation(api.progress.createProgress, {
             objectiveId: read,
             updatedValue: 5,
             updateDate: Date.UTC(2026, 0, 1),
@@ -203,7 +204,7 @@ describe('dashboard stats', () => {
         expect(stats.total).toBe(0);
     });
 
-    test('keeps stats in sync when an objective is deleted', async () => {
+    test('keeps stats in sync when an objective is deleted @REQ-DASHBOARD-001 @INH-PAP-01', async () => {
         const ownerIdentity = asUser(owner);
         await ownerIdentity.mutation(api.objectives.createObjective, {
             title: 'Kept',
@@ -221,5 +222,109 @@ describe('dashboard stats', () => {
         await expect(
             ownerIdentity.query(api.dashboard.getDashboardStats, {})
         ).resolves.toMatchObject({ total: 1, active: 1, completed: 0, averageProgress: 0 });
+    });
+
+    const create = (title: string, extra: { targetValue?: number; deadline?: number } = {}) =>
+        asUser(owner).mutation(api.objectives.createObjective, {
+            title,
+            startValue: 0,
+            targetValue: 10,
+            ...extra,
+        });
+
+    const log = (objectiveId: Id<'objectives'>, updatedValue: number, updateDate: number) =>
+        asUser(owner).mutation(api.progress.createProgress, {
+            objectiveId,
+            updatedValue,
+            updateDate,
+        });
+
+    test('ranks the visible objectives by progress and validates the limit @REQ-DASHBOARD-002 @INH-DAS-05', async () => {
+        const low = await create('Low');
+        const high = await create('High');
+        const trashed = await create('Trashed');
+        await log(low, 2, Date.UTC(2026, 0, 1));
+        await log(high, 8, Date.UTC(2026, 0, 1));
+        await log(trashed, 9, Date.UTC(2026, 0, 1));
+        await asUser(owner).mutation(api.objectives.deleteObjective, { id: trashed });
+
+        const ranking = await asUser(owner).query(api.dashboard.getTopObjectives, { limit: 5 });
+
+        expect(ranking.map(entry => [entry.title, entry.progressPercent])).toEqual([
+            ['High', 80],
+            ['Low', 20],
+        ]);
+
+        for (const limit of [0, 101, 1.5]) {
+            await expect(
+                asUser(owner).query(api.dashboard.getTopObjectives, { limit })
+            ).rejects.toThrow('VALIDATION_ERROR');
+        }
+    });
+
+    test('counts progress entries per UTC month over the last twelve months @REQ-DASHBOARD-003', async () => {
+        vi.useFakeTimers({ toFake: ['Date'] });
+        vi.setSystemTime(Date.UTC(2026, 9, 15, 12));
+
+        try {
+            const objectiveId = await create('Monthly', { targetValue: 100 });
+            await log(objectiveId, 1, Date.UTC(2026, 9, 1));
+            await log(objectiveId, 1, Date.UTC(2026, 9, 14));
+            await log(objectiveId, 1, Date.UTC(2026, 7, 31));
+            await log(objectiveId, 1, Date.UTC(2025, 9, 1));
+
+            const months = await asUser(owner).query(api.dashboard.getMonthlyUpdates, {});
+
+            expect(months).toHaveLength(12);
+            expect(months[0]).toEqual({ month: '2025-11', count: 0 });
+            expect(months.at(-3)).toEqual({ month: '2026-08', count: 1 });
+            expect(months.at(-1)).toEqual({ month: '2026-10', count: 2 });
+        } finally {
+            vi.useRealTimers();
+        }
+    });
+
+    test('lists active objectives by deadline with their due-soon warning @REQ-DASHBOARD-004 @REQ-DASHBOARD-005', async () => {
+        const later = await create('Later', { deadline: Date.UTC(2099, 5, 1) });
+        const sooner = await create('Sooner', { deadline: Date.UTC(2099, 0, 1) });
+        const done = await create('Done', { targetValue: 1, deadline: Date.UTC(2098, 0, 1) });
+        await create('Open-ended');
+        await log(done, 1, Date.UTC(2026, 0, 1));
+        await asUser(owner).mutation(api.objectives.updateObjective, {
+            id: later,
+            dueSoonDays: 30,
+        });
+
+        const upcoming = await asUser(owner).query(api.dashboard.getUpcomingDeadlines, {});
+
+        expect(upcoming.map(entry => [entry.id, entry.dueSoonDays])).toEqual([
+            [sooner, 7],
+            [later, 30],
+        ]);
+    });
+
+    test('counts what was created, updated and completed in the last seven days @REQ-DASHBOARD-006', async () => {
+        const now = Date.UTC(2026, 9, 15, 12);
+        vi.useFakeTimers({ toFake: ['Date'] });
+
+        try {
+            vi.setSystemTime(now - 10 * TIME.DAY_MS);
+            const old = await create('Old', { targetValue: 2 });
+            await log(old, 1, Date.UTC(2026, 9, 1));
+
+            vi.setSystemTime(now - TIME.DAY_MS);
+            const recent = await create('Recent', { targetValue: 1 });
+            await log(recent, 1, Date.UTC(2026, 9, 14));
+            await log(old, 0.5, Date.UTC(2026, 9, 14));
+
+            vi.setSystemTime(now);
+            expect(await asUser(owner).query(api.dashboard.getRecentActivity, {})).toEqual({
+                created: 1,
+                updates: 2,
+                completed: 1,
+            });
+        } finally {
+            vi.useRealTimers();
+        }
     });
 });

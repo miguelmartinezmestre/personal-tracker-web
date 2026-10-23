@@ -13,111 +13,99 @@ describe('user deletion cascade', () => {
         vi.useRealTimers();
     });
 
-    test('removes memberships, deletes personal orgs and preserves a tombstone', async () => {
+    test('deletes the personal organization and those left empty, and keeps shared work @REQ-AUTENTICACION-009 @INH-AUT-13 @INH-AUT-14', async () => {
         const suffix = Math.random().toString(36).slice(2, 10);
 
-        const owner = await createTestUser(t, {
-            userId: `deleted-owner-${suffix}`,
-            email: `deleted-owner-${suffix}@example.com`,
-            name: 'Deleted owner',
-        });
+        const createUser = (label: string) =>
+            createTestUser(t, {
+                userId: `${label}-${suffix}`,
+                email: `${label}-${suffix}@example.com`,
+                name: label,
+            });
 
-        const editor = await createTestUser(t, {
-            userId: `successor-${suffix}`,
-            email: `successor-${suffix}@example.com`,
-            name: 'Successor',
-        });
+        const deleted = await createUser('deleted');
+        const otherOwner = await createUser('other-owner');
 
-        const sharedOrganizationId = await createTestOrganization(t, {
-            name: `Shared organization ${suffix}`,
-            slug: `shared-organization-${suffix}`,
-        });
+        const create = (name: string, description?: string) =>
+            createTestOrganization(t, {
+                name: `${name} ${suffix}`,
+                slug: `${name}-${suffix}`,
+                description,
+            });
 
-        const personalOrganizationId = await createTestOrganization(t, {
-            name: `Personal organization ${suffix}`,
-            slug: `personal-organization-${suffix}`,
-            description: JSON.stringify({ type: 'personal', ownerUserId: owner.docId }),
-        });
+        const shared = await create('shared');
+        const alone = await create('alone');
 
-        await createTestMember(t, {
-            organizationId: sharedOrganizationId,
-            userId: owner.docId,
-            role: 'owner',
-        });
-        await createTestMember(t, {
-            organizationId: sharedOrganizationId,
-            userId: editor.docId,
-            role: 'member',
-        });
-        await createTestMember(t, {
-            organizationId: personalOrganizationId,
-            userId: owner.docId,
-            role: 'owner',
-        });
-
-        await t.mutation(internal.cascades.cascadeUserDeletionInternal, { userId: owner.docId });
-        await t.finishAllScheduledFunctions(() => vi.runAllTimers());
-
-        const result = await t.run(async ctx => ({
-            personalOrganization: await ctx.db.get('organization', personalOrganizationId),
-            sharedOrganization: await ctx.db.get('organization', sharedOrganizationId),
-            ownerMembership: await ctx.db
-                .query('member')
-                .withIndex('by_organizationId_and_userId', q =>
-                    q.eq('organizationId', sharedOrganizationId).eq('userId', owner.docId)
-                )
-                .first(),
-            successorMembership: await ctx.db
-                .query('member')
-                .withIndex('by_organizationId_and_userId', q =>
-                    q.eq('organizationId', sharedOrganizationId).eq('userId', editor.docId)
-                )
-                .first(),
-            tombstone: await ctx.db.get('user', owner.docId),
-        }));
-
-        expect(result.personalOrganization).toBeNull();
-        expect(result.sharedOrganization).not.toBeNull();
-        expect(result.ownerMembership).toBeNull();
-        expect(result.successorMembership?.role).toBe('owner');
-        expect(result.tombstone?.deletedAt).toBeDefined();
-        expect(result.tombstone?.email).toContain('@deleted.invalid');
-    });
-
-    test('promotes nobody when the organization keeps another owner', async () => {
-        const suffix = Math.random().toString(36).slice(2, 10);
-
-        const [deleted, olderMember, otherOwner] = await Promise.all(
-            ['deleted', 'older', 'other'].map(label =>
-                createTestUser(t, {
-                    userId: `${label}-${suffix}`,
-                    email: `${label}-${suffix}@example.com`,
-                    name: label,
-                })
-            )
+        const personal = await create(
+            'personal',
+            JSON.stringify({ type: 'personal', ownerUserId: deleted.docId })
         );
 
-        const organizationId = await createTestOrganization(t, {
-            name: `Two owners ${suffix}`,
-            slug: `two-owners-${suffix}`,
+        await createTestMember(t, { organizationId: shared, userId: deleted.docId, role: 'owner' });
+        await createTestMember(t, {
+            organizationId: shared,
+            userId: otherOwner.docId,
+            role: 'owner',
+        });
+        await createTestMember(t, { organizationId: alone, userId: deleted.docId, role: 'owner' });
+        await createTestMember(t, {
+            organizationId: personal,
+            userId: deleted.docId,
+            role: 'owner',
         });
 
-        await createTestMember(t, { organizationId, userId: deleted.docId, role: 'owner' });
+        const sharedObjective = await t.run(async ctx => {
+            const objectiveId = await ctx.db.insert('objectives', {
+                organizationId: shared,
+                createdBy: deleted.docId,
+                title: 'Shared work',
+                direction: 'increase',
+                memberCanView: true,
+                memberCanEdit: false,
+                startValue: 0,
+                currentValue: 0,
+                targetValue: 5,
+                status: 'active',
+                createdAt: 1,
+                updatedAt: 1,
+            });
 
-        // Joined before the second owner, so the oldest remaining member is not an owner.
-        const olderMembershipId = await createTestMember(t, {
-            organizationId,
-            userId: olderMember.docId,
-            role: 'member',
+            await ctx.db.insert('objectivePermissions', {
+                objectiveId,
+                organizationId: shared,
+                userId: deleted.docId,
+                canEdit: true,
+                addedBy: otherOwner.docId,
+                createdAt: 1,
+                updatedAt: 1,
+            });
+
+            return objectiveId;
         });
-
-        await createTestMember(t, { organizationId, userId: otherOwner.docId, role: 'owner' });
 
         await t.mutation(internal.cascades.cascadeUserDeletionInternal, { userId: deleted.docId });
         await t.finishAllScheduledFunctions(() => vi.runAllTimers());
 
-        expect(await t.run(ctx => ctx.db.get('member', olderMembershipId))).toMatchObject({
-            role: 'member',
+        await t.run(async ctx => {
+            expect(await ctx.db.get('organization', personal)).toBeNull();
+            expect(await ctx.db.get('organization', alone)).toBeNull();
+            expect(await ctx.db.get('organization', shared)).not.toBeNull();
+            expect(await ctx.db.get('objectives', sharedObjective)).toMatchObject({
+                createdBy: deleted.docId,
+            });
+            expect(
+                await ctx.db
+                    .query('objectivePermissions')
+                    .withIndex('by_user_organization', q => q.eq('userId', deleted.docId))
+                    .first()
+            ).toBeNull();
+            expect(
+                await ctx.db
+                    .query('member')
+                    .withIndex('userId', q => q.eq('userId', deleted.docId))
+                    .first()
+            ).toBeNull();
+            expect(await ctx.db.get('user', deleted.docId)).toMatchObject({ name: 'deleted' });
         });
     });
 });

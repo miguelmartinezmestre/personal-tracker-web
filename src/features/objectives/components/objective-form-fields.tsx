@@ -2,59 +2,44 @@
 
 import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
+import { Label } from '@/components/ui/label';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Textarea } from '@/components/ui/textarea';
 import type { TanStackFormApi } from '@/components/forms/form-types';
 import { getFieldErrors } from '@/components/forms/form-utils';
-import { Loader2 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { usePaginatedList } from '@/components/data-table/hooks/use-paginated-list';
-import { api } from '@/convex/_generated/api';
 import type { Id } from '@/convex/_generated/dataModel';
-import { useCategoryLabel } from '@/features/categories/hooks/use-category-label';
 import {
+    MAX_DUE_SOON_DAYS,
     OBJECTIVE_DESCRIPTION_MAX_LENGTH,
     OBJECTIVE_TITLE_MAX_LENGTH,
     OBJECTIVE_UNIT_MAX_LENGTH,
 } from '@/convex/features/objectives/constants';
 import { todayDateInput } from '@/features/objectives/lib/dates';
+import { AccessEditor } from '@/features/objectives/components/access-editor';
+import { CategorySelect } from '@/features/objectives/components/category-select';
+import { DateField } from '@/features/objectives/components/date-field';
 import { NONE_CATEGORY, type ObjectiveFormValues } from '@/features/objectives/schemas/objective';
 import { useTranslations } from 'next-intl';
+
+const DIRECTIONS = ['increase', 'decrease'] as const;
 
 export function ObjectiveFormFields({
     form,
     keptDeadline = '',
     currentCategory,
+    withAccess = false,
 }: {
     form: TanStackFormApi<ObjectiveFormValues>;
     keptDeadline?: string;
     // The objective's own category, which may not be on the pages loaded so far.
     currentCategory?: { id: Id<'categories'>; name: string };
+    // Who can see and edit it is chosen when creating; afterwards it has its own dialog.
+    withAccess?: boolean;
 }) {
     const t = useTranslations('Objectives');
-    const common = useTranslations('Common');
-    // The picker offers today onwards, or the deadline an overdue objective already keeps.
+    // The calendar offers today onwards, or the deadline an overdue objective already keeps.
     const today = todayDateInput();
     const minDeadline = keptDeadline && keptDeadline < today ? keptDeadline : today;
-    const categories = usePaginatedList(api.categories.listCategories, {});
-    const categoryLabel = useCategoryLabel();
-
-    const loaded = categories.data.map(category => ({ id: category.id, name: category.name }));
-
-    if (currentCategory && !loaded.some(category => category.id === currentCategory.id)) {
-        loaded.push(currentCategory);
-    }
-
-    const categoryOptions = [
-        { value: NONE_CATEGORY, label: t('noCategory') },
-        ...loaded.map(category => ({ value: category.id, label: categoryLabel(category.name) })),
-    ];
 
     return (
         <FieldGroup>
@@ -91,46 +76,17 @@ export function ObjectiveFormFields({
                     return (
                         <Field data-invalid={isInvalid}>
                             <FieldLabel htmlFor={field.name}>{t('category')}</FieldLabel>
-                            <Select
-                                name={field.name}
+                            <CategorySelect
+                                id={field.name}
                                 value={field.state.value}
-                                items={categoryOptions}
-                                onValueChange={next => {
-                                    if (next !== null) {
-                                        field.handleChange(next);
-                                    }
-                                }}
-                            >
-                                <SelectTrigger
-                                    id={field.name}
-                                    onBlur={field.handleBlur}
-                                    aria-invalid={isInvalid}
-                                    data-testid="objective-category-select"
-                                >
-                                    <SelectValue placeholder={t('selectACategory')} />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {categoryOptions.map(option => (
-                                        <SelectItem key={option.value} value={option.value}>
-                                            {option.label}
-                                        </SelectItem>
-                                    ))}
-                                    <Button
-                                        type="button"
-                                        variant="ghost"
-                                        size="sm"
-                                        className="w-full"
-                                        disabled={!categories.canLoadMore || categories.isFetching}
-                                        onClick={categories.loadMore}
-                                        data-testid="objective-category-load-more"
-                                    >
-                                        {categories.isFetching && (
-                                            <Loader2 className="animate-spin" aria-hidden />
-                                        )}
-                                        {common('actions.loadMore')}
-                                    </Button>
-                                </SelectContent>
-                            </Select>
+                                onValueChange={field.handleChange}
+                                onBlur={field.handleBlur}
+                                firstOption={{ value: NONE_CATEGORY, label: t('noCategory') }}
+                                currentCategory={currentCategory}
+                                placeholder={t('selectACategory')}
+                                isInvalid={isInvalid}
+                                testId="objective-category-select"
+                            />
                             {isInvalid ? <FieldError errors={errors} /> : null}
                         </Field>
                     );
@@ -160,6 +116,7 @@ export function ObjectiveFormFields({
                     );
                 }}
             </form.Field>
+            <DirectionField form={form} />
             <NumberField
                 form={form}
                 name="startValue"
@@ -180,23 +137,95 @@ export function ObjectiveFormFields({
                     return (
                         <Field data-invalid={isInvalid}>
                             <FieldLabel htmlFor={field.name}>{t('deadline')}</FieldLabel>
-                            <Input
+                            <DateField
                                 id={field.name}
-                                name={field.name}
-                                type="date"
-                                min={minDeadline}
                                 value={field.state.value}
+                                onChange={field.handleChange}
                                 onBlur={field.handleBlur}
-                                onChange={event => field.handleChange(event.target.value)}
-                                aria-invalid={isInvalid}
-                                data-testid="objective-deadline-input"
+                                min={minDeadline}
+                                forwardDate
+                                isInvalid={isInvalid}
+                                testId="objective-deadline-input"
                             />
                             {isInvalid ? <FieldError errors={errors} /> : null}
                         </Field>
                     );
                 }}
             </form.Field>
+            <form.Subscribe selector={state => state.values.deadline !== ''}>
+                {hasDeadline =>
+                    hasDeadline ? (
+                        <NumberField
+                            form={form}
+                            name="dueSoonDays"
+                            label={t('dueSoonDays')}
+                            description={t('dueSoonDaysDescription')}
+                            min={1}
+                            max={MAX_DUE_SOON_DAYS}
+                            testId="objective-due-soon-input"
+                        />
+                    ) : null
+                }
+            </form.Subscribe>
+            {withAccess ? (
+                <form.Subscribe
+                    selector={state => ({
+                        memberAccess: state.values.memberAccess,
+                        users: state.values.users,
+                    })}
+                >
+                    {({ memberAccess, users }) => (
+                        <AccessEditor
+                            memberAccess={memberAccess}
+                            onMemberAccessChange={value =>
+                                form.setFieldValue('memberAccess', value)
+                            }
+                            users={users}
+                            onUsersChange={value => form.setFieldValue('users', value)}
+                        />
+                    )}
+                </form.Subscribe>
+            ) : null}
         </FieldGroup>
+    );
+}
+
+function DirectionField({ form }: { form: TanStackFormApi<ObjectiveFormValues> }) {
+    const t = useTranslations('Objectives');
+
+    return (
+        <form.Field name="direction">
+            {field => (
+                <Field>
+                    <FieldLabel id="direction-label">{t('direction.label')}</FieldLabel>
+                    <RadioGroup
+                        value={field.state.value}
+                        onValueChange={value => {
+                            if (value === 'increase' || value === 'decrease') {
+                                field.handleChange(value);
+                            }
+                        }}
+                        aria-labelledby="direction-label"
+                        className="flex flex-wrap gap-4"
+                        data-testid="objective-direction"
+                    >
+                        {DIRECTIONS.map(direction => (
+                            <div key={direction} className="flex items-center gap-2">
+                                <RadioGroupItem
+                                    value={direction}
+                                    id={`direction-${direction}`}
+                                    data-testid={`objective-direction-${direction}`}
+                                />
+                                <Label htmlFor={`direction-${direction}`}>
+                                    {t(`direction.${direction}`)}
+                                </Label>
+                            </div>
+                        ))}
+                    </RadioGroup>
+                    <FieldDescription>{t('direction.description')}</FieldDescription>
+                </Field>
+            )}
+        </form.Field>
     );
 }
 
@@ -204,11 +233,17 @@ function NumberField({
     form,
     name,
     label,
+    description,
+    min,
+    max,
     testId,
 }: {
     form: TanStackFormApi<ObjectiveFormValues>;
-    name: 'startValue' | 'targetValue';
+    name: 'startValue' | 'targetValue' | 'dueSoonDays';
     label: string;
+    description?: string;
+    min?: number;
+    max?: number;
     testId: string;
 }) {
     return (
@@ -219,18 +254,6 @@ function NumberField({
                 // An emptied input is stored as NaN so the schema reports it as required.
                 const value = Number.isFinite(field.state.value) ? field.state.value : '';
 
-                const handleChange = (rawValue: string) => {
-                    let nextValue: number;
-
-                    if (rawValue === '') {
-                        nextValue = Number.NaN;
-                    } else {
-                        nextValue = Number(rawValue);
-                    }
-
-                    field.handleChange(nextValue);
-                };
-
                 return (
                     <Field data-invalid={isInvalid}>
                         <FieldLabel htmlFor={field.name}>{label}</FieldLabel>
@@ -239,13 +262,21 @@ function NumberField({
                             name={field.name}
                             type="number"
                             step="any"
-                            min={0}
+                            min={min}
+                            max={max}
                             value={value}
                             onBlur={field.handleBlur}
-                            onChange={event => handleChange(event.target.value)}
+                            onChange={event =>
+                                field.handleChange(
+                                    event.target.value === ''
+                                        ? Number.NaN
+                                        : Number(event.target.value)
+                                )
+                            }
                             aria-invalid={isInvalid}
                             data-testid={testId}
                         />
+                        {description ? <FieldDescription>{description}</FieldDescription> : null}
                         {isInvalid ? <FieldError errors={errors} /> : null}
                     </Field>
                 );

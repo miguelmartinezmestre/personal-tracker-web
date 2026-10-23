@@ -1,9 +1,11 @@
 import { ConvexError, v } from 'convex/values';
+import type { Id } from './_generated/dataModel';
 import {
     DEFAULT_ORGANIZATION_NAME,
     buildAvailablePersonalOrganizationSlug,
     buildPersonalOrganizationMetadata,
     getPersonalOrganizationOwnerUserId,
+    isPersonalOrganizationForUser,
 } from './features/organizations/personalOrganization';
 import { ERROR_CODES } from './shared/errorCodes';
 import type { GenericCtx } from './shared/ctx';
@@ -23,6 +25,7 @@ import { normalizeOrganizationName } from './features/organizations/slug';
 import { normalizeRegistrationEmail } from './features/auth/users';
 import { queryWithRLS } from './features/authorization/wrappers';
 import { userDocumentValidator } from './features/auth/validators';
+import { organizationsNeedingNewOwner } from './features/auth/accountDeletion';
 
 export const getEmailRegistrationAuthorization = internalQuery({
     args: {
@@ -83,12 +86,24 @@ export const ensureDefaultOrganizationForUser = internalMutation({
             throw new ConvexError(ERROR_CODES.INTERNAL_ERROR);
         }
 
+        // Every account keeps a personal organization, even when it joined another one first
+        // (decision 6); the session starts in the first organization the user belongs to.
+        let firstOrganizationId: Id<'organization'> | null = null;
+
         for await (const membership of ctx.db
             .query('member')
             .withIndex('userId', q => q.eq('userId', userId))) {
-            if (await ctx.db.get('organization', membership.organizationId)) {
-                return membership.organizationId;
+            const organization = await ctx.db.get('organization', membership.organizationId);
+
+            if (!organization) {
+                continue;
             }
+
+            if (isPersonalOrganizationForUser({ metadata: organization.metadata, userId })) {
+                return firstOrganizationId ?? organization._id;
+            }
+
+            firstOrganizationId ??= organization._id;
         }
 
         const now = Date.now();
@@ -110,7 +125,7 @@ export const ensureDefaultOrganizationForUser = internalMutation({
         });
         await insertDefaultCategories(ctx, organizationId, userId);
 
-        return organizationId;
+        return firstOrganizationId ?? organizationId;
     },
 });
 
@@ -283,6 +298,7 @@ export const getAccountDeletionTarget = internalQuery({
             userId: v.id('user'),
             isSetupUser: v.boolean(),
             passwordHash: v.union(v.string(), v.null()),
+            organizationsNeedingNewOwner: v.array(v.string()),
         }),
         v.null()
     ),
@@ -306,11 +322,32 @@ export const getAccountDeletionTarget = internalQuery({
             userId,
             isSetupUser: settings?.setupCompletedBy === userId,
             passwordHash: account?.password ?? null,
+            organizationsNeedingNewOwner: await organizationsNeedingNewOwner(ctx.db, userId),
         };
     },
 });
 
 export default defineAuth((ctx: GenericCtx) => buildBetterAuthOptions(ctx));
+
+// What stops the current user from deleting the account, shown before asking to confirm it.
+export const getAccountDeletionStatus = queryWithRLS({
+    args: {},
+    returns: v.object({
+        isSetupUser: v.boolean(),
+        organizationsNeedingNewOwner: v.array(v.string()),
+    }),
+    handler: async ctx => {
+        const settings = await ctx.dbForIntegrityChecks.query('platformSettings').first();
+
+        return {
+            isSetupUser: settings?.setupCompletedBy === ctx.userId,
+            organizationsNeedingNewOwner: await organizationsNeedingNewOwner(
+                ctx.dbForIntegrityChecks,
+                ctx.userId
+            ),
+        };
+    },
+});
 
 export const getCurrentUser = queryWithRLS({
     args: {},

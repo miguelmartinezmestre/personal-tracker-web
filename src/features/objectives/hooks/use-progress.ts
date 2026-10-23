@@ -5,8 +5,8 @@ import { usePaginatedList } from '@/components/data-table/hooks/use-paginated-li
 import { api } from '@/convex/_generated/api';
 import type { Id } from '@/convex/_generated/dataModel';
 
-export type ProgressEntry = FunctionReturnType<typeof api.objectives.listProgress>['page'][number];
+export type ProgressEntry = FunctionReturnType<typeof api.progress.listProgress>['page'][number];
 
 export function useProgress(objectiveId: Id<'objectives'>) {
-    return usePaginatedList(api.objectives.listProgress, { objectiveId });
+    return usePaginatedList(api.progress.listProgress, { objectiveId });
 }

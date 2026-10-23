@@ -19,9 +19,10 @@ import CreateObjectiveFormModal from '@/features/objectives/components/objective
 import EditObjectiveFormModal from '@/features/objectives/components/objective-form-edit-modal';
 import { useObjectives, type ObjectiveSummary } from '@/features/objectives/hooks/use-objectives';
 import {
+    ALL_CATEGORIES,
     objectiveDetailHref,
-    type ObjectiveStatusFilter,
-} from '@/features/objectives/lib/status-filter';
+    type ObjectiveListFilters,
+} from '@/features/objectives/lib/list-filters';
 import { useLocale, useTranslations } from 'next-intl';
 
 // On phones the filters already say the status and the deadline is on the detail page, which
@@ -32,15 +33,15 @@ const MOBILE_HIDDEN_COLUMNS = {
 };
 
 export default function ObjectivesTable({
-    status,
+    filters,
     search,
 }: {
-    status: ObjectiveStatusFilter;
+    filters: ObjectiveListFilters;
     search: string;
 }) {
     const t = useTranslations('Objectives');
     const locale = useLocale();
-    const objectives = useObjectives(status, search);
+    const objectives = useObjectives(filters, search);
 
     const deleteObjective = useMutation({
         meta: { handlesErrorsLocally: true },
@@ -53,7 +54,7 @@ export default function ObjectivesTable({
             header: t('columns.title'),
             cell: ({ row }) => (
                 <Link
-                    href={objectiveDetailHref(row.original.id, status)}
+                    href={objectiveDetailHref(row.original.id, filters)}
                     prefetch={false}
                     className="block max-w-xs min-w-40 font-medium whitespace-normal underline-offset-4 wrap-anywhere hover:underline"
                     data-testid="objective-row-link"
@@ -108,52 +109,39 @@ export default function ObjectivesTable({
             id: 'actions',
             header: '',
             cell: ({ row }) => {
-                if (!row.original.canManage) {
-                    return null;
-                }
+                const canEditNow = row.original.canEdit && row.original.status === 'active';
 
                 return (
                     <div className="flex justify-end gap-2">
-                        <EditObjectiveFormModal objective={row.original} compactTrigger />
-                        <DeleteConfirmationDialog
-                            title={t('confirm.deleteObjective')}
-                            description={t('confirm.deletePermanentDescription', {
-                                title: row.original.title,
-                            })}
-                            confirmLabel={t('confirm.deleteConfirm')}
-                            cancelLabel={t('confirm.cancel')}
-                            isLoading={deleteObjective.isPending}
-                            trigger={
-                                <Button
-                                    variant="destructive"
-                                    size="sm"
-                                    aria-label={t('deleteObjective')}
-                                    data-testid="objective-delete-button"
-                                >
-                                    <Trash2 className="sm:hidden" aria-hidden />
-                                    <span className="hidden sm:inline">{t('deleteObjective')}</span>
-                                </Button>
-                            }
-                            onConfirm={async () => {
-                                try {
-                                    await deleteObjective.mutateAsync({ id: row.original.id });
-                                    toast.success(t('toast.deleted'));
-                                } catch {
-                                    toast.error(t('toast.deleteFailed'));
-                                }
-                            }}
-                        />
+                        {canEditNow ? (
+                            <EditObjectiveFormModal objective={row.original} compactTrigger />
+                        ) : null}
+                        {row.original.canManage ? (
+                            <DeleteObjectiveButton
+                                isLoading={deleteObjective.isPending}
+                                onConfirm={async () => {
+                                    try {
+                                        await deleteObjective.mutateAsync({ id: row.original.id });
+                                        toast.success(t('toast.deleted'));
+                                    } catch {
+                                        toast.error(t('toast.deleteFailed'));
+                                    }
+                                }}
+                            />
+                        ) : null}
                     </div>
                 );
             },
         },
     ];
 
-    let emptyMessage: ReactNode = t(`empty.${status}`);
+    let emptyMessage: ReactNode = t(`empty.${filters.status}`);
 
     if (search) {
         emptyMessage = t('empty.search', { search });
-    } else if (status === 'all') {
+    } else if (filters.deadline !== 'all' || filters.category !== ALL_CATEGORIES) {
+        emptyMessage = t('empty.filtered');
+    } else if (filters.status === 'all') {
         emptyMessage = (
             <div
                 className="flex flex-col items-center gap-3 py-6 whitespace-normal"
@@ -177,5 +165,37 @@ export default function ObjectivesTable({
                 emptyMessage={emptyMessage}
             />
         </div>
+    );
+}
+
+function DeleteObjectiveButton({
+    isLoading,
+    onConfirm,
+}: {
+    isLoading: boolean;
+    onConfirm: () => Promise<void>;
+}) {
+    const t = useTranslations('Objectives');
+
+    return (
+        <DeleteConfirmationDialog
+            title={t('confirm.deleteObjective')}
+            description={t('confirm.deleteObjectiveDescription')}
+            confirmLabel={t('confirm.deleteConfirm')}
+            cancelLabel={t('confirm.cancel')}
+            isLoading={isLoading}
+            trigger={
+                <Button
+                    variant="destructive"
+                    size="sm"
+                    aria-label={t('deleteObjective')}
+                    data-testid="objective-delete-button"
+                >
+                    <Trash2 className="sm:hidden" aria-hidden />
+                    <span className="hidden sm:inline">{t('deleteObjective')}</span>
+                </Button>
+            }
+            onConfirm={onConfirm}
+        />
     );
 }

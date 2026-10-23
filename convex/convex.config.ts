@@ -20,4 +20,6 @@ const app = defineApp({
 
 app.use(aggregate, { name: 'objectiveStats' });
 
+app.use(aggregate, { name: 'objectiveRanking' });
+
 export default app;

@@ -24,6 +24,7 @@ import {
 import { api } from '@/convex/_generated/api';
 import { useCategoryLabel } from '@/features/categories/hooks/use-category-label';
 import EditObjectiveFormModal from '@/features/objectives/components/objective-form-edit-modal';
+import ObjectiveAccessDialog from '@/features/objectives/components/objective-access-dialog';
 import ProgressChart from '@/features/objectives/components/progress-chart';
 import ProgressForm from '@/features/objectives/components/progress-form';
 import ProgressList from '@/features/objectives/components/progress-list';
@@ -68,58 +69,53 @@ export default function ObjectiveDetail({
     }
 
     const current = objective.data;
-    let managementActions = null;
+    // A completed objective is closed: it can still be deleted, but not edited.
+    const canEditNow = current.canEdit && current.status === 'active';
 
-    if (current.canManage) {
-        managementActions = (
-            <div className="flex gap-2">
-                <EditObjectiveFormModal objective={current} />
-                <DeleteConfirmationDialog
-                    title={t('confirm.deleteObjective')}
-                    description={t('confirm.deletePermanentDescription', { title: current.title })}
-                    confirmLabel={t('confirm.deleteConfirm')}
-                    cancelLabel={t('confirm.cancel')}
-                    isLoading={deleteObjective.isPending}
-                    trigger={
-                        <Button
-                            variant="destructive"
-                            size="sm"
-                            data-testid="objective-delete-button"
-                        >
-                            {t('deleteObjective')}
-                        </Button>
-                    }
-                    onConfirm={async () => {
-                        try {
-                            await deleteObjective.mutateAsync({ id: current.id });
-                            toast.success(t('toast.deleted'));
-                            router.push(listHref);
-                        } catch {
-                            toast.error(t('toast.deleteFailed'));
-                        }
-                    }}
-                />
-            </div>
-        );
-    }
+    const deleteButton = (
+        <DeleteConfirmationDialog
+            title={t('confirm.deleteObjective')}
+            description={t('confirm.deleteObjectiveDescription')}
+            confirmLabel={t('confirm.deleteConfirm')}
+            cancelLabel={t('confirm.cancel')}
+            isLoading={deleteObjective.isPending}
+            trigger={
+                <Button variant="destructive" size="sm" data-testid="objective-delete-button">
+                    {t('deleteObjective')}
+                </Button>
+            }
+            onConfirm={async () => {
+                try {
+                    await deleteObjective.mutateAsync({ id: current.id });
+                    toast.success(t('toast.deleted'));
+                    router.push(listHref);
+                } catch {
+                    toast.error(t('toast.deleteFailed'));
+                }
+            }}
+        />
+    );
 
-    let progressContent;
+    const managementActions = (
+        <div className="flex flex-wrap gap-2">
+            {canEditNow ? <EditObjectiveFormModal objective={current} /> : null}
+            {current.canManage ? <ObjectiveAccessDialog objective={current} /> : null}
+            {current.canManage ? deleteButton : null}
+        </div>
+    );
+
+    let progressContent = null;
 
     if (current.status === 'completed') {
         progressContent = <CompletedNotice />;
-    } else {
+    } else if (current.canEdit) {
         progressContent = (
             <Card>
                 <CardHeader>
                     <CardTitle>{progressT('createNewUpdateProgress')}</CardTitle>
                 </CardHeader>
                 <CardContent>
-                    <ProgressForm
-                        objectiveId={current.id}
-                        currentValue={current.currentValue}
-                        targetValue={current.targetValue}
-                        unit={current.unit}
-                    />
+                    <ProgressForm objective={current} />
                 </CardContent>
             </Card>
         );
@@ -209,7 +205,7 @@ export default function ObjectiveDetail({
             {progressContent}
             <section className="space-y-3">
                 <h2 className="text-lg font-semibold">{t('objectiveProgress')}</h2>
-                <ProgressList objectiveId={current.id} unit={current.unit} />
+                <ProgressList objective={current} />
             </section>
         </div>
     );

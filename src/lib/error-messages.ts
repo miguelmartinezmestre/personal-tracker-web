@@ -39,6 +39,9 @@ const EN: ErrorDictionary = {
         'This invitation was sent to another email address.',
     ORGANIZATION_SLUG_ALREADY_TAKEN: 'An organization with that identifier already exists.',
     ORGANIZATION_NAME_TAKEN: 'You already have an organization with that name.',
+    NAME_REQUIRED: 'Enter a name.',
+    OWNER_SUCCESSOR_REQUIRED:
+        'Choose a new owner for the organizations you own before deleting your account.',
     ORGANIZATION_ALREADY_EXISTS: 'An organization with that identifier already exists.',
     YOU_CANNOT_LEAVE_THE_ORGANIZATION_AS_THE_ONLY_OWNER:
         'You are the only owner. Make someone else an owner before leaving.',
@@ -55,13 +58,14 @@ const EN: ErrorDictionary = {
     FUTURE_DATE_NOT_ALLOWED: 'The date cannot be in the future.',
     OBJECTIVE_ALREADY_COMPLETED: 'This objective is already completed.',
     TARGET_NOT_FINITE: 'The target value is not a valid number.',
-    TARGET_TOO_SMALL: 'The target value is too small.',
+    TARGET_TOO_LARGE: 'The target value is too large.',
+    TARGET_DIRECTION_MISMATCH:
+        'The target must be above the starting value when increasing and below it when decreasing.',
     VALUE_NOT_FINITE: 'The value is not a valid number.',
-    VALUE_NEGATIVE: 'The value cannot be negative.',
-    PROGRESS_NOT_POSITIVE: 'The progress must be greater than zero.',
+    PROGRESS_ZERO: 'The progress cannot be zero.',
     VALUE_TOO_LARGE: 'The value is too large.',
     DEADLINE_TOO_OLD: 'The deadline cannot be in the past.',
-    START_AFTER_TARGET: 'The starting value must be lower than the target value.',
+    DATE_TOO_OLD: 'The date cannot be more than five years ago.',
 };
 
 const ES: ErrorDictionary = {
@@ -98,6 +102,9 @@ const ES: ErrorDictionary = {
         'Esta invitación se envió a otra dirección de correo.',
     ORGANIZATION_SLUG_ALREADY_TAKEN: 'Ya existe una organización con ese identificador.',
     ORGANIZATION_NAME_TAKEN: 'Ya tienes una organización con ese nombre.',
+    NAME_REQUIRED: 'Escribe un nombre.',
+    OWNER_SUCCESSOR_REQUIRED:
+        'Elige un nuevo owner para las organizaciones que posees antes de borrar tu cuenta.',
     ORGANIZATION_ALREADY_EXISTS: 'Ya existe una organización con ese identificador.',
     YOU_CANNOT_LEAVE_THE_ORGANIZATION_AS_THE_ONLY_OWNER:
         'Eres el único propietario. Nombra a otra persona propietaria antes de salir.',
@@ -115,13 +122,14 @@ const ES: ErrorDictionary = {
     FUTURE_DATE_NOT_ALLOWED: 'La fecha no puede estar en el futuro.',
     OBJECTIVE_ALREADY_COMPLETED: 'Este objetivo ya está completado.',
     TARGET_NOT_FINITE: 'El valor objetivo no es un número válido.',
-    TARGET_TOO_SMALL: 'El valor objetivo es demasiado pequeño.',
+    TARGET_TOO_LARGE: 'El valor objetivo es demasiado grande.',
+    TARGET_DIRECTION_MISMATCH:
+        'La meta debe superar el valor inicial si el objetivo aumenta y quedar por debajo si disminuye.',
     VALUE_NOT_FINITE: 'El valor no es un número válido.',
-    VALUE_NEGATIVE: 'El valor no puede ser negativo.',
-    PROGRESS_NOT_POSITIVE: 'El avance debe ser mayor que cero.',
+    PROGRESS_ZERO: 'El avance no puede ser cero.',
     VALUE_TOO_LARGE: 'El valor es demasiado grande.',
     DEADLINE_TOO_OLD: 'La fecha límite no puede estar en el pasado.',
-    START_AFTER_TARGET: 'El valor inicial debe ser menor que el valor objetivo.',
+    DATE_TOO_OLD: 'La fecha no puede ser de hace más de cinco años.',
 };
 
 const DICTIONARIES: Record<ErrorLocale, ErrorDictionary> = { en: EN, es: ES };

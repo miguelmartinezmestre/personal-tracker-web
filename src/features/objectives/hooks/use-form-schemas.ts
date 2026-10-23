@@ -10,8 +10,8 @@ export function useObjectiveFormSchema(keptDeadline?: string) {
     return useMemo(() => objectiveFormSchema(key => t(key), keptDeadline), [t, keptDeadline]);
 }
 
-export function useProgressFormSchema() {
+export function useProgressFormSchema(baseValue: number) {
     const t = useTranslations('UpdateProgress.validation');
 
-    return useMemo(() => progressFormSchema(key => t(key)), [t]);
+    return useMemo(() => progressFormSchema(key => t(key), baseValue), [t, baseValue]);
 }

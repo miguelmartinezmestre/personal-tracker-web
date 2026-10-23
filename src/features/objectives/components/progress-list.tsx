@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import FormModal from '@/components/forms/form-modal';
@@ -8,7 +9,17 @@ import { DataTable } from '@/components/data-table/components/table';
 import type { DataTableFeatures } from '@/components/data-table/data-table-features';
 import type { ColumnDef } from '@tanstack/react-table';
 import { dateInputToUtcTimestamp, timestampToDateInput } from '@/features/objectives/lib/dates';
-import { formatObjectiveDate, formatObjectiveValue } from '@/features/objectives/lib/format';
+import {
+    formatDifference,
+    formatObjectiveDate,
+    formatObjectiveValue,
+} from '@/features/objectives/lib/format';
+import {
+    progressDifference,
+    roundValue,
+    valuesAfterEntries,
+} from '@/features/objectives/lib/progress';
+import type { ObjectiveSummary } from '@/features/objectives/hooks/use-objectives';
 import { useProgress, type ProgressEntry } from '@/features/objectives/hooks/use-progress';
 import { useProgressFormSchema } from '@/features/objectives/hooks/use-form-schemas';
 import { ProgressFields } from '@/features/objectives/components/progress-fields';
@@ -17,33 +28,42 @@ import { useLocale, useTranslations } from 'next-intl';
 import { useMutation } from '@tanstack/react-query';
 import { useConvexMutation } from '@convex-dev/react-query';
 import { api } from '@/convex/_generated/api';
-import type { Id } from '@/convex/_generated/dataModel';
 
-export default function ProgressList({
-    objectiveId,
-    unit,
-}: {
-    objectiveId: Id<'objectives'>;
-    unit?: string | undefined;
-}) {
+type HistoryView = 'difference' | 'value';
+
+const HISTORY_VIEWS: readonly HistoryView[] = ['difference', 'value'];
+
+type ProgressRow = ProgressEntry & { valueAfter: number };
+
+export default function ProgressList({ objective }: { objective: ObjectiveSummary }) {
     const t = useTranslations('UpdateProgress');
     const locale = useLocale();
-    const progress = useProgress(objectiveId);
+    const progress = useProgress(objective.id);
+    const [view, setView] = useState<HistoryView>('difference');
+    const unit = objective.unit;
 
     const deleteProgress = useMutation({
         meta: { handlesErrorsLocally: true },
-        mutationFn: useConvexMutation(api.objectives.deleteProgress),
+        mutationFn: useConvexMutation(api.progress.deleteProgress),
     });
 
-    const formatAmount = (entry: ProgressEntry) =>
-        `+${formatObjectiveValue(entry.updatedValue, locale)}${unit ? ` ${unit}` : ''}`;
+    // Only differences are stored, so each entry's total is rebuilt from the current one (P5).
+    const valuesAfter = valuesAfterEntries(objective.currentValue, progress.data);
 
-    const columns: ColumnDef<DataTableFeatures, ProgressEntry>[] = [
+    const rows: ProgressRow[] = progress.data.map((entry, index) => ({
+        ...entry,
+        valueAfter: valuesAfter[index] ?? objective.currentValue,
+    }));
+
+    const formatAmount = (row: ProgressRow) =>
+        `${view === 'difference' ? formatDifference(row.updatedValue, locale) : formatObjectiveValue(row.valueAfter, locale)}${unit ? ` ${unit}` : ''}`;
+
+    const columns: ColumnDef<DataTableFeatures, ProgressRow>[] = [
         {
             id: 'amount',
-            header: t('table.columns.amount'),
+            header: t(`table.columns.${view}`),
             cell: ({ row }) => (
-                <span className="font-medium" data-testid="progress-entry-value">
+                <span className="font-medium tabular-nums" data-testid="progress-entry-value">
                     {formatAmount(row.original)}
                 </span>
             ),
@@ -124,10 +144,24 @@ export default function ProgressList({
     ];
 
     return (
-        <div data-testid="progress-list">
+        <div className="space-y-3" data-testid="progress-list">
+            <div className="flex flex-wrap gap-2" role="group" aria-label={t('view.label')}>
+                {HISTORY_VIEWS.map(option => (
+                    <Button
+                        key={option}
+                        variant={view === option ? 'default' : 'outline'}
+                        size="sm"
+                        aria-pressed={view === option}
+                        onClick={() => setView(option)}
+                        data-testid={`progress-view-${option}`}
+                    >
+                        {t(`view.${option}`)}
+                    </Button>
+                ))}
+            </div>
             <DataTable
                 columns={columns}
-                data={progress.data}
+                data={rows}
                 columnClassNames={{ comment: 'hidden sm:table-cell' }}
                 isLoading={progress.isLoading}
                 pagination={progress}
@@ -142,20 +176,23 @@ function EditProgressModal({
     unit,
     triggerLabel,
 }: {
-    entry: ProgressEntry;
+    entry: ProgressRow;
     unit?: string | undefined;
     triggerLabel: string;
 }) {
     const t = useTranslations('UpdateProgress');
     const tCommon = useTranslations('Common');
-    const formSchema = useProgressFormSchema();
+    // A corrected "new value" replaces this entry, so it is compared with the total before it.
+    const baseValue = roundValue(entry.valueAfter - entry.updatedValue);
+    const formSchema = useProgressFormSchema(baseValue);
 
     const updateProgress = useMutation({
-        mutationFn: useConvexMutation(api.objectives.updateProgress),
+        mutationFn: useConvexMutation(api.progress.updateProgress),
     });
 
     const defaultValues: ProgressFormValues = {
-        updatedValue: entry.updatedValue,
+        mode: 'difference',
+        amount: entry.updatedValue,
         updateDate: timestampToDateInput(entry.updateDate),
         comment: entry.comment ?? '',
     };
@@ -190,7 +227,7 @@ function EditProgressModal({
 
                 await updateProgress.mutateAsync({
                     id: entry.id,
-                    updatedValue: values.updatedValue,
+                    updatedValue: progressDifference(values.mode, values.amount, baseValue),
                     updateDate,
                     comment: values.comment.trim() || null,
                 });
@@ -207,8 +244,8 @@ function EditProgressModal({
                     form={form}
                     idPrefix="edit-"
                     testIdPrefix="progress-edit"
-                    valueLabel={unit ? t('entryValueWithUnit', { unit }) : t('entryValue')}
-                    valueHint={t('entryValueDescription')}
+                    baseValue={baseValue}
+                    unit={unit}
                 />
             )}
         </FormModal>

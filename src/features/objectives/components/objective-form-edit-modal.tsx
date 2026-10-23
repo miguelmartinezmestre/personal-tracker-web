@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import FormModal from '@/components/forms/form-modal';
 import { api } from '@/convex/_generated/api';
 import type { Id } from '@/convex/_generated/dataModel';
+import { DEFAULT_DUE_SOON_DAYS } from '@/convex/features/objectives/constants';
 import { dateInputToUtcTimestamp, timestampToDateInput } from '@/features/objectives/lib/dates';
 import { type ObjectiveSummary } from '@/features/objectives/hooks/use-objectives';
 import { ObjectiveFormFields } from '@/features/objectives/components/objective-form-fields';
@@ -35,9 +36,13 @@ export default function EditObjectiveFormModal({
         description: objective.description ?? '',
         categoryId: objective.categoryId ?? NONE_CATEGORY,
         unit: objective.unit ?? '',
+        direction: objective.direction,
         startValue: objective.startValue,
         targetValue: objective.targetValue,
         deadline: timestampToDateInput(objective.deadline),
+        dueSoonDays: objective.dueSoonDays ?? DEFAULT_DUE_SOON_DAYS,
+        memberAccess: objective.memberAccess,
+        users: [],
     };
 
     const formSchema = useObjectiveFormSchema(defaultValues.deadline);
@@ -71,14 +76,7 @@ export default function EditObjectiveFormModal({
                 },
             }}
             onSubmit={async values => {
-                let deadline: number | undefined;
-
-                if (values.deadline) {
-                    deadline = dateInputToUtcTimestamp(values.deadline);
-                } else {
-                    deadline = undefined;
-                }
-
+                const deadline = dateInputToUtcTimestamp(values.deadline);
                 let categoryId: Id<'categories'> | null;
 
                 if (values.categoryId === NONE_CATEGORY) {
@@ -94,17 +92,15 @@ export default function EditObjectiveFormModal({
                     unit: values.unit.trim() || null,
                     categoryId,
                     deadline: deadline ?? null,
+                    dueSoonDays: deadline === undefined ? undefined : values.dueSoonDays,
+                    direction: values.direction,
                     startValue: values.startValue,
                     targetValue: values.targetValue,
                 });
 
-                if (updated.status === objective.status) {
-                    toast.success(t('toast.updated'));
-                } else if (updated.status === 'completed') {
-                    toast.success(t('toast.completed'));
-                } else {
-                    toast.info(t('toast.reopened'));
-                }
+                toast.success(
+                    updated.status === 'completed' ? t('toast.completed') : t('toast.updated')
+                );
             }}
             submitLabel={t('saveObjective')}
             pendingLabel={tCommon('actions.saving')}

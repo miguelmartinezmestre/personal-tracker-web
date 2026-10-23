@@ -136,7 +136,7 @@ export default function ProgressChart({ objective }: { objective: ProgressChartO
     const locale = useLocale();
 
     const history = useQuery(
-        convexQuery(api.objectives.getProgressHistory, { objectiveId: objective.id })
+        convexQuery(api.progress.getProgressHistory, { objectiveId: objective.id })
     );
 
     const points = history.data?.points;
@@ -174,11 +174,15 @@ export default function ProgressChart({ objective }: { objective: ProgressChartO
             timeZone: 'UTC',
         });
 
-        const values = series.map(point => point.value);
-        // Values are never negative; float noise just below zero would make `nice` add a
-        // whole negative tick.
-        const yMin = Math.max(0, Math.min(objective.startValue, ...values));
-        const yMax = Math.max(objective.targetValue, ...values);
+        // Decreasing objectives and negative values put the target below the start.
+        const bounds = [
+            objective.startValue,
+            objective.targetValue,
+            ...series.map(point => point.value),
+        ];
+
+        const yMin = Math.min(...bounds);
+        const yMax = Math.max(...bounds);
 
         const definition = defineChart({
             marks: [
@@ -322,6 +326,11 @@ export default function ProgressChart({ objective }: { objective: ProgressChartO
                     </li>
                 ) : null}
             </ul>
+            {history.data.isTruncated ? (
+                <p className="text-muted-foreground text-xs" data-testid="progress-chart-truncated">
+                    {t('historyLimited')}
+                </p>
+            ) : null}
         </div>
     );
 }

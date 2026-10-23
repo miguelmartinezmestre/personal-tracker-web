@@ -16,3 +16,13 @@ export const userDocumentValidator = v.object({
     banExpires: v.optional(v.union(v.null(), v.number())),
     deletedAt: v.optional(v.number()),
 });
+
+export const sessionListItemValidator = v.object({
+    id: v.id('session'),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+    expiresAt: v.number(),
+    ipAddress: v.union(v.string(), v.null()),
+    userAgent: v.union(v.string(), v.null()),
+    isCurrent: v.boolean(),
+});

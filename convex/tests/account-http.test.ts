@@ -25,7 +25,7 @@ function extractCookie(response: Response): string {
     return cookie;
 }
 
-describe('soft-delete Better Auth endpoint', () => {
+describe('account endpoints', () => {
     const t = initConvexTest();
 
     async function createCredentialUser(role: 'user' | 'globalAdmin' = 'user') {
@@ -76,7 +76,7 @@ describe('soft-delete Better Auth endpoint', () => {
         return extractCookie(response);
     }
 
-    test('verifies the password, returns success, preserves the tombstone and cleans auth rows', async () => {
+    test('verifies the password, returns success, keeps the name and cleans auth rows @REQ-AUTENTICACION-009 @INH-AUT-12 @INH-AUT-15', async () => {
         const { user } = await createCredentialUser();
         const cookie = await signIn(user.email);
 
@@ -91,10 +91,13 @@ describe('soft-delete Better Auth endpoint', () => {
 
         const immediateUser = await t.run(ctx => ctx.db.get('user', user.docId));
         expect(immediateUser).toMatchObject({
-            name: 'Deleted account',
+            name: 'HTTP deletion user',
             banned: true,
             banReason: 'Account deleted',
+            role: null,
+            image: null,
         });
+        expect(immediateUser?.email).toContain('@deleted.invalid');
         expect(immediateUser?.deletedAt).toBeDefined();
 
         await drainScheduledFunctions(t);
@@ -167,6 +170,44 @@ describe('soft-delete Better Auth endpoint', () => {
         });
     });
 
+    test('waits until shared organizations have another owner @REQ-AUTENTICACION-009 @INH-AUT-14', async () => {
+        const { user, organizationId } = await createCredentialUser();
+
+        const teammate = await createTestUser(t, {
+            userId: `teammate-${Math.random().toString(36).slice(2, 10)}`,
+            email: `teammate-${Math.random().toString(36).slice(2, 10)}@example.com`,
+            name: 'Teammate',
+        });
+
+        const teammateMembership = await createTestMember(t, {
+            organizationId,
+            userId: teammate.docId,
+            role: 'member',
+        });
+
+        const cookie = await signIn(user.email);
+
+        const blocked = await t.fetch(
+            '/api/auth/soft-delete-user',
+            jsonRequest({ password: PASSWORD }, cookie)
+        );
+
+        expect(blocked.status).toBe(403);
+        expect(await blocked.text()).toContain('OWNER_SUCCESSOR_REQUIRED');
+        expect((await t.run(ctx => ctx.db.get('user', user.docId)))?.deletedAt).toBeUndefined();
+
+        await t.run(ctx => ctx.db.patch('member', teammateMembership, { role: 'owner' }));
+
+        const allowed = await t.fetch(
+            '/api/auth/soft-delete-user',
+            jsonRequest({ password: PASSWORD }, cookie)
+        );
+
+        expect(allowed.status).toBe(200);
+        await drainScheduledFunctions(t);
+        expect(await t.run(ctx => ctx.db.get('organization', organizationId))).not.toBeNull();
+    });
+
     test('keeps Better Auth core physical deletion disabled', async () => {
         const { user } = await createCredentialUser();
         const cookie = await signIn(user.email);
@@ -182,5 +223,22 @@ describe('soft-delete Better Auth endpoint', () => {
             expect(retainedUser).not.toBeNull();
             expect(retainedUser?.deletedAt).toBeUndefined();
         });
+    });
+
+    test('keeps names free but not blank when signing up or editing the profile @REQ-AUTENTICACION-004 @REQ-AUTENTICACION-001', async () => {
+        const { user } = await createCredentialUser();
+        const cookie = await signIn(user.email);
+
+        const blank = await t.fetch('/api/auth/update-user', jsonRequest({ name: '   ' }, cookie));
+
+        expect(blank.status).toBe(400);
+        expect(await blank.text()).toContain('NAME_REQUIRED');
+
+        const renamed = await t.fetch(
+            '/api/auth/update-user',
+            jsonRequest({ name: 'HTTP deletion user' }, cookie)
+        );
+
+        expect(renamed.status).toBe(200);
     });
 });

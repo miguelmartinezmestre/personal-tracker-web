@@ -18,7 +18,7 @@ describe('organization deletion cascade', () => {
         vi.useRealTimers();
     });
 
-    test('removes categories and memberships owned by the organization', async () => {
+    test('removes categories, objectives, permissions and memberships owned by the organization', async () => {
         const suffix = Math.random().toString(36).slice(2, 10);
 
         const user = await createTestUser(t, {
@@ -52,6 +52,9 @@ describe('organization deletion cascade', () => {
                 organizationId,
                 createdBy: user.docId,
                 title: 'Objective to delete',
+                direction: 'increase',
+                memberCanView: true,
+                memberCanEdit: false,
                 startValue: 0,
                 currentValue: 1,
                 targetValue: 5,
@@ -73,6 +76,18 @@ describe('organization deletion cascade', () => {
             })
         );
 
+        const permissionId = await t.run(ctx =>
+            ctx.db.insert('objectivePermissions', {
+                objectiveId,
+                organizationId,
+                userId: user.docId,
+                canEdit: true,
+                addedBy: user.docId,
+                createdAt: now,
+                updatedAt: now,
+            })
+        );
+
         await t.mutation(internal.cascades.cascadeOrganizationDeletionInternal, {
             organizationId,
         });
@@ -83,6 +98,7 @@ describe('organization deletion cascade', () => {
             expect(await ctx.db.get('categories', categoryId)).toBeNull();
             expect(await ctx.db.get('objectives', objectiveId)).toBeNull();
             expect(await ctx.db.get('progressUpdates', progressId)).toBeNull();
+            expect(await ctx.db.get('objectivePermissions', permissionId)).toBeNull();
         });
     });
 

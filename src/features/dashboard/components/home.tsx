@@ -9,6 +9,12 @@ import { QueryErrorFallback } from '@/components/ui/query-error-fallback';
 import { Skeleton } from '@/components/ui/skeleton';
 import AverageProgressChart from '@/features/dashboard/components/average-progress-chart';
 import CategoryChart from '@/features/dashboard/components/category-chart';
+import MonthlyUpdatesChart from '@/features/dashboard/components/monthly-updates-chart';
+import RecentActivity from '@/features/dashboard/components/recent-activity';
+import TopObjectivesChart from '@/features/dashboard/components/top-objectives-chart';
+import UpcomingDeadlines from '@/features/dashboard/components/upcoming-deadlines';
+
+const TOP_OBJECTIVES = 5;
 
 function DashboardStats() {
     const t = useTranslations('DashboardHome');
@@ -79,6 +85,70 @@ function DashboardStats() {
                     </CardContent>
                 </Card>
             </div>
+            <DashboardDetails />
+        </div>
+    );
+}
+
+function DashboardDetails() {
+    const t = useTranslations('DashboardHome');
+    const top = useQuery(convexQuery(api.dashboard.getTopObjectives, { limit: TOP_OBJECTIVES }));
+    const monthly = useQuery(convexQuery(api.dashboard.getMonthlyUpdates, {}));
+    const deadlines = useQuery(convexQuery(api.dashboard.getUpcomingDeadlines, {}));
+    const activity = useQuery(convexQuery(api.dashboard.getRecentActivity, {}));
+    const queries = [top, monthly, deadlines, activity];
+    const failed = queries.find(query => query.isError);
+
+    if (failed) {
+        return <QueryErrorFallback onRetry={() => void failed.refetch()} />;
+    }
+
+    if (!top.data || !monthly.data || !deadlines.data || !activity.data) {
+        return (
+            <div className="grid gap-4 lg:grid-cols-2">
+                <Skeleton className="h-64" />
+                <Skeleton className="h-64" />
+            </div>
+        );
+    }
+
+    return (
+        <div className="grid gap-4 lg:grid-cols-2">
+            <Card>
+                <CardHeader>
+                    <CardTitle>{t('charts.topObjectives')}</CardTitle>
+                    <CardDescription>{t('charts.topObjectivesDescription')}</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <TopObjectivesChart objectives={top.data} />
+                </CardContent>
+            </Card>
+            <Card>
+                <CardHeader>
+                    <CardTitle>{t('charts.monthlyProgress')}</CardTitle>
+                    <CardDescription>{t('charts.monthlyProgressDescription')}</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <MonthlyUpdatesChart months={monthly.data} />
+                </CardContent>
+            </Card>
+            <Card>
+                <CardHeader>
+                    <CardTitle>{t('upcomingDeadlines')}</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <UpcomingDeadlines objectives={deadlines.data} />
+                </CardContent>
+            </Card>
+            <Card>
+                <CardHeader>
+                    <CardTitle>{t('recentActivity')}</CardTitle>
+                    <CardDescription>{t('activity.period', { days: 7 })}</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <RecentActivity activity={activity.data} />
+                </CardContent>
+            </Card>
         </div>
     );
 }

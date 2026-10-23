@@ -18,6 +18,7 @@ export function initConvexTest() {
     process.env.BETTER_AUTH_SECRET ??= 'synthetic-secret-for-convex-pagination-tests-only';
     const t = convexTest(schema, modules);
     aggregateTest.register(t, 'objectiveStats');
+    aggregateTest.register(t, 'objectiveRanking');
 
     const withIdentity = t.withIdentity.bind(t);
 

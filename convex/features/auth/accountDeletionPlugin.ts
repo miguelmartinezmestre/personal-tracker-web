@@ -51,6 +51,13 @@ export function accountDeletionPlugin(ctx: GenericCtx) {
                         });
                     }
 
+                    if (target.organizationsNeedingNewOwner.length > 0) {
+                        throw new APIError('FORBIDDEN', {
+                            code: ERROR_CODES.OWNER_SUCCESSOR_REQUIRED,
+                            message: 'Choose a new owner for the organizations you own first.',
+                        });
+                    }
+
                     const passwordMatches =
                         target.passwordHash !== null &&
                         (await endpointCtx.context.password.verify({

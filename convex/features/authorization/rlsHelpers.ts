@@ -2,10 +2,9 @@ import type { Doc, Id } from '../../_generated/dataModel';
 import type { QueryCtx } from '../../_generated/server';
 import { isGlobalAdminRole } from '../auth/roles';
 
-export type RlsInsertDoc<Table extends 'categories' | 'objectives' | 'progressUpdates'> = Omit<
-    Doc<Table>,
-    '_id' | '_creationTime'
->;
+export type RlsInsertDoc<
+    Table extends 'categories' | 'objectives' | 'objectivePermissions' | 'progressUpdates',
+> = Omit<Doc<Table>, '_id' | '_creationTime'>;
 
 export function rlsDeny(): Promise<boolean> {
     return Promise.resolve(false);
