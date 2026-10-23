@@ -5,7 +5,7 @@ interface RegisterValidationMessages {
     weakPassword: string;
     passwordsDontMatch: string;
     invalidEmail?: string;
-    shortUsername?: string;
+    nameRequired?: string;
     shortPassword?: string;
 }
 
@@ -15,7 +15,8 @@ export function createRegisterSchema(messages: RegisterValidationMessages) {
             email: z.email({ error: messages.invalidEmail }),
             password: z.string().min(8, { error: messages.shortPassword }),
             confirmPassword: z.string().min(8, { error: messages.shortPassword }),
-            username: z.string().min(3, { error: messages.shortUsername }),
+            // Free and possibly repeated, only not blank (decision 8).
+            username: z.string().trim().min(1, { error: messages.nameRequired }),
         })
         .superRefine((values, ctx) => {
             if (values.password.length >= 8 && !STRONG_PASSWORD_REGEX.test(values.password)) {

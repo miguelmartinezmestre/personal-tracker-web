@@ -48,7 +48,6 @@ export function useCreateOrganization() {
             const result = await authClient.organization.create({
                 name: values.name,
                 logo: '',
-                metadata: values.description ? { description: values.description } : undefined,
                 slug: buildUniqueOrganizationSlug(values.name),
             });
 
@@ -63,10 +62,7 @@ export function useUpdateOrganization() {
     return useMutation({
         mutationFn: async (values: UpdateOrganization) => {
             const result = await authClient.organization.update({
-                data: {
-                    name: values.name,
-                    metadata: { description: values.description },
-                },
+                data: { name: values.name },
                 organizationId: values.id,
             });
 

@@ -29,6 +29,7 @@ export type AuthOptions = BetterAuthOptionsWithoutDatabase & {
 };
 
 const registrationRequestBodySchema = z.object({
+    name: z.string().optional(),
     email: z.string().optional(),
     callbackURL: z.string().optional(),
     password: z.string().optional(),
@@ -141,16 +142,45 @@ function createSessionCreateHook(ctx: GenericCtx) {
     };
 }
 
+// The name is free and may repeat, but it can't be blank (decision 8).
+function rejectBlankName(path: string, name: string | undefined) {
+    if (['/sign-up/email', '/update-user'].includes(path) && name !== undefined && !name.trim()) {
+        throw new APIError('BAD_REQUEST', {
+            code: ERROR_CODES.NAME_REQUIRED,
+            message: 'The name cannot be empty.',
+        });
+    }
+}
+
+// Signing up from an invitation link joins its organization straight away (decision 9).
+function createUserCreateHook(ctx: GenericCtx) {
+    return {
+        after: async (user: { id: string }, endpoint?: { body?: unknown } | null) => {
+            const parsedBody = registrationRequestBodySchema.safeParse(endpoint?.body);
+            const callbackURL = parsedBody.success ? parsedBody.data.callbackURL : undefined;
+            const invitationId = callbackURL ? getInvitationIdFromCallbackPath(callbackURL) : null;
+
+            if (invitationId) {
+                await requireRunnableCtx(ctx).runMutation(
+                    internal.organizations.acceptInvitationOnRegistration,
+                    { invitationId, userId: user.id }
+                );
+            }
+        },
+    };
+}
+
 function createRegistrationHook(ctx: GenericCtx) {
     return createAuthMiddleware(async authRequest => {
         const pathsWithStrongPassword = ['/sign-up/email', '/reset-password', '/change-password'];
+        const parsedBody = registrationRequestBodySchema.safeParse(authRequest.body);
+        const body = parsedBody.success ? parsedBody.data : undefined;
+
+        rejectBlankName(authRequest.path, body?.name);
 
         if (!pathsWithStrongPassword.includes(authRequest.path)) {
             return;
         }
-
-        const parsedBody = registrationRequestBodySchema.safeParse(authRequest.body);
-        const body = parsedBody.success ? parsedBody.data : undefined;
 
         if (authRequest.path === '/sign-up/email') {
             const email = body?.email;
@@ -203,7 +233,20 @@ function createRegistrationHook(ctx: GenericCtx) {
 
 function createOrganizationPlugin(ctx: GenericCtx) {
     return organization({
-        requireEmailVerificationOnInvitation: true,
+        // Whether accepting needs a verified email is decided per invitation (decision 9).
+        requireEmailVerificationOnInvitation: false,
+        schema: {
+            invitation: {
+                additionalFields: {
+                    requireEmailVerification: {
+                        type: 'boolean',
+                        required: false,
+                        defaultValue: false,
+                        input: true,
+                    },
+                },
+            },
+        },
         invitationExpiresIn: 60 * 60 * 24 * 2,
         defaultRole: 'member',
         organizationHooks: {
@@ -299,11 +342,18 @@ function createOrganizationPlugin(ctx: GenericCtx) {
                     });
                 }
             },
-            beforeAcceptInvitation: async ({ organization }) => {
+            beforeAcceptInvitation: async ({ invitation, organization, user }) => {
                 if (await isProtectedDefaultOrganization(ctx, organization.id)) {
                     throw new APIError('FORBIDDEN', {
                         code: ERROR_CODES.PERSONAL_ORG_INVITE_FORBIDDEN,
                         message: 'Personal organization cannot invite members.',
+                    });
+                }
+
+                if (invitation.requireEmailVerification === true && !user.emailVerified) {
+                    throw new APIError('FORBIDDEN', {
+                        code: 'EMAIL_VERIFICATION_REQUIRED_BEFORE_ACCEPTING_OR_REJECTING_INVITATION',
+                        message: 'Verify your email before accepting this invitation.',
                     });
                 }
             },
@@ -355,6 +405,11 @@ export function buildBetterAuthOptions(ctx: GenericCtx): AuthOptions {
                 enabled: false,
             },
         },
+        // Sessions last seven days and are renewed on each day they are used (decision 18).
+        session: {
+            expiresIn: 7 * 24 * 60 * 60,
+            updateAge: 24 * 60 * 60,
+        },
         emailAndPassword: {
             enabled: true,
             sendResetPassword: passwordHooks.sendResetPassword,
@@ -367,6 +422,9 @@ export function buildBetterAuthOptions(ctx: GenericCtx): AuthOptions {
         databaseHooks: {
             session: {
                 create: createSessionCreateHook(ctx),
+            },
+            user: {
+                create: createUserCreateHook(ctx),
             },
         },
         hooks: {

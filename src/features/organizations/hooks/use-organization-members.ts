@@ -9,6 +9,7 @@ export interface CreateOrganizationMemberParams {
     organizationId: string;
     email: string;
     role: OrganizationRoleValue;
+    requireEmailVerification: boolean;
 }
 
 export interface UpdateOrganizationMemberParams {
@@ -29,6 +30,7 @@ export function useCreateOrganizationMember() {
                 email: values.email,
                 role: values.role,
                 organizationId: values.organizationId,
+                requireEmailVerification: values.requireEmailVerification,
             });
 
             throwIfAuthClientError(result);

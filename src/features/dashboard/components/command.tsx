@@ -12,7 +12,7 @@ import {
 } from '@/components/ui/command';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
-import { Home, Mail, Target, Users } from 'lucide-react';
+import { Home, Mail, MonitorSmartphone, Settings, Target, Users } from 'lucide-react';
 import { useMountEffect } from '@/hooks/use-mount-effect';
 
 export default function CommandMenu() {
@@ -86,6 +86,20 @@ export default function CommandMenu() {
                         >
                             <Users className="mr-2 h-4 w-4" />
                             <span>{tSidebar('organizations')}</span>
+                        </CommandItem>
+                        <CommandItem
+                            onSelect={() => runCommand(() => router.push('/dashboard/sessions'))}
+                            data-testid="command-item-sessions"
+                        >
+                            <MonitorSmartphone className="mr-2 h-4 w-4" />
+                            <span>{tSidebar('sessions')}</span>
+                        </CommandItem>
+                        <CommandItem
+                            onSelect={() => runCommand(() => router.push('/dashboard/settings'))}
+                            data-testid="command-item-settings"
+                        >
+                            <Settings className="mr-2 h-4 w-4" />
+                            <span>{tSidebar('settings')}</span>
                         </CommandItem>
                     </CommandGroup>
 

@@ -7,6 +7,9 @@ import { ERROR_CODES } from '../../shared/errorCodes';
 
 export const SESSION_REVOCATION_BATCH_SIZE = 100;
 
+// A brand-new account has the session it just signed in with, at most.
+export const NEW_ACCOUNT_SESSIONS = 5;
+
 export async function currentSessionId(ctx: QueryCtx) {
     const session = await getSession(ctx);
 

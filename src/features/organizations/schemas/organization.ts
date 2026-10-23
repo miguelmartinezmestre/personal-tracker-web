@@ -11,7 +11,6 @@ export function organizationSchema(message: (key: OrganizationValidationKey) => 
             .trim()
             .min(1, { error: message('nameRequired') })
             .max(ORGANIZATION_NAME_MAX_LENGTH, { error: message('nameTooLong') }),
-        description: z.string(),
     });
 }
 

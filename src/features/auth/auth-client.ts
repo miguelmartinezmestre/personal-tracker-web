@@ -42,6 +42,11 @@ export const authClient = createAuthClient({
                         logo: { type: 'string' },
                     },
                 },
+                invitation: {
+                    additionalFields: {
+                        requireEmailVerification: { type: 'boolean', required: false },
+                    },
+                },
             },
         }),
     ],

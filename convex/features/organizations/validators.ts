@@ -12,7 +12,6 @@ export const organizationSummaryValidator = v.object({
     id: v.id('organization'),
     name: v.string(),
     slug: v.string(),
-    description: v.string(),
     logo: v.optional(v.union(v.null(), v.string())),
     createdAt: v.number(),
     role: organizationRoleValidator,
@@ -46,6 +45,7 @@ export const userInvitationValidator = v.object({
     organizationId: v.id('organization'),
     organization: v.object({ name: v.string() }),
     inviter: v.optional(v.object({ name: v.string() })),
+    requireEmailVerification: v.boolean(),
 });
 
 export const currentSessionValidator = v.object({

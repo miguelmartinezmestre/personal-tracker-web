@@ -42,27 +42,34 @@ async function setActiveOrganization(page: Page, orgName: string): Promise<void>
 }
 
 test.describe('Organizations CRUD', () => {
-    test('create new organization', { tag: ['@REQ-EQUIPOS-001'] }, async ({ page }) => {
-        const orgData = OrganizationFactory.create();
+    test(
+        'create a new organization with just a name',
+        { tag: ['@REQ-EQUIPOS-001'] },
+        async ({ page }) => {
+            const orgData = OrganizationFactory.create();
 
-        await page.goto('/dashboard/organizations');
-        await page.waitForLoadState('domcontentloaded');
+            await page.goto('/dashboard/organizations');
+            await page.waitForLoadState('domcontentloaded');
 
-        await expect(page.getByTestId('organizations-title')).toBeVisible({
-            timeout: 15000,
-        });
+            await expect(page.getByTestId('organizations-title')).toBeVisible({
+                timeout: 15000,
+            });
 
-        await page.getByTestId('organization-create-open').click();
+            await page.getByTestId('organization-create-open').click();
 
-        await page.getByTestId('organization-name-input').fill(orgData.name);
-        await page.getByTestId('organization-description-input').fill(orgData.description);
+            await page.getByTestId('organization-name-input').fill(orgData.name);
+            await expect(page.getByTestId('organization-description-input')).toHaveCount(0);
 
-        await page.getByTestId('organization-save-button').click();
+            await page.getByTestId('organization-save-button').click();
 
-        const createdRow = page.getByTestId('table-row').filter({ hasText: orgData.name }).first();
-        await expect(createdRow).toBeVisible({ timeout: 10000 });
-        await expect(createdRow).toContainText(orgData.description);
-    });
+            const createdRow = page
+                .getByTestId('table-row')
+                .filter({ hasText: orgData.name })
+                .first();
+
+            await expect(createdRow).toBeVisible({ timeout: 10000 });
+        }
+    );
 
     test('edit organization name', { tag: ['@REQ-EQUIPOS-007'] }, async ({ page }) => {
         const organization = await createOrganization(page, {
@@ -95,9 +102,7 @@ test.describe('Organizations CRUD', () => {
         await expect(nameInput).toBeVisible({ timeout: 10000 });
 
         const newName = `Updated Org ${randomUUID().substring(0, 8)}`;
-        const newDescription = `Updated description ${randomUUID().substring(0, 8)}`;
         await nameInput.fill(newName);
-        await page.getByTestId('organization-edit-description-input').fill(newDescription);
 
         const saveButton = page.getByTestId('organization-edit-save-button');
         await saveButton.click();
@@ -109,7 +114,7 @@ test.describe('Organizations CRUD', () => {
             .filter({ hasText: newName })
             .first();
 
-        await expect(updatedRow).toContainText(newDescription, { timeout: 10000 });
+        await expect(updatedRow).toBeVisible({ timeout: 10000 });
     });
 
     test('delete organization', { tag: ['@REQ-EQUIPOS-008', '@REQ-NF-011'] }, async ({ page }) => {

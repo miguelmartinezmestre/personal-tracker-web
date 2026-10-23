@@ -2,7 +2,6 @@ import type { Browser, BrowserContext, Page } from '@playwright/test';
 import { expect } from '@playwright/test';
 import { randomUUID } from 'crypto';
 import { createOrganization, createTestUser, type TestUserData } from './test-helpers';
-import { verifyEmailFromInvitationPage } from './email-verification';
 
 export type CollaboratorSession = {
     context: BrowserContext;
@@ -50,8 +49,6 @@ export async function setupCollaboratorInOrganization(
 
     await page.goto('/dashboard/invitations');
     await page.waitForURL(/\/dashboard\/invitations(?:\?|$)/, { timeout: 15000 });
-
-    await verifyEmailFromInvitationPage(page, collaboratorUser.email);
 
     const acceptButton = page.getByTestId('invitation-accept-button').first();
     await expect(acceptButton).toBeVisible({ timeout: 20000 });

@@ -31,7 +31,7 @@ export default async function Register({ searchParams }: RegisterProps) {
     const registrationRequiresInvitation = settings?.registrationPolicy !== 'open';
     let invitationStatus = null;
 
-    if (registrationRequiresInvitation && params.invitation) {
+    if (params.invitation) {
         invitationStatus = await client.query(api.organizations.getPublicInvitationStatus, {
             invitationId: params.invitation,
         });
@@ -63,7 +63,10 @@ export default async function Register({ searchParams }: RegisterProps) {
             <h1 className="text-2xl font-bold text-center mb-6 text-primary">
                 {t('createAccount')}
             </h1>
-            <RegisterForm invitationToken={params.invitation} />
+            <RegisterForm
+                invitationToken={params.invitation}
+                invitationRequiresVerification={invitationStatus?.requireEmailVerification ?? false}
+            />
         </div>
     );
 }

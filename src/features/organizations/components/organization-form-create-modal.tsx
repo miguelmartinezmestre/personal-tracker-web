@@ -4,7 +4,6 @@ import { PlusCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import type { CreateOrganization } from '@/features/organizations/schemas/organization';
 import { useOrganizationFormSchema } from '@/features/organizations/hooks/use-organization-form-schemas';
 import { useTranslations } from 'next-intl';
@@ -17,7 +16,6 @@ import { toast } from 'sonner';
 
 const defaultValues: CreateOrganization = {
     name: '',
-    description: '',
 };
 
 export default function CreateOrganizationFormModal() {
@@ -80,37 +78,6 @@ export default function CreateOrganizationFormModal() {
                                     />
                                     <FieldDescription>
                                         {t('giveYourOrganizationAClearConciseTitle')}
-                                    </FieldDescription>
-                                    {isInvalid && <FieldError errors={errors} />}
-                                </Field>
-                            );
-                        }}
-                    </form.Field>
-
-                    <form.Field name="description">
-                        {field => {
-                            const errors = getFieldErrors(form, field);
-                            const isInvalid = !!errors.length;
-                            const value = field.state.value;
-
-                            return (
-                                <Field data-invalid={isInvalid}>
-                                    <FieldLabel htmlFor={field.name}>
-                                        {t('tableDescription')}
-                                    </FieldLabel>
-                                    <Textarea
-                                        id={field.name}
-                                        name={field.name}
-                                        placeholder={t('describeOrganizationInDetail')}
-                                        className="resize-none min-h-[80px]"
-                                        value={value}
-                                        onChange={event => field.handleChange(event.target.value)}
-                                        onBlur={field.handleBlur}
-                                        aria-invalid={isInvalid}
-                                        data-testid="organization-description-input"
-                                    />
-                                    <FieldDescription>
-                                        {t('optionalAddDetailsAboutYourOrganization')}
                                     </FieldDescription>
                                     {isInvalid && <FieldError errors={errors} />}
                                 </Field>

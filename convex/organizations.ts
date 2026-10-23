@@ -1,4 +1,5 @@
 import { ConvexError, v } from 'convex/values';
+import type { Doc } from './_generated/dataModel';
 import { ERROR_CODES } from './shared/errorCodes';
 import {
     buildDefaultOrganizationSlug,
@@ -10,25 +11,28 @@ import {
     paginatedOrganizationMembersValidator,
     userInvitationValidator,
 } from './features/organizations/validators';
-import {
-    getOrganizationDescription,
-    toOrganizationSummaries,
-} from './features/organizations/summaries';
+import { toOrganizationSummaries } from './features/organizations/summaries';
 import { getSession } from 'kitcn/auth';
 import { isActiveAccount } from './features/auth/users';
 import { isOrganizationAdminRole, normalizeOrganizationRole } from './features/organizations/roles';
 import { paginationOptsValidator, paginationResultValidator } from 'convex/server';
-import { query } from './_generated/server';
+import { internalMutation, query } from './_generated/server';
+import { normalizeRegistrationEmail } from './features/auth/users';
 import { queryWithRLS } from './features/authorization/wrappers';
 import { resolveActiveMembership } from './features/authorization/authContext';
 import { withNextPageCheck, withPaginationLimits } from './shared/pagination';
+import { NEW_ACCOUNT_SESSIONS } from './features/auth/sessions';
 
 export const getPublicInvitationStatus = query({
     args: {
         invitationId: v.string(),
     },
     // The organization name is only shown to whoever holds a valid invitation link.
-    returns: v.object({ isValid: v.boolean(), organizationName: v.optional(v.string()) }),
+    returns: v.object({
+        isValid: v.boolean(),
+        organizationName: v.optional(v.string()),
+        requireEmailVerification: v.optional(v.boolean()),
+    }),
     handler: async (ctx, args) => {
         const serverNow = Date.now();
         const invitationId = ctx.db.normalizeId('invitation', args.invitationId);
@@ -49,7 +53,11 @@ export const getPublicInvitationStatus = query({
             return { isValid: false };
         }
 
-        return { isValid: true, organizationName: organization.name };
+        return {
+            isValid: true,
+            organizationName: organization.name,
+            requireEmailVerification: invitation.requireEmailVerification ?? false,
+        };
     },
 });
 
@@ -211,7 +219,6 @@ export const getOrganizationByIdentifier = queryWithRLS({
             id: org._id,
             name: org.name,
             slug: org.slug,
-            description: getOrganizationDescription(org.metadata),
             logo: org.logo,
             createdAt: org.createdAt,
             role: normalizeOrganizationRole(member.role),
@@ -227,11 +234,14 @@ export const getUserInvitations = queryWithRLS({
     args: { paginationOpts: paginationOptsValidator },
     returns: paginationResultValidator(userInvitationValidator),
     handler: async (ctx, args) => {
-        const email = ctx.email;
+        // Unverified accounts still get the invitations that don't ask for a verified email.
+        const user = await ctx.dbForIntegrityChecks.get('user', ctx.userId);
 
-        if (!email) {
+        if (!user) {
             return { page: [], isDone: true, continueCursor: '' };
         }
+
+        const email = user.email;
 
         const result = await ctx.dbForIntegrityChecks
             .query('invitation')
@@ -243,7 +253,12 @@ export const getUserInvitations = queryWithRLS({
             .paginate(withPaginationLimits(args.paginationOpts));
 
         const now = Date.now();
-        const live = result.page.filter(invitation => invitation.expiresAt > now);
+
+        const isListed = (invitation: Doc<'invitation'>) =>
+            invitation.expiresAt > now &&
+            (user.emailVerified || invitation.requireEmailVerification !== true);
+
+        const live = result.page.filter(isListed);
 
         const page = await Promise.all(
             live.map(async invitation => {
@@ -263,6 +278,7 @@ export const getUserInvitations = queryWithRLS({
                     organizationId: invitation.organizationId,
                     organization: { name: organization.name },
                     inviter: inviter ? { name: inviter.name } : undefined,
+                    requireEmailVerification: invitation.requireEmailVerification ?? false,
                 };
             })
         );
@@ -275,10 +291,14 @@ export const getUserInvitations = queryWithRLS({
                 prefix: [email, 'pending'],
                 indexKey: doc => [doc.email, doc.status, doc.expiresAt],
                 paginationOpts: args.paginationOpts,
-                isLive: doc => doc.expiresAt > now,
+                isLive: isListed,
             },
             // Newest expiry first, so once one has expired every later one has too.
-            { ...result, isDone: result.isDone || live.length < result.page.length },
+            {
+                ...result,
+                isDone:
+                    result.isDone || result.page.some(invitation => invitation.expiresAt <= now),
+            },
             page.filter(invitation => invitation !== null)
         );
     },
@@ -408,5 +428,53 @@ export const getOrganizationPendingInvitations = queryWithRLS({
                 expiresAt: invitation.expiresAt,
             }))
         );
+    },
+});
+
+// Called right after signing up from an invitation link; one that needs a verified email waits
+// in the invitations page instead (decision 9).
+export const acceptInvitationOnRegistration = internalMutation({
+    args: { invitationId: v.string(), userId: v.string() },
+    returns: v.null(),
+    handler: async (ctx, args) => {
+        const invitationId = ctx.db.normalizeId('invitation', args.invitationId);
+        const userId = ctx.db.normalizeId('user', args.userId);
+        const invitation = invitationId && (await ctx.db.get('invitation', invitationId));
+        const user = userId && (await ctx.db.get('user', userId));
+
+        if (
+            !invitation ||
+            !user ||
+            invitation.status !== 'pending' ||
+            invitation.expiresAt <= Date.now() ||
+            invitation.requireEmailVerification === true ||
+            normalizeRegistrationEmail(invitation.email) !==
+                normalizeRegistrationEmail(user.email) ||
+            !(await ctx.db.get('organization', invitation.organizationId))
+        ) {
+            return null;
+        }
+
+        await ctx.db.insert('member', {
+            organizationId: invitation.organizationId,
+            userId: user._id,
+            role: invitation.role ?? 'member',
+            createdAt: Date.now(),
+        });
+        await ctx.db.patch('invitation', invitation._id, { status: 'accepted' });
+
+        // The first session may already exist in the personal organization; start in this one.
+        const sessions = await ctx.db
+            .query('session')
+            .withIndex('userId', q => q.eq('userId', user._id))
+            .take(NEW_ACCOUNT_SESSIONS);
+
+        for (const session of sessions) {
+            await ctx.db.patch('session', session._id, {
+                activeOrganizationId: invitation.organizationId,
+            });
+        }
+
+        return null;
     },
 });

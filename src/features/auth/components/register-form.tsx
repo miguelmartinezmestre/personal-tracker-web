@@ -22,6 +22,8 @@ import { convexQuery } from '@convex-dev/react-query';
 
 interface RegisterFormProps {
     invitationToken?: string | null;
+    // Without it, signing up from the invitation joins its organization at once (decision 9).
+    invitationRequiresVerification?: boolean;
 }
 
 type RegistrationAttempt =
@@ -30,11 +32,13 @@ type RegistrationAttempt =
 async function registerAccount({
     values,
     invitationToken,
+    invitationRequiresVerification,
     hasActiveSession,
     signOut,
 }: {
     values: RegisterFormValues;
     invitationToken?: string | null;
+    invitationRequiresVerification: boolean;
     hasActiveSession: boolean;
     signOut: () => Promise<void>;
 }): Promise<RegistrationAttempt> {
@@ -53,7 +57,7 @@ async function registerAccount({
         return { status: 'error', error: result.error };
     }
 
-    if (!invitationToken) {
+    if (!invitationToken || !invitationRequiresVerification) {
         return { status: 'dashboard' };
     }
 
@@ -69,7 +73,10 @@ async function registerAccount({
     return { status: 'verification-sent' };
 }
 
-export default function RegisterForm({ invitationToken }: RegisterFormProps) {
+export default function RegisterForm({
+    invitationToken,
+    invitationRequiresVerification = false,
+}: RegisterFormProps) {
     const hydrated = useHydrated();
     const router = useRouter();
     const locale = useLocale() === 'es' ? 'es' : 'en';
@@ -80,7 +87,7 @@ export default function RegisterForm({ invitationToken }: RegisterFormProps) {
         weakPassword: t('errors.weakPassword'),
         passwordsDontMatch: t('errors.passwordsDontMatch'),
         invalidEmail: tCommon('validation.invalidEmail'),
-        shortUsername: tCommon('validation.minimumCharacters', { count: 3 }),
+        nameRequired: tCommon('validation.required'),
         shortPassword: tCommon('validation.minimumCharacters', { count: 8 }),
     });
 
@@ -120,6 +127,7 @@ export default function RegisterForm({ invitationToken }: RegisterFormProps) {
         await registerAccount({
             values,
             invitationToken,
+            invitationRequiresVerification,
             hasActiveSession: Boolean(session.data?.user),
             signOut: async () => {
                 await signOutMutation.mutateAsync();

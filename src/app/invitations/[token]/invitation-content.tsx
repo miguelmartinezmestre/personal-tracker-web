@@ -24,12 +24,14 @@ interface InvitationContentProps {
     // Pending and not expired when the page was rendered.
     invitationValid: boolean;
     organizationName?: string | undefined;
+    requireEmailVerification: boolean;
 }
 
 export default function InvitationContent({
     token,
     invitationValid,
     organizationName,
+    requireEmailVerification,
 }: InvitationContentProps) {
     const router = useRouter();
     const t = useTranslations('Invitations');
@@ -138,8 +140,12 @@ export default function InvitationContent({
         return <InvitationLoginRequired token={token} organizationName={organizationName} />;
     }
 
-    // Accepting requires a verified email; the invitations page offers the verification email.
-    if (sessionQuery.data?.user && !sessionQuery.data.user.emailVerified) {
+    // The inviter asked for a verified email; the invitations page offers the verification email.
+    if (
+        requireEmailVerification &&
+        sessionQuery.data?.user &&
+        !sessionQuery.data.user.emailVerified
+    ) {
         return <InvitationVerificationRequired />;
     }
 

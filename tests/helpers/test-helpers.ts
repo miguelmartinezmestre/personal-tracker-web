@@ -187,7 +187,6 @@ export async function logoutUser(page: Page): Promise<void> {
 
 interface CreateOrganizationOptions {
     name?: string;
-    description?: string;
 }
 
 interface OrganizationData {
@@ -200,14 +199,12 @@ export async function createOrganization(
 ): Promise<OrganizationData> {
     const uuid = randomUUID();
     const name = options?.name ?? `test-org-${uuid.substring(0, 8)}`;
-    const description = options?.description ?? 'Test organization description';
     await page.goto('/dashboard/organizations');
     await page.waitForURL(/\/dashboard\/organizations(\?|$)/, { timeout: 15000 });
     await page.waitForSelector('[data-testid="organizations-title"]', { timeout: 15000 });
     await page.getByTestId('organization-create-open').click();
     await page.waitForSelector('[data-testid="organization-name-input"]', { timeout: 5000 });
     await page.getByTestId('organization-name-input').fill(name);
-    await page.getByTestId('organization-description-input').fill(description);
     await page.getByTestId('organization-save-button').click();
     await expect(page.getByTestId('organization-name-input')).toBeHidden({ timeout: 20000 });
     await expect(page.getByTestId('table-row').filter({ hasText: name }).first()).toBeVisible({

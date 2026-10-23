@@ -33,10 +33,6 @@ export default function OrganizationsTable() {
                 row.original.isPersonal ? t('personalOrganizationName') : row.original.name,
         },
         {
-            accessorKey: 'description',
-            header: t('tableDescription'),
-        },
-        {
             header: () => <span className="sr-only">{t('editOrganization')}</span>,
             id: 'update-organization',
             cell: ({ row }) => {

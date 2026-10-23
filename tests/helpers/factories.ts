@@ -25,12 +25,10 @@ export const OrganizationFactory = {
 
         return {
             name: `Test Organization ${shortId}`,
-            description: 'Test organization description',
         };
     },
 };
 
 interface OrganizationData {
     name: string;
-    description: string;
 }

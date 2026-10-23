@@ -171,16 +171,14 @@ export function InvitationsList() {
 
     const pendingInvitations = invitations;
 
-    // Unverified accounts get no invitations from the backend, only the prompt to verify.
-    if (requiresEmailVerification) {
-        return (
-            <VerificationAlert
-                verificationSent={verificationSent}
-                isPending={sendVerificationEmail.isPending}
-                onSend={() => sendVerificationEmail.mutate()}
-            />
-        );
-    }
+    // Invitations that ask for a verified email only reach verified accounts (decision 9).
+    const verificationAlert = requiresEmailVerification ? (
+        <VerificationAlert
+            verificationSent={verificationSent}
+            isPending={sendVerificationEmail.isPending}
+            onSend={() => sendVerificationEmail.mutate()}
+        />
+    ) : null;
 
     if (pendingInvitations.length === 0) {
         if (acceptInvitation.isPending) {
@@ -192,10 +190,15 @@ export function InvitationsList() {
         }
 
         return (
-            <div className="text-center py-16" data-testid="invitations-empty">
-                <Mail className="mx-auto h-12 w-12 text-muted-foreground/50" />
-                <h3 className="mt-4 text-lg font-semibold">{t('noPendingTitle')}</h3>
-                <p className="mt-2 text-sm text-muted-foreground">{t('noPendingDescription')}</p>
+            <div className="space-y-4">
+                {verificationAlert}
+                <div className="text-center py-16" data-testid="invitations-empty">
+                    <Mail className="mx-auto h-12 w-12 text-muted-foreground/50" />
+                    <h3 className="mt-4 text-lg font-semibold">{t('noPendingTitle')}</h3>
+                    <p className="mt-2 text-sm text-muted-foreground">
+                        {t('noPendingDescription')}
+                    </p>
+                </div>
             </div>
         );
     }
@@ -248,6 +251,7 @@ export function InvitationsList() {
 
     return (
         <div className="space-y-4">
+            {verificationAlert}
             {actionErrorAlert}
             <p className="text-sm text-muted-foreground">{t('orgSwitchNote')}</p>
             <div data-testid="invitations-list">
