@@ -1,14 +1,12 @@
+import { internal } from '../../_generated/api';
 import type { MutationCtx } from '../../_generated/server';
-import { getAuthUserId, type Triggers as BetterAuthTriggers } from 'kitcn/auth';
+import type { Triggers as BetterAuthTriggers } from 'kitcn/auth';
 import { requireMutationCtx, type GenericCtx } from '../../shared/ctx';
 import type schema from '../../schema';
-import type { DataModel, Doc, Id } from '../../_generated/dataModel';
-import { resolveActorUserId } from './privacy';
+import type { DataModel, Doc } from '../../_generated/dataModel';
+import { insertAuditLog, type AuditEntry, type AuditRecord } from './log';
 
 type BetterAuthSchema = typeof schema;
-
-// Allowlisted IDs, enums, numbers and flags only: free text and personal data never reach the log.
-type AuditRecord = Record<string, string | number | boolean | null>;
 
 const sanitizeSession = (session: Doc<'session'>) =>
     ({
@@ -54,66 +52,24 @@ const sanitizeMember = (member: Doc<'member'>) =>
 
 const insertAuthAuditLog = async (
     ctx: MutationCtx,
-    args: {
-        action: string;
-        resourceType: string;
-        resourceId?: string | null;
+    args: Omit<AuditEntry, 'userId' | 'organizationId' | 'resourceId'> & {
         userId: string;
         organizationId?: string | null;
-        // Already reduced to allowlisted, redacted fields by the sanitize* helpers above.
-        metadata?: { before?: AuditRecord; after?: AuditRecord };
+        resourceId?: string;
     }
 ) => {
-    let organizationId: Id<'organization'> | null = null;
+    const userId = ctx.db.normalizeId('user', args.userId);
 
-    if (args.organizationId) {
-        organizationId = ctx.db.normalizeId('organization', args.organizationId);
-    }
-
-    if (!organizationId && args.userId) {
-        const fallbackUserId = ctx.db.normalizeId('user', args.userId);
-
-        if (fallbackUserId) {
-            const membership = await ctx.db
-                .query('member')
-                .withIndex('userId', q => q.eq('userId', fallbackUserId))
-                .first();
-
-            if (membership?.organizationId) {
-                organizationId = ctx.db.normalizeId('organization', membership.organizationId);
-            }
-        }
-    }
-
-    const normalizedUserId = ctx.db.normalizeId('user', args.userId);
-
-    if (!organizationId || !normalizedUserId) {
+    if (!userId) {
         return;
     }
 
-    const rawActorUserId = await getAuthUserId(ctx);
-    let normalizedActorUserId: Id<'user'> | undefined;
+    // Sessions and accounts are platform-wide: only organization events carry one.
+    const organizationId = args.organizationId
+        ? (ctx.db.normalizeId('organization', args.organizationId) ?? undefined)
+        : undefined;
 
-    if (rawActorUserId) {
-        normalizedActorUserId = ctx.db.normalizeId('user', rawActorUserId) ?? undefined;
-    } else {
-        normalizedActorUserId = undefined;
-    }
-
-    const actorUserId = resolveActorUserId(normalizedUserId, normalizedActorUserId);
-
-    const { before, after } = args.metadata ?? {};
-
-    await ctx.db.insert('auditLogs', {
-        userId: normalizedUserId,
-        actorUserId,
-        organizationId,
-        action: args.action,
-        resourceType: args.resourceType,
-        resourceId: args.resourceId ?? undefined,
-        metadata: before || after ? { before, after } : undefined,
-        createdAt: Date.now(),
-    });
+    await insertAuditLog(ctx, { ...args, userId, organizationId });
 };
 
 export const authAuditTriggers: BetterAuthTriggers<DataModel, BetterAuthSchema, GenericCtx> = {
@@ -124,6 +80,7 @@ export const authAuditTriggers: BetterAuthTriggers<DataModel, BetterAuthSchema, 
             if (change.operation === 'insert') {
                 await insertAuthAuditLog(mutationCtx, {
                     action: 'session.created',
+                    severity: 'info',
                     resourceType: 'session',
                     resourceId: change.newDoc._id,
                     userId: change.newDoc.userId,
@@ -135,6 +92,7 @@ export const authAuditTriggers: BetterAuthTriggers<DataModel, BetterAuthSchema, 
             if (change.operation === 'delete') {
                 await insertAuthAuditLog(mutationCtx, {
                     action: 'session.deleted',
+                    severity: 'info',
                     resourceType: 'session',
                     resourceId: change.oldDoc._id,
                     userId: change.oldDoc.userId,
@@ -151,6 +109,7 @@ export const authAuditTriggers: BetterAuthTriggers<DataModel, BetterAuthSchema, 
             if (change.operation === 'insert') {
                 await insertAuthAuditLog(mutationCtx, {
                     action: 'invitation.created',
+                    severity: 'info',
                     resourceType: 'invitation',
                     resourceId: change.newDoc._id,
                     userId: change.newDoc.inviterId,
@@ -162,6 +121,7 @@ export const authAuditTriggers: BetterAuthTriggers<DataModel, BetterAuthSchema, 
             if (change.operation === 'update') {
                 await insertAuthAuditLog(mutationCtx, {
                     action: 'invitation.updated',
+                    severity: 'info',
                     resourceType: 'invitation',
                     resourceId: change.newDoc._id,
                     userId: change.newDoc.inviterId,
@@ -176,6 +136,7 @@ export const authAuditTriggers: BetterAuthTriggers<DataModel, BetterAuthSchema, 
             if (change.operation === 'delete') {
                 await insertAuthAuditLog(mutationCtx, {
                     action: 'invitation.deleted',
+                    severity: 'warning',
                     resourceType: 'invitation',
                     resourceId: change.oldDoc._id,
                     userId: change.oldDoc.inviterId,
@@ -192,6 +153,7 @@ export const authAuditTriggers: BetterAuthTriggers<DataModel, BetterAuthSchema, 
             if (change.operation === 'update') {
                 await insertAuthAuditLog(mutationCtx, {
                     action: 'user.updated',
+                    severity: 'warning',
                     resourceType: 'user',
                     resourceId: change.newDoc._id,
                     userId: change.newDoc._id,
@@ -205,6 +167,7 @@ export const authAuditTriggers: BetterAuthTriggers<DataModel, BetterAuthSchema, 
             if (change.operation === 'delete') {
                 await insertAuthAuditLog(mutationCtx, {
                     action: 'user.deleted',
+                    severity: 'critical',
                     resourceType: 'user',
                     resourceId: change.oldDoc._id,
                     userId: change.oldDoc._id,
@@ -218,8 +181,17 @@ export const authAuditTriggers: BetterAuthTriggers<DataModel, BetterAuthSchema, 
             const mutationCtx = requireMutationCtx(ctx);
 
             if (change.operation === 'delete') {
+                await mutationCtx.scheduler.runAfter(
+                    0,
+                    internal.objectiveAccess.removeMemberAccess,
+                    {
+                        userId: change.oldDoc.userId,
+                        organizationId: change.oldDoc.organizationId,
+                    }
+                );
                 await insertAuthAuditLog(mutationCtx, {
                     action: 'organization_member.deleted',
+                    severity: 'warning',
                     resourceType: 'organization_member',
                     resourceId: change.oldDoc._id,
                     userId: change.oldDoc.userId,

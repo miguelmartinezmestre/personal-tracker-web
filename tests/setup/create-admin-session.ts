@@ -1,9 +1,14 @@
+import { mkdir } from 'node:fs/promises';
+import { dirname } from 'node:path';
 import { expect, type Page } from '@playwright/test';
 import {
     generateTestUserData,
     hasOrganizationSelectedInUI,
     type TestUserData,
 } from '../helpers/test-helpers';
+
+// The admin E2E project reuses this signed-in state of the global admin.
+const ADMIN_USER_FILE = 'tests/.auth/admin-user.json';
 
 async function fillSetupInput(
     page: Page,
@@ -106,4 +111,7 @@ export async function createAdminSession(page: Page): Promise<void> {
     await expect(page.getByTestId('dashboard-home-stub')).toBeVisible({
         timeout: 10_000,
     });
+
+    await mkdir(dirname(ADMIN_USER_FILE), { recursive: true });
+    await page.context().storageState({ path: ADMIN_USER_FILE });
 }

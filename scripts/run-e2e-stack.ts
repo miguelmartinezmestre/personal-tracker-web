@@ -188,6 +188,7 @@ const E2E_WORKSPACE_ARTIFACT_DIRS = [
     'playwright-report',
     'blob-report',
     'reports/e2e',
+    'tests/.auth',
 ];
 
 function isInsideRepo(directoryPath: string): boolean {

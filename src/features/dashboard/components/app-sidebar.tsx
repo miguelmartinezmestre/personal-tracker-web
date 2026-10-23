@@ -1,6 +1,15 @@
 'use client';
 
-import { Goal, Home, Mail, Target, Users } from 'lucide-react';
+import {
+    Goal,
+    Home,
+    Mail,
+    MonitorSmartphone,
+    Settings,
+    ShieldCheck,
+    Target,
+    Users,
+} from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import {
     Sidebar,
@@ -18,6 +27,10 @@ import { useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
+import { useQuery } from '@tanstack/react-query';
+import { convexQuery } from '@convex-dev/react-query';
+import { api } from '@/convex/_generated/api';
+import { isGlobalAdminRole } from '@/convex/features/auth/roles';
 
 type ProjectNavItem = {
     name: string;
@@ -46,11 +59,30 @@ const baseProjects: ProjectNavItem[] = [
         url: '/dashboard/organizations',
         icon: Users,
     },
+    {
+        name: 'sessions',
+        url: '/dashboard/sessions',
+        icon: MonitorSmartphone,
+    },
+    {
+        name: 'settings',
+        url: '/dashboard/settings',
+        icon: Settings,
+    },
 ];
+
+// Only the global admin sees the administration entry (REQ-ROLES-002).
+const adminProject: ProjectNavItem = { name: 'admin', url: '/dashboard/admin', icon: ShieldCheck };
 
 export function AppSidebar() {
     const t = useTranslations('Sidebar');
     const pathname = usePathname();
+    const user = useQuery(convexQuery(api.auth.getCurrentUser, {}));
+
+    const projects = isGlobalAdminRole(user.data?.role)
+        ? [...baseProjects, adminProject]
+        : baseProjects;
+
     const { isMobile, setOpenMobile } = useSidebar();
     useEffect(() => {
         if (isMobile) {
@@ -74,7 +106,7 @@ export function AppSidebar() {
                 <SidebarGroup className="group-data-[collapsible=icon]:hidden">
                     <nav aria-label={t('navigationLabel')}>
                         <SidebarMenu data-testid="sidebar-menu">
-                            {baseProjects.map(item => {
+                            {projects.map(item => {
                                 let isActive: boolean;
 
                                 if (item.url === '/dashboard/objectives') {

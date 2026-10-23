@@ -8,26 +8,57 @@ import {
     mutation as rawMutation,
 } from '../../_generated/server';
 import { progressPercent } from './records';
+import {
+    auditCategoryChange,
+    auditObjectiveChange,
+    auditProgressChange,
+} from '../audit/domainChanges';
 
 /**
- * Per-organization counts and progress sums of objectives, keyed by [status, categoryId] so the
- * dashboard can read totals, completed counts and per-category stats without scanning the table.
+ * Per-organization counts and progress sums of objectives, keyed by [inTrash, memberCanView,
+ * status, categoryId] so the dashboard can read totals, completed counts and per-category stats
+ * without scanning the table, leaving the trash out and private objectives apart (P10).
  */
 export const objectiveStats = new TableAggregate<{
     Namespace: Id<'organization'>;
-    Key: [Doc<'objectives'>['status'], Id<'categories'> | null];
+    Key: [boolean, boolean, Doc<'objectives'>['status'], Id<'categories'> | null];
     DataModel: DataModel;
     TableName: 'objectives';
 }>(components.objectiveStats, {
     namespace: doc => doc.organizationId,
-    sortKey: doc => [doc.status, doc.categoryId ?? null],
+    sortKey: doc => [
+        doc.deletedAt !== undefined,
+        doc.memberCanView,
+        doc.status,
+        doc.categoryId ?? null,
+    ],
     sumValue: doc => progressPercent(doc),
+});
+
+// Objectives by progress within the same visibility groups, for the dashboard ranking.
+export const objectiveRanking = new TableAggregate<{
+    Namespace: Id<'organization'>;
+    Key: [boolean, boolean, number];
+    DataModel: DataModel;
+    TableName: 'objectives';
+}>(components.objectiveRanking, {
+    namespace: doc => doc.organizationId,
+    sortKey: doc => [doc.deletedAt !== undefined, doc.memberCanView, progressPercent(doc)],
 });
 
 const triggers = new Triggers<DataModel>();
 
 triggers.register('objectives', objectiveStats.idempotentTrigger());
 
-// Every objective write must go through these builders so the aggregate never drifts.
+triggers.register('objectives', objectiveRanking.idempotentTrigger());
+
+triggers.register('objectives', auditObjectiveChange);
+
+triggers.register('progressUpdates', auditProgressChange);
+
+triggers.register('categories', auditCategoryChange);
+
+// Every write to these tables must go through these builders so the aggregates never drift and
+// the audit log misses nothing.
 export const mutation = customMutation(rawMutation, customCtx(triggers.wrapDB));
 export const internalMutation = customMutation(rawInternalMutation, customCtx(triggers.wrapDB));

@@ -43,7 +43,9 @@
         ".next-e2e-setup/types/**/*.ts",
         ".next-e2e-setup/dev/types/**/*.ts",
         ".next-e2e-auth/types/**/*.ts",
-        ".next-e2e-auth/dev/types/**/*.ts"
+        ".next-e2e-auth/dev/types/**/*.ts",
+        ".next-e2e-admin/types/**/*.ts",
+        ".next-e2e-admin/dev/types/**/*.ts"
     ],
     "exclude": [
         "node_modules",

@@ -46,13 +46,19 @@ export default defineConfig({
             dependencies: ['setup'],
             use: chromeProjectUse,
             testMatch: ['**/e2e/**'],
-            testIgnore: ['**/e2e/auth/**', '**/e2e/security/**'],
+            testIgnore: ['**/e2e/auth/**', '**/e2e/security/**', '**/e2e/admin/**'],
         },
         {
             name: 'auth',
             dependencies: ['setup'],
             use: chromeProjectUse,
             testMatch: ['**/e2e/auth/**', '**/e2e/security/**'],
+        },
+        {
+            name: 'admin',
+            dependencies: ['setup'],
+            use: { ...chromeProjectUse, storageState: 'tests/.auth/admin-user.json' },
+            testMatch: ['**/e2e/admin/**'],
         },
     ],
 

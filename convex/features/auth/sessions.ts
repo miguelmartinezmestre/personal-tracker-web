@@ -44,3 +44,31 @@ export async function revokeOtherSessionsBatch(
 
     return batch.length;
 }
+
+/**
+ * Deletes one batch of the user's sessions and reschedules while any remain. `banUpdatedAt` ties
+ * the job to one ban: unbanning or banning again changes `updatedAt` and stops it (INH-ADM-04).
+ */
+export async function revokeBannedUserSessionsBatch(
+    ctx: Pick<MutationCtx, 'db' | 'scheduler'>,
+    args: { userId: Id<'user'>; banUpdatedAt: number }
+) {
+    const user = await ctx.db.get('user', args.userId);
+
+    if (user?.banned !== true || user.updatedAt !== args.banUpdatedAt) {
+        return;
+    }
+
+    const sessions = await ctx.db
+        .query('session')
+        .withIndex('userId', q => q.eq('userId', args.userId))
+        .take(SESSION_REVOCATION_BATCH_SIZE + 1);
+
+    for (const session of sessions.slice(0, SESSION_REVOCATION_BATCH_SIZE)) {
+        await ctx.db.delete('session', session._id);
+    }
+
+    if (sessions.length > SESSION_REVOCATION_BATCH_SIZE) {
+        await ctx.scheduler.runAfter(0, internal.admin.continueBanSessionRevocation, args);
+    }
+}
