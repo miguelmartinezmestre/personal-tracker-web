@@ -6,6 +6,8 @@ export const ORGANIZATION_DELETION_BATCH_SIZE = 50;
 export type OrganizationDeletionPhase =
     | 'progressUpdates'
     | 'objectivePermissions'
+    | 'notifications'
+    | 'achievements'
     | 'objectives'
     | 'categories'
     | 'invitations'
@@ -45,6 +47,38 @@ export async function deleteOrganizationObjectivePermissionsBatch(
 
     for (const row of rows) {
         await ctx.db.delete('objectivePermissions', row._id);
+    }
+
+    return rows.length;
+}
+
+export async function deleteOrganizationNotificationsBatch(
+    ctx: MutationCtx,
+    organizationId: Id<'organization'>
+): Promise<number> {
+    const rows = await ctx.db
+        .query('notifications')
+        .withIndex('by_organization', q => q.eq('organizationId', organizationId))
+        .take(ORGANIZATION_DELETION_BATCH_SIZE);
+
+    for (const row of rows) {
+        await ctx.db.delete('notifications', row._id);
+    }
+
+    return rows.length;
+}
+
+export async function deleteOrganizationAchievementsBatch(
+    ctx: MutationCtx,
+    organizationId: Id<'organization'>
+): Promise<number> {
+    const rows = await ctx.db
+        .query('organizationAchievements')
+        .withIndex('by_organization_achievement', q => q.eq('organizationId', organizationId))
+        .take(ORGANIZATION_DELETION_BATCH_SIZE);
+
+    for (const row of rows) {
+        await ctx.db.delete('organizationAchievements', row._id);
     }
 
     return rows.length;
@@ -134,6 +168,14 @@ export async function findOrganizationResiduePhase(
             .withIndex('by_organization', q => q.eq('organizationId', organizationId))
             .first(),
         ctx.db
+            .query('notifications')
+            .withIndex('by_organization', q => q.eq('organizationId', organizationId))
+            .first(),
+        ctx.db
+            .query('organizationAchievements')
+            .withIndex('by_organization_achievement', q => q.eq('organizationId', organizationId))
+            .first(),
+        ctx.db
             .query('objectives')
             .withIndex('by_organization_deletedAt_createdAt', q =>
                 q.eq('organizationId', organizationId)
@@ -157,6 +199,8 @@ export async function findOrganizationResiduePhase(
         'sessions',
         'progressUpdates',
         'objectivePermissions',
+        'notifications',
+        'achievements',
         'objectives',
         'categories',
         'invitations',
@@ -167,3 +211,24 @@ export async function findOrganizationResiduePhase(
 
     return residueIndex < 0 ? null : (phases.at(residueIndex) ?? null);
 }
+
+// In this order: rows that point at objectives go before them, and memberships last.
+export const ORGANIZATION_BATCH_DELETERS = {
+    progressUpdates: deleteOrganizationProgressUpdatesBatch,
+    objectivePermissions: deleteOrganizationObjectivePermissionsBatch,
+    notifications: deleteOrganizationNotificationsBatch,
+    achievements: deleteOrganizationAchievementsBatch,
+    objectives: deleteOrganizationObjectivesBatch,
+    categories: deleteOrganizationCategoriesBatch,
+    invitations: deleteOrganizationInvitationsBatch,
+    memberships: deleteOrganizationMembershipsBatch,
+} satisfies Partial<
+    Record<
+        OrganizationDeletionPhase,
+        (ctx: MutationCtx, organizationId: Id<'organization'>) => Promise<number>
+    >
+>;
+
+export const ORGANIZATION_BATCH_ORDER = Object.keys(ORGANIZATION_BATCH_DELETERS) as Array<
+    keyof typeof ORGANIZATION_BATCH_DELETERS
+>;

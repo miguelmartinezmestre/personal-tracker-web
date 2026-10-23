@@ -1,3 +1,4 @@
+import { randomUUID } from 'crypto';
 import { expect, test } from '@playwright/test';
 import { createTestUser } from '../../helpers/test-helpers';
 
@@ -58,6 +59,33 @@ test.describe('Administration', () => {
             } finally {
                 await userContext.close();
             }
+        }
+    );
+
+    test(
+        'edits the platform category catalog',
+        { tag: ['@INH-ADM-07', '@REQ-CATEGORIAS-002'] },
+        async ({ page }) => {
+            const name = `Zeta ${randomUUID().substring(0, 8)}`;
+            const renamed = `${name} renamed`;
+            await page.goto('/dashboard/admin', { waitUntil: 'domcontentloaded' });
+            const catalog = page.getByTestId('admin-categories');
+
+            await catalog.getByTestId('category-create-open').click();
+            await page.getByTestId('category-name-input').fill(name);
+            await page.getByTestId('category-save-button').click();
+            const row = catalog.getByTestId('category-row').filter({ hasText: name });
+            await expect(row).toBeVisible({ timeout: 15000 });
+
+            await row.getByTestId('category-edit-button').click();
+            await page.getByTestId('category-name-input').fill(renamed);
+            await page.getByTestId('category-save-button').click();
+            const renamedRow = catalog.getByTestId('category-row').filter({ hasText: renamed });
+            await expect(renamedRow).toBeVisible({ timeout: 15000 });
+
+            await renamedRow.getByTestId('category-delete-button').click();
+            await page.getByTestId('delete-confirm-button').click();
+            await expect(renamedRow).toHaveCount(0, { timeout: 15000 });
         }
     );
 });

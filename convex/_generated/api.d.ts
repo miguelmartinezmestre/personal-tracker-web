@@ -8,13 +8,19 @@
  * @module
  */
 
+import type * as achievements from "../achievements.js";
 import type * as admin from "../admin.js";
 import type * as auth from "../auth.js";
 import type * as cascades from "../cascades.js";
 import type * as categories from "../categories.js";
+import type * as crons from "../crons.js";
 import type * as dashboard from "../dashboard.js";
 import type * as email from "../email.js";
 import type * as emailSmtp from "../emailSmtp.js";
+import type * as features_achievements_definitions from "../features/achievements/definitions.js";
+import type * as features_achievements_metrics from "../features/achievements/metrics.js";
+import type * as features_achievements_triggers from "../features/achievements/triggers.js";
+import type * as features_achievements_validators from "../features/achievements/validators.js";
 import type * as features_audit_domainChanges from "../features/audit/domainChanges.js";
 import type * as features_audit_log from "../features/audit/log.js";
 import type * as features_audit_privacy from "../features/audit/privacy.js";
@@ -31,7 +37,9 @@ import type * as features_auth_sessionRecovery from "../features/auth/sessionRec
 import type * as features_auth_sessions from "../features/auth/sessions.js";
 import type * as features_auth_users from "../features/auth/users.js";
 import type * as features_auth_validators from "../features/auth/validators.js";
+import type * as features_authorization_achievementTableRules from "../features/authorization/achievementTableRules.js";
 import type * as features_authorization_authContext from "../features/authorization/authContext.js";
+import type * as features_authorization_notificationTableRules from "../features/authorization/notificationTableRules.js";
 import type * as features_authorization_objectiveTableRules from "../features/authorization/objectiveTableRules.js";
 import type * as features_authorization_organizationTableRules from "../features/authorization/organizationTableRules.js";
 import type * as features_authorization_policies from "../features/authorization/policies.js";
@@ -48,6 +56,11 @@ import type * as features_dashboard_stats from "../features/dashboard/stats.js";
 import type * as features_dashboard_validators from "../features/dashboard/validators.js";
 import type * as features_email_smtpConfig from "../features/email/smtpConfig.js";
 import type * as features_email_templates from "../features/email/templates.js";
+import type * as features_notifications_constants from "../features/notifications/constants.js";
+import type * as features_notifications_delivery from "../features/notifications/delivery.js";
+import type * as features_notifications_inbox from "../features/notifications/inbox.js";
+import type * as features_notifications_notices from "../features/notifications/notices.js";
+import type * as features_notifications_validators from "../features/notifications/validators.js";
 import type * as features_objectives_access from "../features/objectives/access.js";
 import type * as features_objectives_constants from "../features/objectives/constants.js";
 import type * as features_objectives_deletion from "../features/objectives/deletion.js";
@@ -69,6 +82,7 @@ import type * as features_setup_validators from "../features/setup/validators.js
 import type * as generated_auth from "../generated/auth.js";
 import type * as generated_server from "../generated/server.js";
 import type * as http from "../http.js";
+import type * as notifications from "../notifications.js";
 import type * as objectiveAccess from "../objectiveAccess.js";
 import type * as objectives from "../objectives.js";
 import type * as organizations from "../organizations.js";
@@ -89,13 +103,19 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  achievements: typeof achievements;
   admin: typeof admin;
   auth: typeof auth;
   cascades: typeof cascades;
   categories: typeof categories;
+  crons: typeof crons;
   dashboard: typeof dashboard;
   email: typeof email;
   emailSmtp: typeof emailSmtp;
+  "features/achievements/definitions": typeof features_achievements_definitions;
+  "features/achievements/metrics": typeof features_achievements_metrics;
+  "features/achievements/triggers": typeof features_achievements_triggers;
+  "features/achievements/validators": typeof features_achievements_validators;
   "features/audit/domainChanges": typeof features_audit_domainChanges;
   "features/audit/log": typeof features_audit_log;
   "features/audit/privacy": typeof features_audit_privacy;
@@ -112,7 +132,9 @@ declare const fullApi: ApiFromModules<{
   "features/auth/sessions": typeof features_auth_sessions;
   "features/auth/users": typeof features_auth_users;
   "features/auth/validators": typeof features_auth_validators;
+  "features/authorization/achievementTableRules": typeof features_authorization_achievementTableRules;
   "features/authorization/authContext": typeof features_authorization_authContext;
+  "features/authorization/notificationTableRules": typeof features_authorization_notificationTableRules;
   "features/authorization/objectiveTableRules": typeof features_authorization_objectiveTableRules;
   "features/authorization/organizationTableRules": typeof features_authorization_organizationTableRules;
   "features/authorization/policies": typeof features_authorization_policies;
@@ -129,6 +151,11 @@ declare const fullApi: ApiFromModules<{
   "features/dashboard/validators": typeof features_dashboard_validators;
   "features/email/smtpConfig": typeof features_email_smtpConfig;
   "features/email/templates": typeof features_email_templates;
+  "features/notifications/constants": typeof features_notifications_constants;
+  "features/notifications/delivery": typeof features_notifications_delivery;
+  "features/notifications/inbox": typeof features_notifications_inbox;
+  "features/notifications/notices": typeof features_notifications_notices;
+  "features/notifications/validators": typeof features_notifications_validators;
   "features/objectives/access": typeof features_objectives_access;
   "features/objectives/constants": typeof features_objectives_constants;
   "features/objectives/deletion": typeof features_objectives_deletion;
@@ -150,6 +177,7 @@ declare const fullApi: ApiFromModules<{
   "generated/auth": typeof generated_auth;
   "generated/server": typeof generated_server;
   http: typeof http;
+  notifications: typeof notifications;
   objectiveAccess: typeof objectiveAccess;
   objectives: typeof objectives;
   organizations: typeof organizations;

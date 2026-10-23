@@ -19,6 +19,7 @@ import { focusFirstInvalidField, getFieldErrors } from '@/components/forms/form-
 import { api } from '@/convex/_generated/api';
 import { authClient } from '@/features/auth/client';
 import { throwIfAuthClientError } from '@/features/auth/auth-client-response';
+import { NotificationPreferencesCard } from '@/features/notifications/components/notification-preferences-card';
 import { SettingsTextField } from '@/features/settings/components/settings-text-field';
 import {
     passwordSchema,
@@ -331,6 +332,7 @@ export default function SettingsPage() {
             </div>
             <ProfileCard name={user.data.name} />
             <PasswordCard />
+            <NotificationPreferencesCard />
             <AccountDeletionCard email={user.data.email} />
         </div>
     );

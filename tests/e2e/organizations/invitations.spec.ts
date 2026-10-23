@@ -221,6 +221,7 @@ test.describe('Organization Invitations', () => {
                     .getByTestId('register-confirm-password-input')
                     .fill('Password123');
                 await inviteePage.getByTestId('register-button').click();
+                await inviteePage.getByTestId('register-categories-skip').click({ timeout: 20000 });
 
                 await expect(inviteePage).toHaveURL(/\/dashboard\/home(\?|$)/, { timeout: 20000 });
                 await expect(inviteePage.getByTestId('organization-switcher')).toContainText(

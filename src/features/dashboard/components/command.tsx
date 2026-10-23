@@ -12,7 +12,17 @@ import {
 } from '@/components/ui/command';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
-import { Home, Mail, MonitorSmartphone, Settings, Target, Users } from 'lucide-react';
+import {
+    Award,
+    Bell,
+    Home,
+    Mail,
+    MonitorSmartphone,
+    Settings,
+    Tags,
+    Target,
+    Users,
+} from 'lucide-react';
 import { useMountEffect } from '@/hooks/use-mount-effect';
 
 export default function CommandMenu() {
@@ -70,6 +80,31 @@ export default function CommandMenu() {
                         >
                             <Target className="mr-2 h-4 w-4" />
                             <span>{tSidebar('objectives')}</span>
+                        </CommandItem>
+                        <CommandItem
+                            onSelect={() => runCommand(() => router.push('/dashboard/categories'))}
+                            data-testid="command-item-categories"
+                        >
+                            <Tags className="mr-2 h-4 w-4" />
+                            <span>{tSidebar('categories')}</span>
+                        </CommandItem>
+                        <CommandItem
+                            onSelect={() =>
+                                runCommand(() => router.push('/dashboard/achievements'))
+                            }
+                            data-testid="command-item-achievements"
+                        >
+                            <Award className="mr-2 h-4 w-4" />
+                            <span>{tSidebar('achievements')}</span>
+                        </CommandItem>
+                        <CommandItem
+                            onSelect={() =>
+                                runCommand(() => router.push('/dashboard/notifications'))
+                            }
+                            data-testid="command-item-notifications"
+                        >
+                            <Bell className="mr-2 h-4 w-4" />
+                            <span>{tSidebar('notifications')}</span>
                         </CommandItem>
                         <CommandItem
                             onSelect={() => runCommand(() => router.push('/dashboard/invitations'))}

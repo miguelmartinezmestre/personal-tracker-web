@@ -435,7 +435,8 @@
             "save": "Save permissions",
             "cancel": "Cancel",
             "saved": "Permissions updated"
-        }
+        },
+        "progressBar": "Progress towards the target"
     },
     "Organizations": {
         "title": "Organizations",
@@ -469,7 +470,9 @@
             "nameRequired": "Enter a name.",
             "nameTooLong": "The name cannot be longer than 100 characters."
         },
-        "personalOrganizationName": "Personal organization"
+        "personalOrganizationName": "Personal organization",
+        "categories": "Categories",
+        "categoriesDescription": "Chosen from the platform catalog. Edit, remove or add any; they belong only to this organization."
     },
     "UpdateProgress": {
         "pageDescription": "Track progress updates for this objective.",
@@ -706,15 +709,8 @@
             "logoHint": "Provide a URL to your organization logo image."
         },
         "categories": {
-            "title": "Default Categories",
-            "description": "Customize the default objective categories. You can edit, add, or remove them.",
-            "addNew": "New Category",
-            "newPlaceholder": "Category name",
-            "add": "Add",
-            "nameLabel": "Category {index} name",
-            "colorLabel": "Color for {name}",
-            "iconLabel": "Icon for {name}",
-            "removeLabel": "Remove {name}"
+            "title": "Category catalog",
+            "description": "Define the categories organizations can choose from when they are created. The initial organization starts with them. You can edit, add or remove them."
         },
         "registrationPolicy": {
             "title": "Registration Policy",
@@ -749,6 +745,52 @@
             "Creative": "Creative",
             "Fitness": "Fitness",
             "Productivity": "Productivity"
+        },
+        "editor": {
+            "empty": "No categories chosen.",
+            "addNew": "New category",
+            "newPlaceholder": "Category name",
+            "add": "Add",
+            "nameLabel": "Category {index} name",
+            "colorLabel": "Color for {name}",
+            "iconLabel": "Icon for {name}",
+            "removeLabel": "Remove {name}"
+        },
+        "page": {
+            "title": "Categories",
+            "description": "The categories of this organization, shared by all its members to classify objectives.",
+            "empty": "This organization has no categories yet."
+        },
+        "form": {
+            "createTitle": "New category",
+            "editTitle": "Edit category",
+            "name": "Name",
+            "color": "Color",
+            "icon": "Icon",
+            "save": "Save",
+            "cancel": "Cancel"
+        },
+        "validation": {
+            "nameRequired": "Enter a name.",
+            "nameTooLong": "Use at most 50 characters."
+        },
+        "delete": {
+            "title": "Delete category",
+            "description": "\"{name}\" will be deleted. Categories used by an objective cannot be deleted.",
+            "confirm": "Delete"
+        },
+        "edit": "Edit {name}",
+        "deleteLabel": "Delete {name}",
+        "toast": {
+            "created": "Category created",
+            "updated": "Category updated",
+            "deleted": "Category deleted"
+        },
+        "choose": {
+            "title": "Choose your categories",
+            "description": "Your personal organization starts with these categories from the platform catalog. Edit, remove or add any; you can change them later.",
+            "save": "Save and continue",
+            "skip": "Skip"
         }
     },
     "Settings": {
@@ -788,6 +830,27 @@
             "weakPassword": "The password must include an uppercase letter, a lowercase letter and a number.",
             "passwordsDontMatch": "The passwords do not match.",
             "passwordUnchanged": "The new password must differ from the current one."
+        },
+        "notifications": {
+            "title": "Notifications",
+            "description": "Choose which notifications you get. They apply in all your organizations.",
+            "saved": "Notification preferences saved",
+            "deadline": {
+                "label": "Deadlines",
+                "description": "When an objective is due soon, due today or overdue."
+            },
+            "progress": {
+                "label": "Progress",
+                "description": "When an objective reaches 25, 50 or 75% of its target."
+            },
+            "status": {
+                "label": "Completed objectives",
+                "description": "When an objective you can see is completed."
+            },
+            "achievement": {
+                "label": "Achievements",
+                "description": "When you or your organization unlock an achievement."
+            }
         }
     },
     "Sessions": {
@@ -891,6 +954,143 @@
                 "info": "Info",
                 "warning": "Warning",
                 "critical": "Critical"
+            }
+        },
+        "categories": {
+            "title": "Category catalog",
+            "description": "What organizations choose from when they are created. Changing it does not alter the categories they already have.",
+            "empty": "The catalog is empty."
+        }
+    },
+    "Notifications": {
+        "title": "Notifications",
+        "description": "Deadlines, milestones and completed objectives of this organization, newest first.",
+        "empty": "You have no notifications.",
+        "markAllRead": "Mark all as read",
+        "markedAllRead": "All notifications marked as read",
+        "markRead": "Mark as read",
+        "markUnread": "Mark as unread",
+        "delete": "Delete notification",
+        "deleted": "Notification deleted",
+        "bell": "Notifications, {count} unread",
+        "types": {
+            "deadline": "Deadline",
+            "progress": "Progress",
+            "status": "Completed",
+            "achievement": "Achievement"
+        },
+        "messages": {
+            "objectiveCompleted": "Objective \"{title}\" has been completed.",
+            "progressMilestone": "Objective \"{title}\" reached {percent}% of its target.",
+            "deadlineUpcoming": "Objective \"{title}\" is due in {days} days, on {date}.",
+            "deadlineToday": "Objective \"{title}\" is due today.",
+            "deadlineOverdue": "Objective \"{title}\" is overdue since {date}.",
+            "achievementEarned": "You unlocked the achievement \"{name}\" and earned {points} points.",
+            "organizationAchievementEarned": "Your organization unlocked the achievement \"{name}\" and earned {points} points."
+        }
+    },
+    "Achievements": {
+        "title": "Achievements",
+        "description": "Your achievements and those of the active organization, with your progress towards the rest.",
+        "userPoints": "Your points",
+        "organizationPoints": "Organization points",
+        "points": "{points} points",
+        "earnedOn": "Earned on {date}",
+        "progress": "{progress} / {threshold}",
+        "progressLabel": "Progress towards {name}",
+        "tiers": {
+            "bronze": "Bronze",
+            "silver": "Silver",
+            "gold": "Gold"
+        },
+        "scopes": {
+            "individual": "Yours",
+            "organization": "Organization"
+        },
+        "widget": {
+            "title": "Achievements",
+            "points": "{points} points earned",
+            "recent": "Latest earned",
+            "next": "Closest to earn",
+            "none": "None yet.",
+            "viewAll": "See all achievements"
+        },
+        "items": {
+            "first_objective": {
+                "name": "First step",
+                "description": "Create your first objective."
+            },
+            "objectives_created_5": {
+                "name": "Planner",
+                "description": "Create 5 objectives."
+            },
+            "objectives_created_15": {
+                "name": "Strategist",
+                "description": "Create 15 objectives."
+            },
+            "objectives_created_30": {
+                "name": "Visionary",
+                "description": "Create 30 objectives."
+            },
+            "objectives_completed_3": {
+                "name": "Achiever",
+                "description": "Complete 3 of your objectives."
+            },
+            "objectives_completed_10": {
+                "name": "Finisher",
+                "description": "Complete 10 of your objectives."
+            },
+            "objectives_completed_25": {
+                "name": "Unstoppable",
+                "description": "Complete 25 of your objectives."
+            },
+            "early_bird": {
+                "name": "Early bird",
+                "description": "Complete an objective by its deadline."
+            },
+            "streak_3": {
+                "name": "On a roll",
+                "description": "Log progress 3 days in a row."
+            },
+            "streak_7": {
+                "name": "Weekly habit",
+                "description": "Log progress 7 days in a row."
+            },
+            "streak_14": {
+                "name": "Iron will",
+                "description": "Log progress 14 days in a row."
+            },
+            "progress_updates_10": {
+                "name": "Getting started",
+                "description": "Log progress 10 times."
+            },
+            "progress_updates_50": {
+                "name": "Consistent",
+                "description": "Log progress 50 times."
+            },
+            "progress_updates_100": {
+                "name": "Dedicated",
+                "description": "Log progress 100 times."
+            },
+            "organization_first_objective": {
+                "name": "Team kickoff",
+                "description": "The organization creates its first objective."
+            },
+            "organization_completed_5": {
+                "name": "Team effort",
+                "description": "The organization completes 5 objectives."
+            },
+            "organization_completed_15": {
+                "name": "Well-oiled team",
+                "description": "The organization completes 15 objectives."
+            },
+            "organization_completed_30": {
+                "name": "Dream team",
+                "description": "The organization completes 30 objectives."
+            },
+            "organization_streak_7": {
+                "name": "Team momentum",
+                "description": "Someone in the organization logs progress 7 days in a row."
             }
         }
     }

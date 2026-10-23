@@ -1,12 +1,15 @@
 'use client';
 
 import {
+    Award,
+    Bell,
     Goal,
     Home,
     Mail,
     MonitorSmartphone,
     Settings,
     ShieldCheck,
+    Tags,
     Target,
     Users,
 } from 'lucide-react';
@@ -48,6 +51,21 @@ const baseProjects: ProjectNavItem[] = [
         name: 'objectives',
         url: '/dashboard/objectives',
         icon: Target,
+    },
+    {
+        name: 'categories',
+        url: '/dashboard/categories',
+        icon: Tags,
+    },
+    {
+        name: 'achievements',
+        url: '/dashboard/achievements',
+        icon: Award,
+    },
+    {
+        name: 'notifications',
+        url: '/dashboard/notifications',
+        icon: Bell,
     },
     {
         name: 'invitations',

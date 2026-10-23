@@ -7,6 +7,7 @@ import { CommandMenu } from '@/features/dashboard';
 import { LanguageSwitcher } from '@/features/landing';
 import { OrganizationSwitcher } from '@/features/organizations';
 import { SignOutButton } from '@/features/auth';
+import { NotificationBell } from '@/features/notifications';
 import { redirect } from 'next/navigation';
 import { isPlatformSetUp } from '@/features/setup/server';
 import { getTranslations } from 'next-intl/server';
@@ -50,6 +51,7 @@ export default async function Layout({ children }: { children: React.ReactNode }
                             key={activeOrganizationId ?? 'no-active-organization'}
                             initialActiveOrganizationId={activeOrganizationId}
                         />
+                        <NotificationBell />
                         <ThemeToggle testId="dashboard-theme-toggle" />
                         <LanguageSwitcher />
                         <SignOutButton />

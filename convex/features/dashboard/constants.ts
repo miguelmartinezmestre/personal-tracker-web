@@ -2,8 +2,6 @@ export const MONTHS_SHOWN = 12;
 
 export const ACTIVITY_DAYS = 7;
 
-export const DAY_MS = 24 * 60 * 60 * 1000;
-
 // Monthly counts read the entries themselves, as their visibility follows their objective.
 // shortcut: a busy organization could exceed this in a year; move to an aggregate if it does.
 export const MONTHLY_ENTRIES_LIMIT = 5000;

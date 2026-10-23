@@ -1,6 +1,7 @@
 import type { Page } from '@playwright/test';
 import { randomUUID } from 'crypto';
 import { test, expect } from '../../fixtures/test-base';
+import { createCategory } from '../../helpers/categories';
 
 async function createObjective(
     page: Page,
@@ -66,19 +67,25 @@ test.describe('Objectives', () => {
     );
 
     test(
-        'filters objectives by status and title, and shows the assigned category',
-        { tag: ['@REQ-OBJETIVOS-002', '@REQ-OBJETIVOS-004', '@REQ-OBJETIVOS-008'] },
+        'filters objectives by status, category and title, and shows the assigned category',
+        {
+            tag: [
+                '@REQ-OBJETIVOS-002',
+                '@REQ-OBJETIVOS-004',
+                '@REQ-OBJETIVOS-008',
+                '@REQ-CATEGORIAS-004',
+            ],
+        },
         async ({ page }) => {
             const suffix = randomUUID().substring(0, 8);
             const doneTitle = `Done goal ${suffix}`;
             const activeTitle = `Active goal ${suffix}`;
+            const categoryName = `Sport ${suffix}`;
 
+            await createCategory(page, categoryName);
             await createObjective(page, doneTitle, '1');
             await page.getByTestId('objective-category-select').click();
-            const categoryOption = page.getByRole('option').nth(1);
-            const categoryName = (await categoryOption.textContent())?.trim() ?? '';
-            expect(categoryName).not.toBe('');
-            await categoryOption.click();
+            await page.getByRole('option', { name: categoryName }).click();
             await page.getByTestId('objective-save-button').click();
 
             await page.getByTestId('objective-row-link').filter({ hasText: doneTitle }).click();
@@ -106,6 +113,13 @@ test.describe('Objectives', () => {
             await expect(doneRow).toHaveCount(0);
 
             await page.getByTestId('objectives-filter-all').click();
+            await page.getByTestId('objectives-category-filter').click();
+            await page.getByRole('option', { name: categoryName }).click();
+            await expect(doneRow).toBeVisible({ timeout: 15000 });
+            await expect(activeRow).toHaveCount(0);
+            await page.getByTestId('objectives-category-filter').click();
+            await page.getByRole('option').first().click();
+
             await page.getByTestId('objectives-search').fill('Done');
             await expect(doneRow).toBeVisible({ timeout: 15000 });
             await expect(activeRow).toHaveCount(0);

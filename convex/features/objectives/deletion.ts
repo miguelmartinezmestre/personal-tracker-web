@@ -30,8 +30,9 @@ export async function requireManagedTrashObjective(
 }
 
 /**
- * Deletes one batch of the objective's progress, then of its permissions, and the objective
- * itself once both are gone. Returns false while rows remain, so the caller reschedules.
+ * Deletes one batch of the objective's progress, permissions and notifications (INH-NOT-08), and
+ * the objective itself once they are gone. Returns false while rows remain, so the caller
+ * reschedules.
  */
 export async function deleteObjectiveBatch(
     db: MutationCtx['db'],
@@ -55,7 +56,19 @@ export async function deleteObjectiveBatch(
         await db.delete('objectivePermissions', row._id);
     }
 
-    if (progress.length + permissions.length === OBJECTIVE_DELETION_BATCH_SIZE) {
+    const notifications = await db
+        .query('notifications')
+        .withIndex('by_objective_type_date', q => q.eq('objective', objectiveId))
+        .take(OBJECTIVE_DELETION_BATCH_SIZE - progress.length - permissions.length);
+
+    for (const row of notifications) {
+        await db.delete('notifications', row._id);
+    }
+
+    if (
+        progress.length + permissions.length + notifications.length ===
+        OBJECTIVE_DELETION_BATCH_SIZE
+    ) {
         return false;
     }
 

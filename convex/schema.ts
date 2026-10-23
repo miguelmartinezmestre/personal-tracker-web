@@ -3,6 +3,7 @@ import { v } from 'convex/values';
 import authSchema from './features/auth/authSchema';
 import { objectiveDirectionValidator } from './features/objectives/validators';
 import { auditSeverityValidator } from './features/audit/validators';
+import { noticeValidator } from './features/notifications/validators';
 
 const auditPrimitive = v.union(v.string(), v.number(), v.boolean(), v.null());
 
@@ -150,6 +151,10 @@ export default defineSchema({
         ])
         // Any objective blocks deleting its category, even private or in the trash.
         .index('by_category', ['categoryId'])
+        // The creator's own objectives in every organization, for their achievements.
+        .index('by_creator_deletedAt_status', ['createdBy', 'deletedAt', 'status'])
+        // Active deadlines across organizations, for the daily notifications.
+        .index('by_status_deletedAt_deadline', ['status', 'deletedAt', 'deadline'])
         .searchIndex('search_title', {
             searchField: 'title',
             filterFields: ['organizationId', 'deletedAt', 'status', 'categoryId'],
@@ -169,6 +174,44 @@ export default defineSchema({
         .index('by_user_organization', ['userId', 'organizationId'])
         .index('by_organization', ['organizationId']),
 
+    // Earned once and kept for good (INH-LOG-03).
+    obtainedAchievements: defineTable({
+        userId: v.id('user'),
+        achievement: v.string(),
+        earnedAt: v.number(),
+    }).index('by_user_achievement', ['userId', 'achievement']),
+
+    organizationAchievements: defineTable({
+        organizationId: v.id('organization'),
+        achievement: v.string(),
+        earnedAt: v.number(),
+        // Whoever did what unlocked it (INH-LOG-04).
+        contributedBy: v.id('user'),
+    }).index('by_organization_achievement', ['organizationId', 'achievement']),
+
+    notifications: defineTable({
+        userId: v.id('user'),
+        organizationId: v.id('organization'),
+        // Optional: an achievement of the user or the organization has none (REQ-NOTIFICACIONES-004).
+        objective: v.optional(v.id('objectives')),
+        read: v.boolean(),
+        notificationDate: v.number(),
+        ...noticeValidator.fields,
+    })
+        .index('by_user_organization_date', ['userId', 'organizationId', 'notificationDate'])
+        .index('by_user_organization_read', ['userId', 'organizationId', 'read'])
+        .index('by_objective_type_date', ['objective', 'notificationType', 'notificationDate'])
+        .index('by_organization', ['organizationId']),
+
+    // One row per user who changed a default; every kind of notification is on until then.
+    notificationPreferences: defineTable({
+        userId: v.id('user'),
+        deadline: v.boolean(),
+        progress: v.boolean(),
+        status: v.boolean(),
+        achievement: v.boolean(),
+    }).index('by_user', ['userId']),
+
     progressUpdates: defineTable({
         objective: v.id('objectives'),
         organizationId: v.id('organization'),
@@ -181,6 +224,7 @@ export default defineSchema({
     })
         .index('by_objective_date', ['objective', 'updateDate'])
         .index('by_organization_date', ['organizationId', 'updateDate'])
+        .index('by_createdBy_date', ['createdBy', 'updateDate'])
         .index('by_organization_createdAt', ['organizationId', 'createdAt']),
 
     platformSettings: defineTable({

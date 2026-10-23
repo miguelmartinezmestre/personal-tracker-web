@@ -13,6 +13,11 @@ import {
     auditObjectiveChange,
     auditProgressChange,
 } from '../audit/domainChanges';
+import { notifyObjectiveProgress } from '../notifications/delivery';
+import {
+    evaluateObjectiveAchievements,
+    evaluateProgressAchievements,
+} from '../achievements/triggers';
 
 /**
  * Per-organization counts and progress sums of objectives, keyed by [inTrash, memberCanView,
@@ -57,6 +62,12 @@ triggers.register('objectives', auditObjectiveChange);
 triggers.register('progressUpdates', auditProgressChange);
 
 triggers.register('categories', auditCategoryChange);
+
+triggers.register('objectives', notifyObjectiveProgress);
+
+triggers.register('objectives', evaluateObjectiveAchievements);
+
+triggers.register('progressUpdates', evaluateProgressAchievements);
 
 // Every write to these tables must go through these builders so the aggregates never drift and
 // the audit log misses nothing.

@@ -1,13 +1,9 @@
 import {
+    ORGANIZATION_BATCH_DELETERS,
+    ORGANIZATION_BATCH_ORDER,
     ORGANIZATION_DELETION_BATCH_SIZE,
     type OrganizationDeletionPhase,
     type OrganizationDeletionResult,
-    deleteOrganizationCategoriesBatch,
-    deleteOrganizationInvitationsBatch,
-    deleteOrganizationMembershipsBatch,
-    deleteOrganizationObjectivePermissionsBatch,
-    deleteOrganizationObjectivesBatch,
-    deleteOrganizationProgressUpdatesBatch,
     findOrganizationResiduePhase,
 } from './features/cascades/organizationDeletion';
 import {
@@ -17,6 +13,8 @@ import {
     anonymizeUser,
     deleteUserAccountsBatch,
     deleteUserMembershipsBatch,
+    deleteUserAchievementsBatch,
+    deleteUserNotificationsBatch,
     deleteUserObjectivePermissionsBatch,
     deleteUserSessionsBatch,
 } from './features/cascades/userDeletion';
@@ -84,6 +82,28 @@ export const continueUserDeletionCascade = internalMutation({
 
             case 'objectivePermissions': {
                 const rowCount = await deleteUserObjectivePermissionsBatch(ctx, args.userId);
+                const nextPhase = rowCount === USER_DELETION_BATCH_SIZE ? phase : 'notifications';
+                await ctx.scheduler.runAfter(0, internal.cascades.continueUserDeletionCascade, {
+                    userId: args.userId,
+                    phase: nextPhase,
+                });
+
+                return { status: 'in_progress', phase: nextPhase };
+            }
+
+            case 'notifications': {
+                const rowCount = await deleteUserNotificationsBatch(ctx, args.userId);
+                const nextPhase = rowCount === USER_DELETION_BATCH_SIZE ? phase : 'achievements';
+                await ctx.scheduler.runAfter(0, internal.cascades.continueUserDeletionCascade, {
+                    userId: args.userId,
+                    phase: nextPhase,
+                });
+
+                return { status: 'in_progress', phase: nextPhase };
+            }
+
+            case 'achievements': {
+                const rowCount = await deleteUserAchievementsBatch(ctx, args.userId);
                 const nextPhase = rowCount === USER_DELETION_BATCH_SIZE ? phase : 'memberships';
                 await ctx.scheduler.runAfter(0, internal.cascades.continueUserDeletionCascade, {
                     userId: args.userId,
@@ -142,132 +162,35 @@ export const continueOrganizationDeletionCascade = internalMutation({
     handler: async (ctx, args): Promise<OrganizationDeletionResult> => {
         const phase: OrganizationDeletionPhase = args.phase ?? 'progressUpdates';
         const { organizationId } = args;
+        let nextPhase: OrganizationDeletionPhase;
 
-        switch (phase) {
-            case 'progressUpdates': {
-                const rowCount = await deleteOrganizationProgressUpdatesBatch(ctx, organizationId);
+        if (phase === 'finalize') {
+            const residuePhase = await findOrganizationResiduePhase(ctx, organizationId);
 
-                const nextPhase =
-                    rowCount === ORGANIZATION_DELETION_BATCH_SIZE ? phase : 'objectivePermissions';
-
-                await ctx.scheduler.runAfter(
-                    0,
-                    internal.cascades.continueOrganizationDeletionCascade,
-                    { organizationId, phase: nextPhase }
-                );
-
-                return { status: 'in_progress', phase: nextPhase };
+            if (!residuePhase) {
+                return { status: 'completed', phase };
             }
 
-            case 'objectivePermissions': {
-                const rowCount = await deleteOrganizationObjectivePermissionsBatch(
-                    ctx,
-                    organizationId
-                );
+            nextPhase = residuePhase;
+        } else if (phase === 'sessions') {
+            const { remaining } = await ctx.runMutation(
+                internal.auth.recoverAffectedOrganizationSessions,
+                { organizationId }
+            );
 
-                const nextPhase =
-                    rowCount === ORGANIZATION_DELETION_BATCH_SIZE ? phase : 'objectives';
-
-                await ctx.scheduler.runAfter(
-                    0,
-                    internal.cascades.continueOrganizationDeletionCascade,
-                    { organizationId, phase: nextPhase }
-                );
-
-                return { status: 'in_progress', phase: nextPhase };
-            }
-
-            case 'objectives': {
-                const rowCount = await deleteOrganizationObjectivesBatch(ctx, organizationId);
-
-                const nextPhase =
-                    rowCount === ORGANIZATION_DELETION_BATCH_SIZE ? phase : 'categories';
-
-                await ctx.scheduler.runAfter(
-                    0,
-                    internal.cascades.continueOrganizationDeletionCascade,
-                    { organizationId, phase: nextPhase }
-                );
-
-                return { status: 'in_progress', phase: nextPhase };
-            }
-
-            case 'categories': {
-                const rowCount = await deleteOrganizationCategoriesBatch(ctx, organizationId);
-
-                const nextPhase =
-                    rowCount === ORGANIZATION_DELETION_BATCH_SIZE ? phase : 'invitations';
-
-                await ctx.scheduler.runAfter(
-                    0,
-                    internal.cascades.continueOrganizationDeletionCascade,
-                    { organizationId, phase: nextPhase }
-                );
-
-                return { status: 'in_progress', phase: nextPhase };
-            }
-
-            case 'invitations': {
-                const rowCount = await deleteOrganizationInvitationsBatch(ctx, organizationId);
-
-                const nextPhase =
-                    rowCount === ORGANIZATION_DELETION_BATCH_SIZE ? phase : 'memberships';
-
-                await ctx.scheduler.runAfter(
-                    0,
-                    internal.cascades.continueOrganizationDeletionCascade,
-                    { organizationId, phase: nextPhase }
-                );
-
-                return { status: 'in_progress', phase: nextPhase };
-            }
-
-            case 'memberships': {
-                const rowCount = await deleteOrganizationMembershipsBatch(ctx, organizationId);
-
-                const nextPhase =
-                    rowCount === ORGANIZATION_DELETION_BATCH_SIZE ? phase : 'sessions';
-
-                await ctx.scheduler.runAfter(
-                    0,
-                    internal.cascades.continueOrganizationDeletionCascade,
-                    { organizationId, phase: nextPhase }
-                );
-
-                return { status: 'in_progress', phase: nextPhase };
-            }
-
-            case 'sessions': {
-                const { remaining } = await ctx.runMutation(
-                    internal.auth.recoverAffectedOrganizationSessions,
-                    { organizationId }
-                );
-
-                const nextPhase = remaining ? phase : 'finalize';
-                await ctx.scheduler.runAfter(
-                    0,
-                    internal.cascades.continueOrganizationDeletionCascade,
-                    { organizationId, phase: nextPhase }
-                );
-
-                return { status: 'in_progress', phase: nextPhase };
-            }
-
-            case 'finalize': {
-                const residuePhase = await findOrganizationResiduePhase(ctx, organizationId);
-
-                if (residuePhase) {
-                    await ctx.scheduler.runAfter(
-                        0,
-                        internal.cascades.continueOrganizationDeletionCascade,
-                        { organizationId, phase: residuePhase }
-                    );
-
-                    return { status: 'in_progress', phase: residuePhase };
-                }
-
-                return { status: 'completed', phase: 'finalize' };
-            }
+            nextPhase = remaining ? phase : 'finalize';
+        } else {
+            const rowCount = await ORGANIZATION_BATCH_DELETERS[phase](ctx, organizationId);
+            const next = ORGANIZATION_BATCH_ORDER.at(ORGANIZATION_BATCH_ORDER.indexOf(phase) + 1);
+            nextPhase =
+                rowCount === ORGANIZATION_DELETION_BATCH_SIZE ? phase : (next ?? 'sessions');
         }
+
+        await ctx.scheduler.runAfter(0, internal.cascades.continueOrganizationDeletionCascade, {
+            organizationId,
+            phase: nextPhase,
+        });
+
+        return { status: 'in_progress', phase: nextPhase };
     },
 });

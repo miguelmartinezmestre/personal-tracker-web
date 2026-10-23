@@ -3,7 +3,12 @@ import type { QueryCtx } from '../../_generated/server';
 import { isGlobalAdminRole } from '../auth/roles';
 
 export type RlsInsertDoc<
-    Table extends 'categories' | 'objectives' | 'objectivePermissions' | 'progressUpdates',
+    Table extends
+        | 'categories'
+        | 'objectives'
+        | 'objectivePermissions'
+        | 'progressUpdates'
+        | 'notificationPreferences',
 > = Omit<Doc<Table>, '_id' | '_creationTime'>;
 
 export function rlsDeny(): Promise<boolean> {

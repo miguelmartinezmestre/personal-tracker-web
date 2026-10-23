@@ -13,7 +13,6 @@ import {
 import { usePaginatedList } from '@/components/data-table/hooks/use-paginated-list';
 import { api } from '@/convex/_generated/api';
 import type { Id } from '@/convex/_generated/dataModel';
-import { useCategoryLabel } from '@/features/categories/hooks/use-category-label';
 
 /** The organization's categories, loaded page by page, after a first option such as "none". */
 export function CategorySelect({
@@ -42,7 +41,6 @@ export function CategorySelect({
 }) {
     const common = useTranslations('Common');
     const categories = usePaginatedList(api.categories.listCategories, {});
-    const categoryLabel = useCategoryLabel();
 
     const loaded = categories.data.map(category => ({ id: category.id, name: category.name }));
 
@@ -52,7 +50,7 @@ export function CategorySelect({
 
     const options = [
         firstOption,
-        ...loaded.map(category => ({ value: category.id, label: categoryLabel(category.name) })),
+        ...loaded.map(category => ({ value: category.id, label: category.name })),
     ];
 
     return (

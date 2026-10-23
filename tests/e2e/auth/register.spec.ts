@@ -22,6 +22,7 @@ test.describe('User Registration', () => {
             await fillRegistrationForm(page);
             await page.getByTestId('register-button').click();
 
+            await page.getByTestId('register-categories-skip').click({ timeout: 30000 });
             await page.waitForURL(/\/dashboard/, { timeout: 30000, waitUntil: 'domcontentloaded' });
             await expectOnDashboard(page);
         }
@@ -106,7 +107,9 @@ test.describe('User Registration', () => {
             await page.goto('/register');
             const user = await fillRegistrationForm(page);
             await page.getByTestId('register-button').click();
-            await page.waitForURL(/\/dashboard/, { timeout: 30000, waitUntil: 'domcontentloaded' });
+            await expect(page.getByTestId('register-categories-step')).toBeVisible({
+                timeout: 30000,
+            });
 
             await page.context().clearCookies();
             await page.goto('/register');

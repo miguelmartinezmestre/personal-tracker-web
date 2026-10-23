@@ -13,6 +13,7 @@ import MonthlyUpdatesChart from '@/features/dashboard/components/monthly-updates
 import RecentActivity from '@/features/dashboard/components/recent-activity';
 import TopObjectivesChart from '@/features/dashboard/components/top-objectives-chart';
 import UpcomingDeadlines from '@/features/dashboard/components/upcoming-deadlines';
+import { AchievementsWidget } from '@/features/achievements';
 
 const TOP_OBJECTIVES = 5;
 
@@ -168,6 +169,7 @@ export default function Home() {
                 {user?.name ? t('welcome', { name: user.name }) : t('welcomeAnonymous')}
             </h1>
             <DashboardStats />
+            <AchievementsWidget />
         </div>
     );
 }

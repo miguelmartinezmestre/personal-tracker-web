@@ -9,6 +9,7 @@ import { convexQuery, useConvexMutation } from '@convex-dev/react-query';
 import { PartyPopper } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -22,7 +23,6 @@ import {
     formatProgressPercent,
 } from '@/features/objectives/lib/format';
 import { api } from '@/convex/_generated/api';
-import { useCategoryLabel } from '@/features/categories/hooks/use-category-label';
 import EditObjectiveFormModal from '@/features/objectives/components/objective-form-edit-modal';
 import ObjectiveAccessDialog from '@/features/objectives/components/objective-access-dialog';
 import ProgressChart from '@/features/objectives/components/progress-chart';
@@ -41,7 +41,6 @@ export default function ObjectiveDetail({
     const t = useTranslations('Objectives');
     const locale = useLocale();
     const progressT = useTranslations('UpdateProgress');
-    const categoryLabel = useCategoryLabel();
     const router = useRouter();
     const objective = useQuery(convexQuery(api.objectives.getObjective, { id: objectiveId }));
 
@@ -122,7 +121,7 @@ export default function ObjectiveDetail({
     }
 
     const details = [
-        current.categoryName ? `${t('category')}: ${categoryLabel(current.categoryName)}` : null,
+        current.categoryName ? `${t('category')}: ${current.categoryName}` : null,
         current.deadline !== undefined
             ? `${t('deadline')}: ${formatObjectiveDate(current.deadline, locale)}`
             : null,
@@ -181,13 +180,7 @@ export default function ObjectiveDetail({
                 </div>
                 {managementActions}
             </div>
-            <div className="bg-muted h-2 overflow-hidden rounded-full">
-                <div
-                    className="bg-primary h-full"
-                    style={{ width: `${current.progressPercent}%` }}
-                    data-testid="objective-progress-bar"
-                />
-            </div>
+            <Progress value={current.progressPercent} aria-label={t('progressBar')} />
             {current.description ? (
                 <p className="whitespace-pre-line wrap-anywhere">{current.description}</p>
             ) : null}

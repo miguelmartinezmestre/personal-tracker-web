@@ -435,7 +435,8 @@
             "save": "Guardar permisos",
             "cancel": "Cancelar",
             "saved": "Permisos actualizados"
-        }
+        },
+        "progressBar": "Progreso hacia la meta"
     },
     "Organizations": {
         "title": "Organizaciones",
@@ -469,7 +470,9 @@
             "nameRequired": "Escribe un nombre.",
             "nameTooLong": "El nombre no puede superar los 100 caracteres."
         },
-        "personalOrganizationName": "Organización personal"
+        "personalOrganizationName": "Organización personal",
+        "categories": "Categorías",
+        "categoriesDescription": "Elegidas del catálogo de la plataforma. Edita, quita o añade las que quieras; serán solo de esta organización."
     },
     "UpdateProgress": {
         "pageDescription": "Registra actualizaciones de progreso para este objetivo.",
@@ -706,15 +709,8 @@
             "logoHint": "Proporciona una URL con la imagen del logo de tu organización."
         },
         "categories": {
-            "title": "Categorías por defecto",
-            "description": "Personaliza las categorías predefinidas para objetivos. Puedes editarlas, añadir nuevas o eliminarlas.",
-            "addNew": "Nueva categoría",
-            "newPlaceholder": "Nombre de la categoría",
-            "add": "Añadir",
-            "nameLabel": "Nombre de la categoría {index}",
-            "colorLabel": "Color de {name}",
-            "iconLabel": "Icono de {name}",
-            "removeLabel": "Eliminar {name}"
+            "title": "Catálogo de categorías",
+            "description": "Define las categorías que las organizaciones podrán elegir al crearse. La organización inicial empieza con ellas. Puedes editarlas, añadir nuevas o eliminarlas."
         },
         "registrationPolicy": {
             "title": "Política de registro",
@@ -749,6 +745,52 @@
             "Creative": "Creatividad",
             "Fitness": "Forma física",
             "Productivity": "Productividad"
+        },
+        "editor": {
+            "empty": "No hay categorías elegidas.",
+            "addNew": "Nueva categoría",
+            "newPlaceholder": "Nombre de la categoría",
+            "add": "Añadir",
+            "nameLabel": "Nombre de la categoría {index}",
+            "colorLabel": "Color de {name}",
+            "iconLabel": "Icono de {name}",
+            "removeLabel": "Eliminar {name}"
+        },
+        "page": {
+            "title": "Categorías",
+            "description": "Las categorías de esta organización, compartidas por todos sus miembros para clasificar objetivos.",
+            "empty": "Esta organización aún no tiene categorías."
+        },
+        "form": {
+            "createTitle": "Nueva categoría",
+            "editTitle": "Editar categoría",
+            "name": "Nombre",
+            "color": "Color",
+            "icon": "Icono",
+            "save": "Guardar",
+            "cancel": "Cancelar"
+        },
+        "validation": {
+            "nameRequired": "Escribe un nombre.",
+            "nameTooLong": "Usa como máximo 50 caracteres."
+        },
+        "delete": {
+            "title": "Eliminar categoría",
+            "description": "Se eliminará «{name}». Las categorías que usa algún objetivo no se pueden eliminar.",
+            "confirm": "Eliminar"
+        },
+        "edit": "Editar {name}",
+        "deleteLabel": "Eliminar {name}",
+        "toast": {
+            "created": "Categoría creada",
+            "updated": "Categoría actualizada",
+            "deleted": "Categoría eliminada"
+        },
+        "choose": {
+            "title": "Elige tus categorías",
+            "description": "Tu organización personal empieza con estas categorías del catálogo de la plataforma. Edita, quita o añade las que quieras; podrás cambiarlas después.",
+            "save": "Guardar y continuar",
+            "skip": "Omitir"
         }
     },
     "Settings": {
@@ -788,6 +830,27 @@
             "weakPassword": "La contraseña debe incluir una mayúscula, una minúscula y un número.",
             "passwordsDontMatch": "Las contraseñas no coinciden.",
             "passwordUnchanged": "La contraseña nueva debe ser distinta de la actual."
+        },
+        "notifications": {
+            "title": "Notificaciones",
+            "description": "Elige qué notificaciones recibes. Se aplican en todas tus organizaciones.",
+            "saved": "Preferencias de notificación guardadas",
+            "deadline": {
+                "label": "Vencimientos",
+                "description": "Cuando un objetivo está próximo a vencer, vence hoy o ha vencido."
+            },
+            "progress": {
+                "label": "Progreso",
+                "description": "Cuando un objetivo llega al 25, 50 o 75 % de su meta."
+            },
+            "status": {
+                "label": "Objetivos completados",
+                "description": "Cuando se completa un objetivo que puedes ver."
+            },
+            "achievement": {
+                "label": "Logros",
+                "description": "Cuando tú o tu organización desbloqueáis un logro."
+            }
         }
     },
     "Sessions": {
@@ -891,6 +954,143 @@
                 "info": "Info",
                 "warning": "Aviso",
                 "critical": "Crítico"
+            }
+        },
+        "categories": {
+            "title": "Catálogo de categorías",
+            "description": "Lo que eligen las organizaciones al crearse. Cambiarlo no altera las categorías que ya tienen.",
+            "empty": "El catálogo está vacío."
+        }
+    },
+    "Notifications": {
+        "title": "Notificaciones",
+        "description": "Vencimientos, hitos y objetivos completados de esta organización, de la más reciente a la más antigua.",
+        "empty": "No tienes notificaciones.",
+        "markAllRead": "Marcar todas como leídas",
+        "markedAllRead": "Todas las notificaciones están leídas",
+        "markRead": "Marcar como leída",
+        "markUnread": "Marcar como no leída",
+        "delete": "Eliminar notificación",
+        "deleted": "Notificación eliminada",
+        "bell": "Notificaciones, {count} sin leer",
+        "types": {
+            "deadline": "Vencimiento",
+            "progress": "Progreso",
+            "status": "Completado",
+            "achievement": "Logro"
+        },
+        "messages": {
+            "objectiveCompleted": "El objetivo «{title}» se ha completado.",
+            "progressMilestone": "El objetivo «{title}» ha llegado al {percent} % de su meta.",
+            "deadlineUpcoming": "El objetivo «{title}» vence en {days} días, el {date}.",
+            "deadlineToday": "El objetivo «{title}» vence hoy.",
+            "deadlineOverdue": "El objetivo «{title}» venció el {date}.",
+            "achievementEarned": "Has conseguido el logro «{name}» y {points} puntos.",
+            "organizationAchievementEarned": "Tu organización ha conseguido el logro «{name}» y {points} puntos."
+        }
+    },
+    "Achievements": {
+        "title": "Logros",
+        "description": "Tus logros y los de la organización activa, con lo que te falta para los demás.",
+        "userPoints": "Tus puntos",
+        "organizationPoints": "Puntos de la organización",
+        "points": "{points} puntos",
+        "earnedOn": "Conseguido el {date}",
+        "progress": "{progress} / {threshold}",
+        "progressLabel": "Progreso hacia {name}",
+        "tiers": {
+            "bronze": "Bronce",
+            "silver": "Plata",
+            "gold": "Oro"
+        },
+        "scopes": {
+            "individual": "Tuyos",
+            "organization": "De la organización"
+        },
+        "widget": {
+            "title": "Logros",
+            "points": "{points} puntos conseguidos",
+            "recent": "Últimos conseguidos",
+            "next": "Más cerca de conseguir",
+            "none": "Todavía ninguno.",
+            "viewAll": "Ver todos los logros"
+        },
+        "items": {
+            "first_objective": {
+                "name": "Primer paso",
+                "description": "Crea tu primer objetivo."
+            },
+            "objectives_created_5": {
+                "name": "Planificador",
+                "description": "Crea 5 objetivos."
+            },
+            "objectives_created_15": {
+                "name": "Estratega",
+                "description": "Crea 15 objetivos."
+            },
+            "objectives_created_30": {
+                "name": "Visionario",
+                "description": "Crea 30 objetivos."
+            },
+            "objectives_completed_3": {
+                "name": "Cumplidor",
+                "description": "Completa 3 de tus objetivos."
+            },
+            "objectives_completed_10": {
+                "name": "Rematador",
+                "description": "Completa 10 de tus objetivos."
+            },
+            "objectives_completed_25": {
+                "name": "Imparable",
+                "description": "Completa 25 de tus objetivos."
+            },
+            "early_bird": {
+                "name": "Madrugador",
+                "description": "Completa un objetivo antes de su fecha límite."
+            },
+            "streak_3": {
+                "name": "En racha",
+                "description": "Registra progreso 3 días seguidos."
+            },
+            "streak_7": {
+                "name": "Hábito semanal",
+                "description": "Registra progreso 7 días seguidos."
+            },
+            "streak_14": {
+                "name": "Voluntad de hierro",
+                "description": "Registra progreso 14 días seguidos."
+            },
+            "progress_updates_10": {
+                "name": "Arrancando",
+                "description": "Registra progreso 10 veces."
+            },
+            "progress_updates_50": {
+                "name": "Constante",
+                "description": "Registra progreso 50 veces."
+            },
+            "progress_updates_100": {
+                "name": "Entregado",
+                "description": "Registra progreso 100 veces."
+            },
+            "organization_first_objective": {
+                "name": "Puesta en marcha",
+                "description": "La organización crea su primer objetivo."
+            },
+            "organization_completed_5": {
+                "name": "Trabajo en equipo",
+                "description": "La organización completa 5 objetivos."
+            },
+            "organization_completed_15": {
+                "name": "Equipo engrasado",
+                "description": "La organización completa 15 objetivos."
+            },
+            "organization_completed_30": {
+                "name": "Equipo de ensueño",
+                "description": "La organización completa 30 objetivos."
+            },
+            "organization_streak_7": {
+                "name": "Impulso de equipo",
+                "description": "Alguien de la organización registra progreso 7 días seguidos."
             }
         }
     }

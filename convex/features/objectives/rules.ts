@@ -7,14 +7,14 @@ export type ObjectiveDirection = Infer<typeof objectiveDirectionValidator>;
 
 const HOUR_MS = 60 * 60 * 1000;
 
-const DAY_MS = 24 * HOUR_MS;
+export const DAY_MS = 24 * HOUR_MS;
 
 // Civil dates are the UTC midnight of the user's local day, and local time spans UTC-12 to UTC+14.
 const EARLIEST_UTC_OFFSET_MS = 12 * HOUR_MS;
 
 const LATEST_UTC_OFFSET_MS = 14 * HOUR_MS;
 
-function startOfUtcDay(timestamp: number) {
+export function startOfUtcDay(timestamp: number) {
     return timestamp - (timestamp % DAY_MS);
 }
 

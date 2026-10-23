@@ -2,7 +2,6 @@ import type { Doc } from './_generated/dataModel';
 import {
     ACTIVITY_DAYS,
     ACTIVITY_ROWS_LIMIT,
-    DAY_MS,
     MONTHLY_ENTRIES_LIMIT,
     MONTHS_SHOWN,
     UPCOMING_DEADLINES,
@@ -23,6 +22,7 @@ import {
 import { objectiveRanking, objectiveStats } from './features/objectives/stats';
 import { DEFAULT_DUE_SOON_DAYS } from './features/objectives/constants';
 import { MAX_PAGE_ITEMS } from './shared/pagination';
+import { DAY_MS } from './features/objectives/rules';
 import { ERROR_CODES } from './shared/errorCodes';
 import { progressPercent } from './features/objectives/records';
 import { queryWithRLS } from './features/authorization/wrappers';

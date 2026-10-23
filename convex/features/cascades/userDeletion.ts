@@ -5,7 +5,13 @@ import { isPersonalOrganizationForUser } from '../organizations/personalOrganiza
 
 export const USER_DELETION_BATCH_SIZE = 50;
 
-export type UserDeletionPhase = 'sessions' | 'accounts' | 'objectivePermissions' | 'memberships';
+export type UserDeletionPhase =
+    | 'sessions'
+    | 'accounts'
+    | 'objectivePermissions'
+    | 'notifications'
+    | 'achievements'
+    | 'memberships';
 
 export type UserDeletionResult = {
     status: 'in_progress' | 'completed';
@@ -62,6 +68,50 @@ export async function deleteUserAccountsBatch(
 
     for (const row of rows) {
         await ctx.db.delete('account', row._id);
+    }
+
+    return rows.length;
+}
+
+// Their notification preferences go with the last batch (decision 4).
+export async function deleteUserNotificationsBatch(
+    ctx: MutationCtx,
+    userId: Id<'user'>
+): Promise<number> {
+    const rows = await ctx.db
+        .query('notifications')
+        .withIndex('by_user_organization_date', q => q.eq('userId', userId))
+        .take(USER_DELETION_BATCH_SIZE);
+
+    for (const row of rows) {
+        await ctx.db.delete('notifications', row._id);
+    }
+
+    if (rows.length < USER_DELETION_BATCH_SIZE) {
+        const preferences = await ctx.db
+            .query('notificationPreferences')
+            .withIndex('by_user', q => q.eq('userId', userId))
+            .unique();
+
+        if (preferences) {
+            await ctx.db.delete('notificationPreferences', preferences._id);
+        }
+    }
+
+    return rows.length;
+}
+
+export async function deleteUserAchievementsBatch(
+    ctx: MutationCtx,
+    userId: Id<'user'>
+): Promise<number> {
+    const rows = await ctx.db
+        .query('obtainedAchievements')
+        .withIndex('by_user_achievement', q => q.eq('userId', userId))
+        .take(USER_DELETION_BATCH_SIZE);
+
+    for (const row of rows) {
+        await ctx.db.delete('obtainedAchievements', row._id);
     }
 
     return rows.length;

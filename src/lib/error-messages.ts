@@ -30,6 +30,10 @@ const EN: ErrorDictionary = {
     OBJECTIVE_NOT_FOUND: 'That objective no longer exists.',
     PROGRESS_NOT_FOUND: 'That progress entry no longer exists.',
     CATEGORY_NOT_FOUND: 'That category no longer exists.',
+    NOTIFICATION_NOT_FOUND: 'That notification no longer exists.',
+    CATEGORY_NAME_TAKEN: 'This organization already has a category with that name.',
+    CATEGORY_IN_USE:
+        'This category is still used by some objective, perhaps a private one or one in the trash.',
     USER_NOT_FOUND: 'That user could not be found in this organization.',
     INVITATION_NOT_FOUND: 'That invitation no longer exists.',
     USER_IS_ALREADY_A_MEMBER_OF_THIS_ORGANIZATION:
@@ -90,6 +94,10 @@ const ES: ErrorDictionary = {
     OBJECTIVE_NOT_FOUND: 'Ese objetivo ya no existe.',
     PROGRESS_NOT_FOUND: 'Ese registro de progreso ya no existe.',
     CATEGORY_NOT_FOUND: 'Esa categoría ya no existe.',
+    NOTIFICATION_NOT_FOUND: 'Esa notificación ya no existe.',
+    CATEGORY_NAME_TAKEN: 'Esta organización ya tiene una categoría con ese nombre.',
+    CATEGORY_IN_USE:
+        'Algún objetivo usa todavía esta categoría, quizá uno privado o en la papelera.',
     USER_NOT_FOUND: 'No se ha encontrado ese usuario en esta organización.',
     INVITATION_NOT_FOUND: 'Esa invitación ya no existe.',
     USER_IS_ALREADY_A_MEMBER_OF_THIS_ORGANIZATION:
