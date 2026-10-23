@@ -1,12 +1,6 @@
 import { ConvexError } from 'convex/values';
 import type { Doc, Id } from '../../_generated/dataModel';
 import { ERROR_CODES } from '../../shared/errorCodes';
-import {
-    OBJECTIVE_DESCRIPTION_MAX_LENGTH,
-    OBJECTIVE_TITLE_MAX_LENGTH,
-    OBJECTIVE_UNIT_MAX_LENGTH,
-    PROGRESS_COMMENT_MAX_LENGTH,
-} from './constants';
 import { isTargetReached, validateMetric, type ObjectiveDirection } from './rules';
 import type { QueryCtx } from '../../_generated/server';
 import {
@@ -129,34 +123,21 @@ function progressHistoryPoints(
     return points.reverse();
 }
 
-function optionalBoundedText(
-    value: string | null | undefined,
-    maxLength: number
-): string | undefined {
-    const text = value?.trim();
-
-    if (text && text.length > maxLength) {
-        throw new ConvexError(ERROR_CODES.VALIDATION_ERROR);
-    }
-
-    if (!text) {
-        return undefined;
-    }
-
-    return text;
+function optionalText(value: string | null | undefined): string | undefined {
+    return value?.trim() || undefined;
 }
 
 export function objectiveTextFields(input: { title: string; description?: string; unit?: string }) {
     const title = input.title.trim();
 
-    if (!title || title.length > OBJECTIVE_TITLE_MAX_LENGTH) {
+    if (!title) {
         throw new ConvexError(ERROR_CODES.VALIDATION_ERROR);
     }
 
     return {
         title,
-        description: optionalBoundedText(input.description, OBJECTIVE_DESCRIPTION_MAX_LENGTH),
-        unit: optionalBoundedText(input.unit, OBJECTIVE_UNIT_MAX_LENGTH),
+        description: optionalText(input.description),
+        unit: optionalText(input.unit),
     };
 }
 
@@ -176,19 +157,14 @@ export function resolvedObjectiveFields(
 ) {
     const title = args.title === undefined ? existing.title : args.title.trim();
 
-    if (!title || title.length > OBJECTIVE_TITLE_MAX_LENGTH) {
+    if (!title) {
         throw new ConvexError(ERROR_CODES.VALIDATION_ERROR);
     }
 
     const description =
-        args.description === undefined
-            ? existing.description
-            : optionalBoundedText(args.description, OBJECTIVE_DESCRIPTION_MAX_LENGTH);
+        args.description === undefined ? existing.description : optionalText(args.description);
 
-    const unit =
-        args.unit === undefined
-            ? existing.unit
-            : optionalBoundedText(args.unit, OBJECTIVE_UNIT_MAX_LENGTH);
+    const unit = args.unit === undefined ? existing.unit : optionalText(args.unit);
 
     let categoryId = existing.categoryId;
 
@@ -231,7 +207,7 @@ export function measurement(
 }
 
 export function progressComment(value: string | null | undefined): string | undefined {
-    return optionalBoundedText(value, PROGRESS_COMMENT_MAX_LENGTH);
+    return optionalText(value);
 }
 
 // An objective the actor cannot see is reported exactly like one that doesn't exist; one in the

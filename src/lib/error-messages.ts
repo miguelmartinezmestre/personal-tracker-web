@@ -58,14 +58,11 @@ const EN: ErrorDictionary = {
     FUTURE_DATE_NOT_ALLOWED: 'The date cannot be in the future.',
     OBJECTIVE_ALREADY_COMPLETED: 'This objective is already completed.',
     TARGET_NOT_FINITE: 'The target value is not a valid number.',
-    TARGET_TOO_LARGE: 'The target value is too large.',
     TARGET_DIRECTION_MISMATCH:
         'The target must be above the starting value when increasing and below it when decreasing.',
     VALUE_NOT_FINITE: 'The value is not a valid number.',
     PROGRESS_ZERO: 'The progress cannot be zero.',
-    VALUE_TOO_LARGE: 'The value is too large.',
     DEADLINE_TOO_OLD: 'The deadline cannot be in the past.',
-    DATE_TOO_OLD: 'The date cannot be more than five years ago.',
 };
 
 const ES: ErrorDictionary = {
@@ -122,14 +119,11 @@ const ES: ErrorDictionary = {
     FUTURE_DATE_NOT_ALLOWED: 'La fecha no puede estar en el futuro.',
     OBJECTIVE_ALREADY_COMPLETED: 'Este objetivo ya está completado.',
     TARGET_NOT_FINITE: 'El valor objetivo no es un número válido.',
-    TARGET_TOO_LARGE: 'El valor objetivo es demasiado grande.',
     TARGET_DIRECTION_MISMATCH:
         'La meta debe superar el valor inicial si el objetivo aumenta y quedar por debajo si disminuye.',
     VALUE_NOT_FINITE: 'El valor no es un número válido.',
     PROGRESS_ZERO: 'El avance no puede ser cero.',
-    VALUE_TOO_LARGE: 'El valor es demasiado grande.',
     DEADLINE_TOO_OLD: 'La fecha límite no puede estar en el pasado.',
-    DATE_TOO_OLD: 'La fecha no puede ser de hace más de cinco años.',
 };
 
 const DICTIONARIES: Record<ErrorLocale, ErrorDictionary> = { en: EN, es: ES };

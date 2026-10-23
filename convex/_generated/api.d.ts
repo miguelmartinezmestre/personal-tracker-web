@@ -41,7 +41,8 @@ import type * as features_cascades_organizationDeletion from "../features/cascad
 import type * as features_cascades_userDeletion from "../features/cascades/userDeletion.js";
 import type * as features_cascades_validators from "../features/cascades/validators.js";
 import type * as features_categories_constants from "../features/categories/constants.js";
-import type * as features_categories_defaults from "../features/categories/defaults.js";
+import type * as features_categories_rules from "../features/categories/rules.js";
+import type * as features_categories_validators from "../features/categories/validators.js";
 import type * as features_dashboard_constants from "../features/dashboard/constants.js";
 import type * as features_dashboard_stats from "../features/dashboard/stats.js";
 import type * as features_dashboard_validators from "../features/dashboard/validators.js";
@@ -71,6 +72,7 @@ import type * as http from "../http.js";
 import type * as objectiveAccess from "../objectiveAccess.js";
 import type * as objectives from "../objectives.js";
 import type * as organizations from "../organizations.js";
+import type * as platformCategories from "../platformCategories.js";
 import type * as progress from "../progress.js";
 import type * as sessions from "../sessions.js";
 import type * as setup from "../setup.js";
@@ -120,7 +122,8 @@ declare const fullApi: ApiFromModules<{
   "features/cascades/userDeletion": typeof features_cascades_userDeletion;
   "features/cascades/validators": typeof features_cascades_validators;
   "features/categories/constants": typeof features_categories_constants;
-  "features/categories/defaults": typeof features_categories_defaults;
+  "features/categories/rules": typeof features_categories_rules;
+  "features/categories/validators": typeof features_categories_validators;
   "features/dashboard/constants": typeof features_dashboard_constants;
   "features/dashboard/stats": typeof features_dashboard_stats;
   "features/dashboard/validators": typeof features_dashboard_validators;
@@ -150,6 +153,7 @@ declare const fullApi: ApiFromModules<{
   objectiveAccess: typeof objectiveAccess;
   objectives: typeof objectives;
   organizations: typeof organizations;
+  platformCategories: typeof platformCategories;
   progress: typeof progress;
   sessions: typeof sessions;
   setup: typeof setup;

@@ -160,44 +160,37 @@ describe('progress', () => {
         expect(await get(objectiveId)).toMatchObject({ currentValue: 0.9 });
     });
 
-    test.each([
-        ['zero', 0, 'PROGRESS_ZERO'],
-        ['too large', 2e9, 'VALUE_TOO_LARGE'],
-    ] as const)(
-        'rejects a %s difference without changing entries or totals @INH-PRO-02',
-        async (_label, updatedValue, errorCode) => {
-            const objectiveId = await createObjective();
-            const entry = await log(objectiveId, 1);
-            const before = await get(objectiveId);
+    test('rejects a zero difference without changing entries or totals @INH-PRO-02', async () => {
+        const objectiveId = await createObjective();
+        const entry = await log(objectiveId, 1);
+        const before = await get(objectiveId);
 
-            await expect(log(objectiveId, updatedValue)).rejects.toThrow(errorCode);
-            await expect(
-                ownerIdentity.mutation(api.progress.updateProgress, {
-                    id: entry.id,
-                    updatedValue,
-                    updateDate: Date.UTC(2026, 0, 2),
-                })
-            ).rejects.toThrow(errorCode);
+        await expect(log(objectiveId, 0)).rejects.toThrow('PROGRESS_ZERO');
+        await expect(
+            ownerIdentity.mutation(api.progress.updateProgress, {
+                id: entry.id,
+                updatedValue: 0,
+                updateDate: Date.UTC(2026, 0, 2),
+            })
+        ).rejects.toThrow('PROGRESS_ZERO');
 
-            expect(await get(objectiveId)).toEqual(before);
+        expect(await get(objectiveId)).toEqual(before);
 
-            const entries = await ownerIdentity.query(api.progress.listProgress, {
-                objectiveId,
-                paginationOpts: page,
-            });
+        const entries = await ownerIdentity.query(api.progress.listProgress, {
+            objectiveId,
+            paginationOpts: page,
+        });
 
-            expect(entries.page.map(listed => listed.updatedValue)).toEqual([1]);
-        }
-    );
+        expect(entries.page.map(listed => listed.updatedValue)).toEqual([1]);
+    });
 
-    test('accepts calendar days from five years ago up to today and nothing else @REQ-PROGRESO-002', async () => {
+    test('accepts any calendar day up to today and no later one @REQ-PROGRESO-002', async () => {
         const today = Date.UTC(2026, 0, 10);
         vi.useFakeTimers({ toFake: ['Date'] });
         vi.setSystemTime(today + 12 * 60 * 60 * 1000);
 
         try {
             const objectiveId = await createObjective();
-            const fiveYearsAgo = today - 5 * 365 * TIME.DAY_MS;
 
             const dated = (updateDate: number) =>
                 ownerIdentity.mutation(api.progress.createProgress, {
@@ -208,9 +201,8 @@ describe('progress', () => {
 
             // From UTC+14 it is already tomorrow.
             await expect(dated(today + TIME.DAY_MS)).resolves.toMatchObject({ updatedValue: 1 });
-            await expect(dated(fiveYearsAgo)).resolves.toMatchObject({ updatedValue: 1 });
+            await expect(dated(Date.UTC(2010, 0, 1))).resolves.toMatchObject({ updatedValue: 1 });
             await expect(dated(today + 2 * TIME.DAY_MS)).rejects.toThrow('FUTURE_DATE_NOT_ALLOWED');
-            await expect(dated(fiveYearsAgo - 2 * TIME.DAY_MS)).rejects.toThrow('DATE_TOO_OLD');
             await expect(dated(today + 60 * 1000)).rejects.toThrow('VALIDATION_ERROR');
             expect(await get(objectiveId)).toMatchObject({ currentValue: 2 });
         } finally {

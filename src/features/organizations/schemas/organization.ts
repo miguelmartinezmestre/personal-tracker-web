@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { categoryDraftSchema } from '@/features/categories/schemas/category';
 
 const ORGANIZATION_NAME_MAX_LENGTH = 100;
 
@@ -14,12 +15,19 @@ export function organizationSchema(message: (key: OrganizationValidationKey) => 
     });
 }
 
+// The owner chooses its categories from the platform catalog when creating it (decision 13).
+export function newOrganizationSchema(message: (key: OrganizationValidationKey) => string) {
+    return organizationSchema(message).extend({
+        categories: z.array(categoryDraftSchema),
+    });
+}
+
 export function savedOrganizationSchema(message: (key: OrganizationValidationKey) => string) {
     return organizationSchema(message).extend({
         id: z.string(),
     });
 }
 
-export type CreateOrganization = z.infer<ReturnType<typeof organizationSchema>>;
+export type CreateOrganization = z.infer<ReturnType<typeof newOrganizationSchema>>;
 
 export type SavedOrganization = z.infer<ReturnType<typeof savedOrganizationSchema>>;

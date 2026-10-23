@@ -9,11 +9,7 @@ import {
     requireOrganizationId,
     toProgressEntry,
 } from './features/objectives/records';
-import {
-    applyDifference,
-    requireEditableEntry,
-    requireEditableObjective,
-} from './features/objectives/progress';
+import { applyDifference, requireEditableEntry } from './features/objectives/progress';
 import { mutationWithRLS, queryWithRLS } from './features/authorization/wrappers';
 import {
     progressEntryValidator,
@@ -88,7 +84,15 @@ export const createProgress = mutationWithRLS({
     handler: async (ctx, args) => {
         const organizationId = requireOrganizationId(ctx.organizationId);
         const { objective, access } = await requireObjective(ctx.db, ctx, args.objectiveId);
-        requireEditableObjective(objective, access);
+
+        // Logging progress is editing the objective, and a completed one is closed (decision 11).
+        if (!access.canEdit) {
+            throw new ConvexError(ERROR_CODES.NOT_AUTHORIZED_PROGRESS);
+        }
+
+        if (objective.status === 'completed') {
+            throw new ConvexError(ERROR_CODES.OBJECTIVE_ALREADY_COMPLETED);
+        }
 
         const now = Date.now();
         validateProgressDifference(args.updatedValue);

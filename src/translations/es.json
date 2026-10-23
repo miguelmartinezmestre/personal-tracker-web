@@ -386,21 +386,16 @@
         },
         "validation": {
             "titleRequired": "Escribe un título.",
-            "titleTooLong": "El título admite como máximo 120 caracteres.",
-            "descriptionTooLong": "La descripción admite como máximo 2000 caracteres.",
-            "unitTooLong": "La unidad admite como máximo 32 caracteres.",
             "numberRequired": "Introduce un número.",
             "dateInvalid": "Introduce una fecha válida.",
             "deadlinePast": "La fecha límite no puede estar en el pasado.",
-            "valueTooLarge": "El valor debe estar entre -1.000.000.000 y 1.000.000.000.",
             "targetDirection": "La meta debe superar el valor inicial si el objetivo aumenta y quedar por debajo si disminuye.",
-            "dueSoonDaysRange": "Indica un número entero de días entre 1 y 365."
+            "dueSoonDaysInvalid": "Indica un número entero de días mayor que 0."
         },
         "columns": {
             "title": "Título"
         },
         "completedOn": "Completado el {date}",
-        "characterCount": "{count}/{max}",
         "direction": {
             "label": "Sentido",
             "increase": "Aumentar",
@@ -522,11 +517,8 @@
             "amountRequired": "Introduce una cantidad.",
             "dateInvalid": "Introduce una fecha válida.",
             "dateFuture": "La fecha no puede estar en el futuro.",
-            "commentTooLong": "El comentario admite como máximo 500 caracteres.",
-            "valueTooLarge": "El valor debe estar entre -1.000.000.000 y 1.000.000.000.",
             "amountZero": "La diferencia no puede ser cero.",
-            "valueUnchanged": "El valor nuevo es igual al actual; no hay nada que registrar.",
-            "dateTooOld": "La fecha no puede ser de hace más de cinco años."
+            "valueUnchanged": "El valor nuevo es igual al actual; no hay nada que registrar."
         },
         "aria": {
             "editEntry": "Editar el avance {entry}",

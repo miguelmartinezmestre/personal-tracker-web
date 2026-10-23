@@ -386,21 +386,16 @@
         },
         "validation": {
             "titleRequired": "Enter a title.",
-            "titleTooLong": "The title can be at most 120 characters.",
-            "descriptionTooLong": "The description can be at most 2000 characters.",
-            "unitTooLong": "The unit can be at most 32 characters.",
             "numberRequired": "Enter a number.",
             "dateInvalid": "Enter a valid date.",
             "deadlinePast": "The deadline cannot be in the past.",
-            "valueTooLarge": "The value must be between -1,000,000,000 and 1,000,000,000.",
             "targetDirection": "The target must be above the starting value when increasing and below it when decreasing.",
-            "dueSoonDaysRange": "Enter a whole number of days between 1 and 365."
+            "dueSoonDaysInvalid": "Enter a whole number of days greater than 0."
         },
         "columns": {
             "title": "Title"
         },
         "completedOn": "Completed on {date}",
-        "characterCount": "{count}/{max}",
         "direction": {
             "label": "Direction",
             "increase": "Increase",
@@ -522,11 +517,8 @@
             "amountRequired": "Enter an amount.",
             "dateInvalid": "Enter a valid date.",
             "dateFuture": "The date cannot be in the future.",
-            "commentTooLong": "The comment can be at most 500 characters.",
-            "valueTooLarge": "The value must be between -1,000,000,000 and 1,000,000,000.",
             "amountZero": "The difference cannot be zero.",
-            "valueUnchanged": "The new value equals the current one; there is nothing to log.",
-            "dateTooOld": "The date cannot be more than five years ago."
+            "valueUnchanged": "The new value equals the current one; there is nothing to log."
         },
         "aria": {
             "editEntry": "Edit progress entry {entry}",

@@ -7,24 +7,14 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Textarea } from '@/components/ui/textarea';
 import type { TanStackFormApi } from '@/components/forms/form-types';
 import { getFieldErrors } from '@/components/forms/form-utils';
-import {
-    PROGRESS_COMMENT_MAX_LENGTH,
-    PROGRESS_HISTORY_DAYS,
-} from '@/convex/features/objectives/constants';
 import { DateField } from '@/features/objectives/components/date-field';
-import {
-    dateInputToUtcTimestamp,
-    timestampToDateInput,
-    todayDateInput,
-} from '@/features/objectives/lib/dates';
+import { todayDateInput } from '@/features/objectives/lib/dates';
 import { formatObjectiveValue } from '@/features/objectives/lib/format';
 import { progressDifference, roundValue } from '@/features/objectives/lib/progress';
 import { type ProgressFormValues } from '@/features/objectives/schemas/objective';
 import { useLocale, useTranslations } from 'next-intl';
 
 const MODES = ['difference', 'value'] as const;
-
-const DAY_MS = 24 * 60 * 60 * 1000;
 
 /**
  * The entry fields shared by the new-progress form and the edit dialog. Each entry is typed as a
@@ -49,10 +39,6 @@ export function ProgressFields({
     const t = useTranslations('UpdateProgress');
     const locale = useLocale();
     const today = todayDateInput();
-
-    const oldest = timestampToDateInput(
-        (dateInputToUtcTimestamp(today) ?? 0) - PROGRESS_HISTORY_DAYS * DAY_MS
-    );
 
     return (
         <FieldGroup>
@@ -163,7 +149,6 @@ export function ProgressFields({
                                 value={field.state.value}
                                 onChange={field.handleChange}
                                 onBlur={field.handleBlur}
-                                min={oldest}
                                 max={today}
                                 required
                                 isInvalid={isInvalid}
@@ -189,7 +174,6 @@ export function ProgressFields({
                                 name={field.name}
                                 value={field.state.value}
                                 placeholder={commentPlaceholder}
-                                maxLength={PROGRESS_COMMENT_MAX_LENGTH}
                                 onBlur={field.handleBlur}
                                 onChange={event => field.handleChange(event.target.value)}
                                 aria-invalid={isInvalid}

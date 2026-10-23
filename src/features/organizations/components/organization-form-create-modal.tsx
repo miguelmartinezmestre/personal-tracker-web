@@ -13,10 +13,11 @@ import FormModal from '@/components/forms/form-modal';
 import { getFieldErrors } from '@/components/forms/form-utils';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
-
-const defaultValues: CreateOrganization = {
-    name: '',
-};
+import { useQuery } from '@tanstack/react-query';
+import { convexQuery } from '@convex-dev/react-query';
+import { api } from '@/convex/_generated/api';
+import { CategoryListEditor } from '@/features/categories/components/category-list-editor';
+import { toCategoryDraft } from '@/features/categories/schemas/category';
 
 export default function CreateOrganizationFormModal() {
     const t = useTranslations('Organizations');
@@ -24,11 +25,22 @@ export default function CreateOrganizationFormModal() {
     const createOrganization = useCreateOrganization();
     const organizationSchema = useOrganizationFormSchema();
     const router = useRouter();
+    const catalog = useQuery(convexQuery(api.platformCategories.listPlatformCategories, {}));
+
+    // The whole catalog to trim or extend (decision 13); the button waits, as typing fixes defaults.
+    const defaultValues: CreateOrganization = {
+        name: '',
+        categories: catalog.data?.map(toCategoryDraft) ?? [],
+    };
 
     return (
         <FormModal<CreateOrganization>
             trigger={
-                <Button className="gap-2" data-testid="organization-create-open">
+                <Button
+                    className="gap-2"
+                    disabled={catalog.isPending}
+                    data-testid="organization-create-open"
+                >
                     <PlusCircle className="h-4 w-4" />
                     {t('createOrganization')}
                 </Button>
@@ -83,6 +95,18 @@ export default function CreateOrganizationFormModal() {
                                 </Field>
                             );
                         }}
+                    </form.Field>
+                    <form.Field name="categories">
+                        {field => (
+                            <Field>
+                                <p className="text-sm font-medium">{t('categories')}</p>
+                                <FieldDescription>{t('categoriesDescription')}</FieldDescription>
+                                <CategoryListEditor
+                                    value={field.state.value}
+                                    onChange={field.handleChange}
+                                />
+                            </Field>
+                        )}
                     </form.Field>
                 </FieldGroup>
             )}

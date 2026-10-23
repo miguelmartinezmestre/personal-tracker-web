@@ -7,7 +7,9 @@ import { completeSetupArgsValidator } from './features/setup/validators';
 import { getAuthUserIdentity } from 'kitcn/auth';
 import { isFirstSetupUser, validateSetupArgs } from './features/setup/rules';
 import { isPersonalOrganizationForUser } from './features/organizations/personalOrganization';
-import { mutation, query } from './_generated/server';
+import { query } from './_generated/server';
+import { mutation } from './features/objectives/stats';
+import { normalizeCategory } from './features/categories/rules';
 
 export const isPlatformSetUp = query({
     args: {},
@@ -64,6 +66,10 @@ export const completeSetup = mutation({
         }
 
         validateSetupArgs(args);
+
+        const categories = new Map(
+            args.categories.map(normalizeCategory).map(category => [category.name, category])
+        );
 
         if (!(await isFirstSetupUser(ctx, userId))) {
             throw new ConvexError(ERROR_CODES.SETUP_USER_MISMATCH);
@@ -149,8 +155,15 @@ export const completeSetup = mutation({
 
         const now = Date.now();
 
-        for (const category of args.categories) {
-            // A reused organization may already have the default categories.
+        // The admin chose them in the wizard, so the setup organization starts with them too.
+        for (const category of categories.values()) {
+            await ctx.db.insert('platformCategories', {
+                ...category,
+                createdAt: now,
+                updatedAt: now,
+            });
+
+            // A reused organization may already have a category with that name.
             const sameName = await ctx.db
                 .query('categories')
                 .withIndex('by_organization_name', q =>
@@ -158,19 +171,15 @@ export const completeSetup = mutation({
                 )
                 .first();
 
-            if (sameName) {
-                continue;
+            if (!sameName) {
+                await ctx.db.insert('categories', {
+                    ...category,
+                    userId,
+                    organizationId,
+                    createdAt: now,
+                    updatedAt: now,
+                });
             }
-
-            await ctx.db.insert('categories', {
-                userId,
-                organizationId,
-                name: category.name,
-                color: category.color,
-                icon: category.icon,
-                createdAt: now,
-                updatedAt: now,
-            });
         }
 
         await ctx.db.insert('platformSettings', {

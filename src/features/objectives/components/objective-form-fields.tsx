@@ -8,12 +8,6 @@ import { Textarea } from '@/components/ui/textarea';
 import type { TanStackFormApi } from '@/components/forms/form-types';
 import { getFieldErrors } from '@/components/forms/form-utils';
 import type { Id } from '@/convex/_generated/dataModel';
-import {
-    MAX_DUE_SOON_DAYS,
-    OBJECTIVE_DESCRIPTION_MAX_LENGTH,
-    OBJECTIVE_TITLE_MAX_LENGTH,
-    OBJECTIVE_UNIT_MAX_LENGTH,
-} from '@/convex/features/objectives/constants';
 import { todayDateInput } from '@/features/objectives/lib/dates';
 import { AccessEditor } from '@/features/objectives/components/access-editor';
 import { CategorySelect } from '@/features/objectives/components/category-select';
@@ -57,7 +51,6 @@ export function ObjectiveFormFields({
                                 name={field.name}
                                 value={field.state.value}
                                 placeholder={t('describeObjectiveInDetail')}
-                                maxLength={OBJECTIVE_DESCRIPTION_MAX_LENGTH}
                                 onBlur={field.handleBlur}
                                 onChange={event => field.handleChange(event.target.value)}
                                 aria-invalid={isInvalid}
@@ -105,7 +98,6 @@ export function ObjectiveFormFields({
                                 name={field.name}
                                 value={field.state.value}
                                 placeholder={t('unitExample')}
-                                maxLength={OBJECTIVE_UNIT_MAX_LENGTH}
                                 onBlur={field.handleBlur}
                                 onChange={event => field.handleChange(event.target.value)}
                                 aria-invalid={isInvalid}
@@ -161,7 +153,6 @@ export function ObjectiveFormFields({
                             label={t('dueSoonDays')}
                             description={t('dueSoonDaysDescription')}
                             min={1}
-                            max={MAX_DUE_SOON_DAYS}
                             testId="objective-due-soon-input"
                         />
                     ) : null
@@ -305,29 +296,14 @@ function TitleField({ form }: { form: TanStackFormApi<ObjectiveFormValues> }) {
                             name={field.name}
                             value={title}
                             placeholder={t('enterObjectiveTitle')}
-                            maxLength={OBJECTIVE_TITLE_MAX_LENGTH}
-                            aria-describedby={`${field.name}-count`}
                             onBlur={field.handleBlur}
                             onChange={event => field.handleChange(event.target.value)}
                             aria-invalid={isInvalid}
                             data-testid="objective-title-input"
                         />
-                        <div className="flex justify-between gap-4">
-                            <FieldDescription>
-                                {t('giveYourObjectiveAClearConciseTitle')}
-                            </FieldDescription>
-                            {/* The input stops at the limit, so show how close it is. */}
-                            <span
-                                id={`${field.name}-count`}
-                                className="text-muted-foreground shrink-0 text-xs tabular-nums"
-                                data-testid="objective-title-count"
-                            >
-                                {t('characterCount', {
-                                    count: title.length,
-                                    max: OBJECTIVE_TITLE_MAX_LENGTH,
-                                })}
-                            </span>
-                        </div>
+                        <FieldDescription>
+                            {t('giveYourObjectiveAClearConciseTitle')}
+                        </FieldDescription>
                         {isInvalid ? <FieldError errors={errors} /> : null}
                     </Field>
                 );

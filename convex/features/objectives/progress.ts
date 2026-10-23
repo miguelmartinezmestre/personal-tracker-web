@@ -3,21 +3,7 @@ import type { Doc, Id } from '../../_generated/dataModel';
 import type { MutationCtx } from '../../_generated/server';
 import { ERROR_CODES } from '../../shared/errorCodes';
 import { measurement, requireObjective, requireOrganizationId, roundStoredValue } from './records';
-import type { AccessActor, ObjectiveAccess } from './access';
-
-// Logging and correcting progress, anyone's entries included, is editing the objective (P4).
-// A completed objective is closed: no new entries and no corrections (decision 11).
-export function requireEditableObjective(objective: Doc<'objectives'>, access: ObjectiveAccess) {
-    if (!access.canEdit) {
-        throw new ConvexError(ERROR_CODES.NOT_AUTHORIZED_PROGRESS);
-    }
-
-    if (objective.status === 'completed') {
-        throw new ConvexError(ERROR_CODES.OBJECTIVE_ALREADY_COMPLETED);
-    }
-
-    return objective;
-}
+import type { AccessActor } from './access';
 
 // Progress changes adjust the total by their difference, without walking the history.
 export async function applyDifference(
@@ -45,5 +31,14 @@ export async function requireEditableEntry(
 
     const { objective, access } = await requireObjective(ctx.db, ctx, entry.objective);
 
-    return { entry, objective: requireEditableObjective(objective, access) };
+    // Correcting anyone's entries is editing the objective (P4); a completed one is closed (decision 11).
+    if (!access.canEdit) {
+        throw new ConvexError(ERROR_CODES.NOT_AUTHORIZED_PROGRESS);
+    }
+
+    if (objective.status === 'completed') {
+        throw new ConvexError(ERROR_CODES.OBJECTIVE_ALREADY_COMPLETED);
+    }
+
+    return { entry, objective };
 }

@@ -19,7 +19,6 @@ import {
 } from './features/auth/sessionRecovery';
 import { buildBetterAuthOptions } from './features/auth/options';
 import { defineAuth } from './generated/auth';
-import { insertDefaultCategories } from './features/categories/defaults';
 import { internalMutation, internalQuery } from './_generated/server';
 import { normalizeOrganizationName } from './features/organizations/slug';
 import { normalizeRegistrationEmail } from './features/auth/users';
@@ -123,7 +122,6 @@ export const ensureDefaultOrganizationForUser = internalMutation({
             role: 'owner',
             createdAt: now,
         });
-        await insertDefaultCategories(ctx, organizationId, userId);
 
         return firstOrganizationId ?? organizationId;
     },

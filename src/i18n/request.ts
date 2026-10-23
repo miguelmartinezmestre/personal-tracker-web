@@ -44,8 +44,9 @@ const getValidLocale = cache(async () => {
     return routing.defaultLocale;
 });
 
-export default getRequestConfig(async () => {
-    const validLocale = await getValidLocale();
+// An explicit locale, as in `getTranslations({ locale })`, wins over the visitor's one.
+export default getRequestConfig(async ({ locale }) => {
+    const validLocale = locale && isAppLocale(locale) ? locale : await getValidLocale();
 
     return {
         locale: validLocale,

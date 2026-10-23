@@ -1,0 +1,58 @@
+import {
+    Award,
+    BarChart3,
+    Book,
+    Briefcase,
+    Calendar,
+    Camera,
+    Check,
+    Coffee,
+    DollarSign,
+    Heart,
+    Home,
+    Lightbulb,
+    Map,
+    Music,
+    Palette,
+    Plane,
+    Star,
+    Tag,
+    Target,
+    TrendingUp,
+    User,
+    Users,
+    Zap,
+    type LucideIcon,
+} from 'lucide-react';
+import type { CATEGORY_ICONS } from '@/convex/features/categories/constants';
+
+// Typed by string to look up stored icons; `satisfies` still makes the catalog complete.
+const CATEGORY_ICON_COMPONENTS: Partial<Record<string, LucideIcon>> = {
+    tag: Tag,
+    heart: Heart,
+    briefcase: Briefcase,
+    book: Book,
+    user: User,
+    'dollar-sign': DollarSign,
+    users: Users,
+    palette: Palette,
+    home: Home,
+    map: Map,
+    target: Target,
+    chart: BarChart3,
+    check: Check,
+    calendar: Calendar,
+    lightbulb: Lightbulb,
+    'trending-up': TrendingUp,
+    star: Star,
+    award: Award,
+    zap: Zap,
+    coffee: Coffee,
+    music: Music,
+    camera: Camera,
+    plane: Plane,
+} satisfies Record<(typeof CATEGORY_ICONS)[number], LucideIcon>;
+
+export function categoryIconComponent(icon: string | undefined): LucideIcon {
+    return CATEGORY_ICON_COMPONENTS[icon ?? 'tag'] ?? Tag;
+}

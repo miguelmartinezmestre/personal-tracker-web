@@ -56,6 +56,15 @@ export default defineSchema({
         .index('by_organization', ['organizationId'])
         .index('by_organization_name', ['organizationId', 'name']),
 
+    // The catalog organizations choose from; what they choose is copied, never linked (decision 13).
+    platformCategories: defineTable({
+        name: v.string(),
+        color: v.string(),
+        icon: v.optional(v.string()),
+        createdAt: v.number(),
+        updatedAt: v.number(),
+    }).index('by_name', ['name']),
+
     objectives: defineTable({
         organizationId: v.id('organization'),
         createdBy: v.id('user'),
@@ -139,6 +148,8 @@ export default defineSchema({
             'memberCanView',
             'deletedAt',
         ])
+        // Any objective blocks deleting its category, even private or in the trash.
+        .index('by_category', ['categoryId'])
         .searchIndex('search_title', {
             searchField: 'title',
             filterFields: ['organizationId', 'deletedAt', 'status', 'categoryId'],

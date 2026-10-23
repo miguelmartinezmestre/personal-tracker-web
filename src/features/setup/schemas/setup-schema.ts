@@ -1,5 +1,4 @@
 import { z } from 'zod';
-import { categoryColorSchema, categoryIconSchema } from '@/features/categories/schemas/category';
 import {
     isSetupSecretLengthValid,
     MAX_SETUP_SECRET_LENGTH,
@@ -59,12 +58,6 @@ export const organizationSchema = z.object({
     logo: z.url().optional().or(z.literal('')),
 });
 
-export const setupCategorySchema = z.object({
-    name: z.string().min(1).max(50),
-    color: categoryColorSchema,
-    icon: categoryIconSchema.optional(),
-});
-
 export const registrationPolicySchema = z.object({
     policy: z.enum(['open', 'invitation-only']),
 });
@@ -74,7 +67,5 @@ export type PlatformConfig = z.infer<typeof platformConfigSchema>;
 export type AdminAccount = z.infer<typeof adminAccountSchema>;
 
 export type OrganizationConfig = z.infer<typeof organizationSchema>;
-
-export type SetupCategory = z.infer<typeof setupCategorySchema>;
 
 export type RegistrationPolicy = z.infer<typeof registrationPolicySchema>;

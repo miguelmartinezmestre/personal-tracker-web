@@ -1,49 +1,20 @@
 import { z } from 'zod';
-import {
-    MAX_DUE_SOON_DAYS,
-    MAX_METRIC,
-    OBJECTIVE_DESCRIPTION_MAX_LENGTH,
-    OBJECTIVE_TITLE_MAX_LENGTH,
-    OBJECTIVE_UNIT_MAX_LENGTH,
-    PROGRESS_COMMENT_MAX_LENGTH,
-    PROGRESS_HISTORY_DAYS,
-} from '@/convex/features/objectives/constants';
 import { isTargetReached } from '@/convex/features/objectives/rules';
 import type { Id } from '@/convex/_generated/dataModel';
 import { dateInputToUtcTimestamp, todayDateInput } from '@/features/objectives/lib/dates';
 
 export const NONE_CATEGORY = 'none';
 
-const DAY_MS = 24 * 60 * 60 * 1000;
-
 type ObjectiveValidationKey =
     | 'titleRequired'
-    | 'titleTooLong'
-    | 'descriptionTooLong'
-    | 'unitTooLong'
     | 'numberRequired'
-    | 'valueTooLarge'
     | 'targetDirection'
     | 'dateInvalid'
     | 'deadlinePast'
-    | 'dueSoonDaysRange';
+    | 'dueSoonDaysInvalid';
 
 type ProgressValidationKey =
-    | 'amountRequired'
-    | 'valueTooLarge'
-    | 'amountZero'
-    | 'valueUnchanged'
-    | 'dateInvalid'
-    | 'dateFuture'
-    | 'dateTooOld'
-    | 'commentTooLong';
-
-function metricSchema(message: (key: 'numberRequired' | 'valueTooLarge') => string) {
-    return z
-        .number({ error: message('numberRequired') })
-        .min(-MAX_METRIC, { error: message('valueTooLarge') })
-        .max(MAX_METRIC, { error: message('valueTooLarge') });
-}
+    'amountRequired' | 'amountZero' | 'valueUnchanged' | 'dateInvalid' | 'dateFuture';
 
 // Dates are typed as text and kept as `YYYY-MM-DD` once read, so anything else is unreadable.
 function dateTextSchema(message: string) {
@@ -78,16 +49,13 @@ export function objectiveFormSchema(
             title: z
                 .string()
                 .trim()
-                .min(1, { error: message('titleRequired') })
-                .max(OBJECTIVE_TITLE_MAX_LENGTH, { error: message('titleTooLong') }),
-            description: z
-                .string()
-                .max(OBJECTIVE_DESCRIPTION_MAX_LENGTH, { error: message('descriptionTooLong') }),
+                .min(1, { error: message('titleRequired') }),
+            description: z.string(),
             categoryId: z.string(),
-            unit: z.string().max(OBJECTIVE_UNIT_MAX_LENGTH, { error: message('unitTooLong') }),
+            unit: z.string(),
             direction: z.enum(['increase', 'decrease']),
-            startValue: metricSchema(message),
-            targetValue: metricSchema(message),
+            startValue: z.number({ error: message('numberRequired') }),
+            targetValue: z.number({ error: message('numberRequired') }),
             deadline: z.union([
                 z.literal(''),
                 dateTextSchema(message('dateInvalid')).refine(
@@ -97,10 +65,9 @@ export function objectiveFormSchema(
                 ),
             ]),
             dueSoonDays: z
-                .number({ error: message('dueSoonDaysRange') })
-                .int({ error: message('dueSoonDaysRange') })
-                .min(1, { error: message('dueSoonDaysRange') })
-                .max(MAX_DUE_SOON_DAYS, { error: message('dueSoonDaysRange') }),
+                .number({ error: message('dueSoonDaysInvalid') })
+                .int({ error: message('dueSoonDaysInvalid') })
+                .min(1, { error: message('dueSoonDaysInvalid') }),
             // Only set when creating; later changes go through the permissions dialog.
             memberAccess: accessSchema.shape.memberAccess,
             users: accessSchema.shape.users,
@@ -127,19 +94,12 @@ export function progressFormSchema(
     return z
         .object({
             mode: z.enum(['difference', 'value']),
-            amount: metricSchema(key => message(key === 'numberRequired' ? 'amountRequired' : key)),
-            updateDate: dateTextSchema(message('dateInvalid'))
-                .refine(value => value <= todayDateInput(), { error: message('dateFuture') })
-                .refine(
-                    value =>
-                        (dateInputToUtcTimestamp(value) ?? 0) >=
-                        (dateInputToUtcTimestamp(todayDateInput()) ?? 0) -
-                            PROGRESS_HISTORY_DAYS * DAY_MS,
-                    { error: message('dateTooOld') }
-                ),
-            comment: z
-                .string()
-                .max(PROGRESS_COMMENT_MAX_LENGTH, { error: message('commentTooLong') }),
+            amount: z.number({ error: message('amountRequired') }),
+            updateDate: dateTextSchema(message('dateInvalid')).refine(
+                value => value <= todayDateInput(),
+                { error: message('dateFuture') }
+            ),
+            comment: z.string(),
         })
         .superRefine((value, context) => {
             if (value.mode === 'difference' && value.amount === 0) {

@@ -1,7 +1,6 @@
 import { beforeEach, describe, expect, test } from 'vitest';
 import { api, internal } from '../_generated/api';
 import { initConvexTest } from './test.helper';
-import { DEFAULT_CATEGORIES } from '../features/categories/constants';
 import {
     createTestUser,
     createTestOrganization,
@@ -166,34 +165,6 @@ describe('convex auth', () => {
         );
 
         expect(memberships).toHaveLength(1);
-    });
-
-    test('default organization starts with the default categories once', async () => {
-        const randomSuffix = Math.random().toString(36).substring(2, 15);
-
-        const user = await createTestUser(t, {
-            userId: `default-categories-user-${randomSuffix}`,
-            email: `default-categories-user-${randomSuffix}@example.com`,
-            name: 'Default Categories User',
-        });
-
-        const organizationId = await t.mutation(internal.auth.ensureDefaultOrganizationForUser, {
-            userId: user.docId,
-        });
-
-        await t.mutation(internal.categories.seedDefaultCategories, { organizationId });
-
-        const categories = await t.run(
-            async ctx =>
-                await ctx.db
-                    .query('categories')
-                    .withIndex('by_organization', q => q.eq('organizationId', organizationId))
-                    .take(50)
-        );
-
-        expect(categories.map(category => category.name).sort()).toEqual(
-            DEFAULT_CATEGORIES.map(category => category.name).sort()
-        );
     });
 
     test('detects an organization name the user already has, ignoring case', async () => {

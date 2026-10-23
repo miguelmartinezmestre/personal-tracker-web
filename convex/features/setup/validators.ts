@@ -1,4 +1,5 @@
 import { v } from 'convex/values';
+import { categoryInputValidator } from '../categories/validators';
 
 export const completeSetupArgsValidator = {
     platformName: v.string(),
@@ -6,11 +7,6 @@ export const completeSetupArgsValidator = {
     registrationPolicy: v.union(v.literal('open'), v.literal('invitation-only')),
     organizationName: v.string(),
     organizationLogo: v.optional(v.string()),
-    categories: v.array(
-        v.object({
-            name: v.string(),
-            color: v.string(),
-            icon: v.optional(v.string()),
-        })
-    ),
+    // The platform catalog, also copied into the setup organization.
+    categories: v.array(categoryInputValidator),
 } as const;

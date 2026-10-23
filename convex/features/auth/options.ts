@@ -262,14 +262,6 @@ function createOrganizationPlugin(ctx: GenericCtx) {
                     throwOrganizationNameTaken();
                 }
             },
-            afterCreateOrganization: async ({ organization }) => {
-                await requireRunnableCtx(ctx).runMutation(
-                    internal.categories.seedDefaultCategories,
-                    {
-                        organizationId: organization.id,
-                    }
-                );
-            },
             beforeDeleteOrganization: async ({ organization }) => {
                 if (await isProtectedDefaultOrganization(ctx, organization.id)) {
                     throw new APIError('FORBIDDEN', {

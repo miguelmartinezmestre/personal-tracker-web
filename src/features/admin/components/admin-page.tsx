@@ -8,6 +8,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { api } from '@/convex/_generated/api';
 import { isGlobalAdminRole } from '@/convex/features/auth/roles';
 import AdminAudit from '@/features/admin/components/admin-audit';
+import AdminCategories from '@/features/admin/components/admin-categories';
 import AdminUsers from '@/features/admin/components/admin-users';
 
 /** Platform administration, only for the global admin; every function checks it again. */
@@ -38,6 +39,7 @@ export default function AdminPage() {
                 <p className="text-muted-foreground">{t('description')}</p>
             </div>
             <AdminUsers currentUserId={user.data._id} />
+            <AdminCategories />
             <AdminAudit />
         </div>
     );

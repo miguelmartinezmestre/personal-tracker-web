@@ -26,11 +26,9 @@ test('accepts negative differences and rejects entries that change nothing @INH-
     expect(progressErrors({ mode: 'value', amount: 85 })).toEqual(['valueUnchanged']);
 });
 
-test('accepts progress dated today or in the last five years @REQ-PROGRESO-002', () => {
+test('accepts progress dated today or any earlier day @REQ-PROGRESO-002', () => {
     expect(progressErrors({ mode: 'difference', amount: 1, updateDate: '2026-01-01' })).toEqual([]);
-    expect(progressErrors({ mode: 'difference', amount: 1, updateDate: '2000-01-01' })).toEqual([
-        'dateTooOld',
-    ]);
+    expect(progressErrors({ mode: 'difference', amount: 1, updateDate: '2000-01-01' })).toEqual([]);
     expect(progressErrors({ mode: 'difference', amount: 1, updateDate: '2999-01-01' })).toEqual([
         'dateFuture',
     ]);

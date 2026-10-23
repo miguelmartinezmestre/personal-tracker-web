@@ -11,7 +11,7 @@ import { AlertCircle } from 'lucide-react';
 import { api } from '@/convex/_generated/api';
 import { authClient } from '@/features/auth/client';
 import { convex } from '@/platform/convex/providers/convex-query-client';
-import { useSetupWizard } from '../hooks/use-setup-wizard';
+import { useSetupWizard, type CategoryProposals } from '../hooks/use-setup-wizard';
 import { resolveErrorMessage } from '@/lib/error-messages';
 import SetupProgress from './setup-progress';
 import { createOrResumeSetupAccount } from '../lib/setup-account';
@@ -19,7 +19,11 @@ import { throwIfAuthClientError } from '@/features/auth/auth-client-response';
 import { SETUP_SECRET_HEADER } from '@/convex/features/setup/secret';
 import { SetupStepContent, SetupWizardActions } from './setup-step-content';
 
-export default function SetupWizard() {
+export default function SetupWizard({
+    categoryProposals,
+}: {
+    categoryProposals: CategoryProposals;
+}) {
     const router = useRouter();
     const errorLocale = useLocale() === 'es' ? 'es' : 'en';
     const t = useTranslations('Setup');
@@ -37,7 +41,7 @@ export default function SetupWizard() {
         isStepValid,
         isFirstStep,
         isLastStep,
-    } = useSetupWizard();
+    } = useSetupWizard(categoryProposals);
 
     const { mutateAsync: completeSetup } = useMutation({
         mutationFn: useConvexMutation(api.setup.completeSetup),

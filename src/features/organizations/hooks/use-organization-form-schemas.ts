@@ -3,14 +3,14 @@
 import { useMemo } from 'react';
 import { useTranslations } from 'next-intl';
 import {
-    organizationSchema,
+    newOrganizationSchema,
     savedOrganizationSchema,
 } from '@/features/organizations/schemas/organization';
 
 export function useOrganizationFormSchema() {
     const t = useTranslations('Organizations.validation');
 
-    return useMemo(() => organizationSchema(key => t(key)), [t]);
+    return useMemo(() => newOrganizationSchema(key => t(key)), [t]);
 }
 
 export function useSavedOrganizationFormSchema() {

@@ -183,7 +183,7 @@ describe('convex setup', () => {
             await expect(t.query(api.setup.isPlatformSetUp, {})).resolves.toBe(false);
         });
 
-        test('succeeds with exactly one user and no existing settings', async () => {
+        test('succeeds with exactly one user and no existing settings @INH-SET-01 @REQ-CATEGORIAS-002', async () => {
             const t = initConvexTest();
 
             const user = await createTestUser(t, {
@@ -243,13 +243,15 @@ describe('convex setup', () => {
 
             expect(organization?.name).toBe('My Company');
 
-            const categories = await t.run(async ctx => {
-                return await ctx.db.query('categories').collect();
-            });
+            // The wizard's categories form the platform catalog and start the setup organization.
+            const [catalog, categories] = await t.run(async ctx => [
+                await ctx.db.query('platformCategories').collect(),
+                await ctx.db.query('categories').collect(),
+            ]);
 
-            expect(categories).toHaveLength(2);
-            expect(categories.map(category => category.name)).toContain('Health');
-            expect(categories.map(category => category.name)).toContain('Career');
+            for (const rows of [catalog, categories]) {
+                expect(rows.map(category => category.name).sort()).toEqual(['Career', 'Health']);
+            }
 
             const settings = await t.run(async ctx => {
                 return await ctx.db.query('platformSettings').first();

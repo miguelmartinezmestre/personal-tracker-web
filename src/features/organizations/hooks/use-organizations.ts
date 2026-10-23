@@ -3,15 +3,16 @@
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { usePaginatedList } from '@/components/data-table/hooks/use-paginated-list';
 import { api } from '@/convex/_generated/api';
+import type { Id } from '@/convex/_generated/dataModel';
 import { authClient } from '@/features/auth/client';
 import type { CreateOrganization } from '@/features/organizations/schemas/organization';
-import { convexQuery } from '@convex-dev/react-query';
+import { convexQuery, useConvexMutation } from '@convex-dev/react-query';
 import { throwIfAuthClientError } from '@/features/auth/auth-client-response';
 import type { FunctionReturnType } from 'convex/server';
 import { buildOrganizationSlug } from '@/convex/features/organizations/slug';
 import { DEFAULT_ORGANIZATION_SLUG_BASE } from '@/convex/features/organizations/personalOrganization';
 
-type UpdateOrganization = CreateOrganization & { id: string };
+type UpdateOrganization = { id: string; name: string };
 
 export type Organization = FunctionReturnType<
     typeof api.organizations.listOrganizations
@@ -43,6 +44,8 @@ function buildUniqueOrganizationSlug(name: string): string {
 }
 
 export function useCreateOrganization() {
+    const addChosenCategories = useConvexMutation(api.categories.addChosenCategories);
+
     return useMutation({
         mutationFn: async (values: CreateOrganization) => {
             const result = await authClient.organization.create({
@@ -52,6 +55,13 @@ export function useCreateOrganization() {
             });
 
             throwIfAuthClientError(result);
+
+            if (result.data) {
+                await addChosenCategories({
+                    organizationId: result.data.id as Id<'organization'>,
+                    categories: values.categories,
+                });
+            }
 
             return result.data;
         },

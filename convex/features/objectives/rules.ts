@@ -1,11 +1,6 @@
 import { ConvexError, type Infer } from 'convex/values';
 import { ERROR_CODES } from '../../shared/errorCodes';
-import {
-    DEFAULT_DUE_SOON_DAYS,
-    MAX_DUE_SOON_DAYS,
-    MAX_METRIC,
-    PROGRESS_HISTORY_DAYS,
-} from './constants';
+import { DEFAULT_DUE_SOON_DAYS } from './constants';
 import type { deadlineFilterValidator, objectiveDirectionValidator } from './validators';
 
 export type ObjectiveDirection = Infer<typeof objectiveDirectionValidator>;
@@ -35,10 +30,6 @@ export function validateProgressDate(updateDate: number, now: number) {
     if (updateDate > startOfUtcDay(now + LATEST_UTC_OFFSET_MS)) {
         throw new ConvexError(ERROR_CODES.FUTURE_DATE_NOT_ALLOWED);
     }
-
-    if (updateDate < startOfUtcDay(now - EARLIEST_UTC_OFFSET_MS) - PROGRESS_HISTORY_DAYS * DAY_MS) {
-        throw new ConvexError(ERROR_CODES.DATE_TOO_OLD);
-    }
 }
 
 // The server doesn't know the user's time zone, so a deadline is "today" while that day is
@@ -52,7 +43,7 @@ export function validateDeadline(deadline: number, now: number) {
 }
 
 export function validateDueSoonDays(days: number) {
-    if (!Number.isInteger(days) || days < 1 || days > MAX_DUE_SOON_DAYS) {
+    if (!Number.isInteger(days) || days < 1) {
         throw new ConvexError(ERROR_CODES.VALIDATION_ERROR);
     }
 }
@@ -97,10 +88,6 @@ export function validateMetric(value: number) {
     if (!Number.isFinite(value)) {
         throw new ConvexError(ERROR_CODES.VALUE_NOT_FINITE);
     }
-
-    if (Math.abs(value) > MAX_METRIC) {
-        throw new ConvexError(ERROR_CODES.VALUE_TOO_LARGE);
-    }
 }
 
 export function validateProgressDifference(difference: number) {
@@ -128,10 +115,6 @@ export function validateObjectiveValues(
 
     if (!Number.isFinite(targetValue)) {
         throw new ConvexError(ERROR_CODES.TARGET_NOT_FINITE);
-    }
-
-    if (Math.abs(targetValue) > MAX_METRIC) {
-        throw new ConvexError(ERROR_CODES.TARGET_TOO_LARGE);
     }
 
     // An objective that starts at its target would be born completed with nothing to log.

@@ -19,6 +19,7 @@ import { RegisterFormInputField } from './register-form-input-field';
 import { useHydrated } from '@/hooks/use-hydrated';
 import { api } from '@/convex/_generated/api';
 import { convexQuery } from '@convex-dev/react-query';
+import { PersonalCategoriesStep } from '@/features/categories/components/personal-categories-step';
 
 interface RegisterFormProps {
     invitationToken?: string | null;
@@ -93,6 +94,7 @@ export default function RegisterForm({
 
     const [registerError, setRegisterError] = useState('');
     const [verificationSent, setVerificationSent] = useState(false);
+    const [choosingCategories, setChoosingCategories] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const session = useQuery(convexQuery(api.organizations.getCurrentSession, {}));
     const signOutMutation = useMutation(useSignOutMutationOptions());
@@ -148,12 +150,16 @@ export default function RegisterForm({
                     return;
                 }
 
-                router.push('/dashboard/home');
+                setChoosingCategories(true);
             })
             .catch(error => {
                 setRegisterError(resolveErrorMessage(error, locale, t('errors.registerFallback')));
             })
             .finally(() => setIsSubmitting(false));
+    }
+
+    if (choosingCategories) {
+        return <PersonalCategoriesStep onDone={() => router.push('/dashboard/home')} />;
     }
 
     // The account exists now; resubmitting would only fail, so leave just the next step.

@@ -7,7 +7,6 @@ import {
 } from '../organizations/personalOrganization';
 import type { Id } from '../../_generated/dataModel';
 import type { MutationCtx } from '../../_generated/server';
-import { insertDefaultCategories } from '../categories/defaults';
 import { internal } from '../../_generated/api';
 import { isActiveAccount } from './users';
 
@@ -105,7 +104,6 @@ async function findOrCreateFallbackOrganization(
         role: 'owner',
         createdAt: now,
     });
-    await insertDefaultCategories(ctx, organizationId, userId);
 
     return organizationId;
 }

@@ -137,7 +137,7 @@ describe('objectives', () => {
         }
     );
 
-    test('accepts negative values and rejects values beyond the metric limit @INH-OBJ-01 @INH-OBJ-03', async () => {
+    test('accepts negative values @INH-OBJ-01 @INH-OBJ-03', async () => {
         const debt = await ownerIdentity.mutation(api.objectives.createObjective, {
             title: 'Pay off the debt',
             direction: 'increase',
@@ -146,13 +146,6 @@ describe('objectives', () => {
         });
 
         expect(await get(debt)).toMatchObject({ startValue: -500, targetValue: 0 });
-
-        await expect(create('Too large start', { startValue: -2e9 })).rejects.toThrow(
-            'VALUE_TOO_LARGE'
-        );
-        await expect(create('Too large target', { targetValue: 2e9 })).rejects.toThrow(
-            'TARGET_TOO_LARGE'
-        );
     });
 
     test('completes an objective whose new target or direction is already reached @REQ-OBJETIVOS-003 @INH-OBJ-08', async () => {
@@ -307,7 +300,7 @@ describe('objectives', () => {
         }
     });
 
-    test('keeps a due-soon warning of 1 to 365 days only while there is a deadline @INH-OBJ-19', async () => {
+    test('keeps a due-soon warning of at least one day only while there is a deadline @INH-OBJ-19', async () => {
         const deadline = Date.UTC(2099, 0, 1);
 
         const objectiveId = await ownerIdentity.mutation(api.objectives.createObjective, {
@@ -326,7 +319,7 @@ describe('objectives', () => {
             })
         ).toMatchObject({ dueSoonDays: 30 });
 
-        for (const dueSoonDays of [0, 366, 1.5]) {
+        for (const dueSoonDays of [0, 1.5]) {
             await expect(
                 ownerIdentity.mutation(api.objectives.updateObjective, {
                     id: objectiveId,
