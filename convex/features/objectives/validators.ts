@@ -65,6 +65,7 @@ export const progressEntryValidator = v.object({
     objectiveId: v.id('objectives'),
     updatedValue: v.number(),
     updateDate: v.number(),
+    resultingValue: v.number(),
     comment: v.optional(v.string()),
     createdAt: v.number(),
     canEdit: v.boolean(),

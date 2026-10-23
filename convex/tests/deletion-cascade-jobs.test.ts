@@ -71,6 +71,7 @@ describe('organization deletion cascade', () => {
                 createdBy: user.docId,
                 updatedValue: 1,
                 updateDate: now,
+                resultingValue: 1,
                 createdAt: now,
                 updatedAt: now,
             })

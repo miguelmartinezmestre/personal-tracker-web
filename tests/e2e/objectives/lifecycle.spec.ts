@@ -172,8 +172,16 @@ test.describe('Objectives', () => {
     );
 
     test(
-        'reads a typed deadline, filters by it and keeps the filter on the detail link',
-        { tag: ['@REQ-OBJETIVOS-005', '@REQ-OBJETIVOS-009', '@INH-OBJ-15', '@INH-OBJ-18'] },
+        'reads a typed deadline, shows the pace, filters by it and keeps the filter on the detail link',
+        {
+            tag: [
+                '@REQ-OBJETIVOS-005',
+                '@REQ-OBJETIVOS-009',
+                '@REQ-OBJETIVOS-010',
+                '@INH-OBJ-15',
+                '@INH-OBJ-18',
+            ],
+        },
         async ({ page }) => {
             const suffix = randomUUID().substring(0, 8);
             const dueTitle = `Due soon ${suffix}`;
@@ -194,6 +202,13 @@ test.describe('Objectives', () => {
             await page.getByTestId('objective-save-button').click();
             await expect(openRow).toBeVisible({ timeout: 15000 });
 
+            // Nothing is expected yet on the day it is created; without a deadline there is no pace.
+            const paceIn = (title: string) =>
+                page.getByRole('row').filter({ hasText: title }).getByTestId('objective-pace');
+
+            await expect(paceIn(dueTitle)).toHaveAttribute('data-pace', 'onTrack');
+            await expect(paceIn(openTitle)).toHaveCount(0);
+
             await page.getByTestId('objectives-deadline-filter-week').click();
             await expect(page).toHaveURL(/\/dashboard\/objectives\?deadline=week$/);
             await expect(dueRow).toBeVisible({ timeout: 15000 });
@@ -203,6 +218,10 @@ test.describe('Objectives', () => {
             await expect(page.getByTestId('objective-detail-title')).toHaveText(dueTitle, {
                 timeout: 15000,
             });
+            await expect(page.getByTestId('objective-pace')).toHaveAttribute(
+                'data-pace',
+                'onTrack'
+            );
             await page.getByRole('link', { name: /back/i }).click();
             await expect(page).toHaveURL(/\/dashboard\/objectives\?deadline=week$/);
             await expect(dueRow).toBeVisible({ timeout: 15000 });

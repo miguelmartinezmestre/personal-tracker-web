@@ -136,6 +136,7 @@ describe('trash', () => {
                     createdBy: creator.docId,
                     updatedValue: 1,
                     updateDate: Date.UTC(2026, 0, 1),
+                    resultingValue: 1,
                     createdAt: 1,
                     updatedAt: 1,
                 });

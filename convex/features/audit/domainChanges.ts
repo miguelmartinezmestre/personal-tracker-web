@@ -1,6 +1,7 @@
 import type { Change } from 'convex-helpers/server/triggers';
 import type { DataModel, Doc, Id } from '../../_generated/dataModel';
 import type { MutationCtx } from '../../_generated/server';
+import { isResultingValueRecalculation } from '../objectives/progress';
 import { insertAuditLog, type AuditRecord } from './log';
 
 const VERBS = { insert: 'created', update: 'updated', delete: 'deleted' } as const;
@@ -70,6 +71,10 @@ export async function auditProgressChange(
     ctx: MutationCtx,
     change: Change<DataModel, 'progressUpdates'>
 ) {
+    if (isResultingValueRecalculation(change)) {
+        return;
+    }
+
     const doc = change.newDoc ?? change.oldDoc;
 
     await recordChange(

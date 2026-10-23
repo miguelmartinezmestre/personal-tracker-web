@@ -30,6 +30,7 @@ import {
     validateObjectiveValues,
 } from './features/objectives/rules';
 import { paginateObjectives, searchObjectives } from './features/objectives/listing';
+import { recalculateResultingValues } from './features/objectives/progress';
 
 export const listObjectives = queryWithRLS({
     args: {
@@ -228,6 +229,10 @@ export const updateObjective = mutationWithRLS({
             createdAt: existing.createdAt,
             updatedAt: now,
         });
+
+        if (fields.startValue !== existing.startValue) {
+            await recalculateResultingValues(ctx, args.id, null);
+        }
 
         const updated = await requireObjective(ctx.db, ctx, args.id);
 

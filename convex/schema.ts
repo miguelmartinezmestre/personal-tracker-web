@@ -218,6 +218,8 @@ export default defineSchema({
         createdBy: v.id('user'),
         updatedValue: v.number(),
         updateDate: v.number(),
+        // The objective's value right after this entry, in date order (decision 11).
+        resultingValue: v.number(),
         comment: v.optional(v.string()),
         createdAt: v.number(),
         updatedAt: v.number(),

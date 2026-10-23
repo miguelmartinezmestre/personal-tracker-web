@@ -2,6 +2,7 @@ import type { Change } from 'convex-helpers/server/triggers';
 import { internal } from '../../_generated/api';
 import type { DataModel } from '../../_generated/dataModel';
 import type { MutationCtx } from '../../_generated/server';
+import { isResultingValueRecalculation } from '../objectives/progress';
 import { isEarlyBirdCompletion } from './metrics';
 
 // Creating and completing an objective count for its creator (INH-LOG-04, INH-OBJ-13).
@@ -26,7 +27,7 @@ export async function evaluateProgressAchievements(
     ctx: MutationCtx,
     change: Change<DataModel, 'progressUpdates'>
 ) {
-    if (change.newDoc) {
+    if (change.newDoc && !isResultingValueRecalculation(change)) {
         await ctx.scheduler.runAfter(0, internal.achievements.evaluateAchievements, {
             userId: change.newDoc.createdBy,
             organizationId: change.newDoc.organizationId,

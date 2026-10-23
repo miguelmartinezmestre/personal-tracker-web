@@ -12,18 +12,3 @@ export function progressDifference(
 ): number {
     return mode === 'difference' ? amount : Number((amount - baseValue).toPrecision(12));
 }
-
-/** The total right after each entry, for entries listed newest first from the current total. */
-export function valuesAfterEntries(
-    currentValue: number,
-    newestFirst: readonly { updatedValue: number }[]
-): number[] {
-    let value = currentValue;
-
-    return newestFirst.map(entry => {
-        const after = value;
-        value = roundValue(value - entry.updatedValue);
-
-        return after;
-    });
-}

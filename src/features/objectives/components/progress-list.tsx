@@ -14,11 +14,7 @@ import {
     formatObjectiveDate,
     formatObjectiveValue,
 } from '@/features/objectives/lib/format';
-import {
-    progressDifference,
-    roundValue,
-    valuesAfterEntries,
-} from '@/features/objectives/lib/progress';
+import { progressDifference, roundValue } from '@/features/objectives/lib/progress';
 import type { ObjectiveSummary } from '@/features/objectives/hooks/use-objectives';
 import { useProgress, type ProgressEntry } from '@/features/objectives/hooks/use-progress';
 import { useProgressFormSchema } from '@/features/objectives/hooks/use-form-schemas';
@@ -33,8 +29,6 @@ type HistoryView = 'difference' | 'value';
 
 const HISTORY_VIEWS: readonly HistoryView[] = ['difference', 'value'];
 
-type ProgressRow = ProgressEntry & { valueAfter: number };
-
 export default function ProgressList({ objective }: { objective: ObjectiveSummary }) {
     const t = useTranslations('UpdateProgress');
     const locale = useLocale();
@@ -47,18 +41,10 @@ export default function ProgressList({ objective }: { objective: ObjectiveSummar
         mutationFn: useConvexMutation(api.progress.deleteProgress),
     });
 
-    // Only differences are stored, so each entry's total is rebuilt from the current one (P5).
-    const valuesAfter = valuesAfterEntries(objective.currentValue, progress.data);
+    const formatAmount = (row: ProgressEntry) =>
+        `${view === 'difference' ? formatDifference(row.updatedValue, locale) : formatObjectiveValue(row.resultingValue, locale)}${unit ? ` ${unit}` : ''}`;
 
-    const rows: ProgressRow[] = progress.data.map((entry, index) => ({
-        ...entry,
-        valueAfter: valuesAfter[index] ?? objective.currentValue,
-    }));
-
-    const formatAmount = (row: ProgressRow) =>
-        `${view === 'difference' ? formatDifference(row.updatedValue, locale) : formatObjectiveValue(row.valueAfter, locale)}${unit ? ` ${unit}` : ''}`;
-
-    const columns: ColumnDef<DataTableFeatures, ProgressRow>[] = [
+    const columns: ColumnDef<DataTableFeatures, ProgressEntry>[] = [
         {
             id: 'amount',
             header: t(`table.columns.${view}`),
@@ -161,7 +147,7 @@ export default function ProgressList({ objective }: { objective: ObjectiveSummar
             </div>
             <DataTable
                 columns={columns}
-                data={rows}
+                data={progress.data}
                 columnClassNames={{ comment: 'hidden sm:table-cell' }}
                 isLoading={progress.isLoading}
                 pagination={progress}
@@ -176,14 +162,14 @@ function EditProgressModal({
     unit,
     triggerLabel,
 }: {
-    entry: ProgressRow;
+    entry: ProgressEntry;
     unit?: string | undefined;
     triggerLabel: string;
 }) {
     const t = useTranslations('UpdateProgress');
     const tCommon = useTranslations('Common');
     // A corrected "new value" replaces this entry, so it is compared with the total before it.
-    const baseValue = roundValue(entry.valueAfter - entry.updatedValue);
+    const baseValue = roundValue(entry.resultingValue - entry.updatedValue);
     const formSchema = useProgressFormSchema(baseValue);
 
     const updateProgress = useMutation({

@@ -89,38 +89,24 @@ export function toProgressEntry(entry: Doc<'progressUpdates'>, canEdit: boolean)
         objectiveId: entry.objective,
         updatedValue: entry.updatedValue,
         updateDate: entry.updateDate,
+        resultingValue: entry.resultingValue,
         comment: entry.comment,
         createdAt: entry.createdAt,
         canEdit,
     };
 }
 
-export /**
- * Converts the most recent progress entries (newest first) into a chronological cumulative
- * series. Entries store increments, so each value is reconstructed backwards from the
- * objective's current total; this stays exact when older entries are not included.
- */
-function progressHistoryPoints(
-    objective: { currentValue: number },
-    newestFirst: readonly Doc<'progressUpdates'>[]
-) {
-    let value = objective.currentValue;
-
-    const points = newestFirst.map(entry => {
-        const point = {
+// The most recent entries (newest first) as a chronological cumulative series.
+export function progressHistoryPoints(newestFirst: readonly Doc<'progressUpdates'>[]) {
+    return newestFirst
+        .map(entry => ({
             id: entry._id,
             updateDate: entry.updateDate,
-            value,
+            value: entry.resultingValue,
             delta: entry.updatedValue,
             comment: entry.comment,
-        };
-
-        value = roundStoredValue(value - entry.updatedValue);
-
-        return point;
-    });
-
-    return points.reverse();
+        }))
+        .reverse();
 }
 
 function optionalText(value: string | null | undefined): string | undefined {

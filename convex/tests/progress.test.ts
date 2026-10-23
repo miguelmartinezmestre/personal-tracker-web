@@ -96,7 +96,7 @@ describe('progress', () => {
         expect(entries.page.map(entry => entry.canEdit)).toEqual([false, false, false]);
     });
 
-    test('correcting or deleting an old entry adjusts the current value by its difference @REQ-PROGRESO-003 @INH-PRO-04', async () => {
+    test('correcting or deleting an old entry adjusts the current value and the values stored after it @REQ-PROGRESO-003 @INH-PRO-01 @INH-PRO-04', async () => {
         const objectiveId = await createObjective({ startValue: 10, targetValue: 100 });
         const oldest = await log(objectiveId, 5, 1);
         const middle = await log(objectiveId, -2, 2);
@@ -118,6 +118,71 @@ describe('progress', () => {
             [12, 22],
             [7, 29],
         ]);
+    });
+
+    test('changing the start value moves every stored value @INH-PRO-01', async () => {
+        const objectiveId = await createObjective({ startValue: 10, targetValue: 100 });
+        await log(objectiveId, 5, 1);
+        await log(objectiveId, 2, 2);
+
+        await ownerIdentity.mutation(api.objectives.updateObjective, {
+            id: objectiveId,
+            startValue: 20,
+        });
+
+        const entries = await ownerIdentity.query(api.progress.listProgress, {
+            objectiveId,
+            paginationOpts: page,
+        });
+
+        expect(entries.page.map(entry => entry.resultingValue)).toEqual([27, 25]);
+    });
+
+    test('recalculates the values after a backdated entry in batches of 100 @INH-PRO-01', async () => {
+        const objectiveId = await createObjective({ startValue: 0, targetValue: 1000 });
+
+        await t.run(async ctx => {
+            for (let day = 2; day <= 151; day += 1) {
+                await ctx.db.insert('progressUpdates', {
+                    objective: objectiveId,
+                    organizationId,
+                    createdBy: owner.docId,
+                    updatedValue: 1,
+                    updateDate: Date.UTC(2024, 0, day),
+                    resultingValue: day - 1,
+                    createdAt: 1,
+                    updatedAt: 1,
+                });
+            }
+
+            await ctx.db.patch('objectives', objectiveId, { currentValue: 150 });
+        });
+
+        const latestValue = async () => {
+            const history = await ownerIdentity.query(api.progress.getProgressHistory, {
+                objectiveId,
+            });
+
+            return history.points.at(-1)?.value;
+        };
+
+        vi.useFakeTimers();
+
+        try {
+            await ownerIdentity.mutation(api.progress.createProgress, {
+                objectiveId,
+                updatedValue: 10,
+                updateDate: Date.UTC(2024, 0, 1),
+            });
+
+            expect(await latestValue()).toBe(150);
+            await t.finishAllScheduledFunctions(() => vi.runAllTimers());
+        } finally {
+            vi.useRealTimers();
+        }
+
+        expect(await latestValue()).toBe(160);
+        expect(await get(objectiveId)).toMatchObject({ currentValue: 160 });
     });
 
     test('a correction that reaches the target completes the objective @REQ-PROGRESO-003', async () => {
@@ -210,7 +275,7 @@ describe('progress', () => {
         }
     });
 
-    test('returns the cumulative history in chronological order @REQ-OBJETIVOS-007 @REQ-PROGRESO-004 @INH-PRO-05', async () => {
+    test('returns the cumulative history in chronological order, also for backdated entries @REQ-OBJETIVOS-007 @REQ-PROGRESO-004 @INH-PRO-01 @INH-PRO-05', async () => {
         const objectiveId = await createObjective({ startValue: 5, targetValue: 50 });
 
         for (const [day, difference, comment] of [
@@ -249,6 +314,7 @@ describe('progress', () => {
                     createdBy: owner.docId,
                     updatedValue: 1,
                     updateDate: Date.UTC(2024, 0, day),
+                    resultingValue: day,
                     createdAt: 1,
                     updatedAt: 1,
                 });
