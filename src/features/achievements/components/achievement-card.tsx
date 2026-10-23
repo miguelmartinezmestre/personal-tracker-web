@@ -27,7 +27,7 @@ export function AchievementCard({ achievement }: { achievement: Achievement }) {
 
     return (
         <li
-            className={cn('space-y-3 rounded-lg border p-4', !isEarned && 'opacity-80')}
+            className={cn('space-y-3 rounded-lg border p-4', !isEarned && 'border-dashed')}
             data-testid="achievement-card"
             data-earned={isEarned}
         >

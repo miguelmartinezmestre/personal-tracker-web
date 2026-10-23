@@ -11,7 +11,7 @@ test.describe('Route Protection', () => {
 
     test(
         'anonymous users are redirected from protected dashboard routes',
-        { tag: ['@REQ-ROLES-001'] },
+        { tag: ['@REQ-ROLES-001', '@cross-browser-critical', '@mobile-critical'] },
         async ({ page, context }) => {
             await context.clearCookies();
 
@@ -25,7 +25,13 @@ test.describe('Route Protection', () => {
     test(
         'authenticated users can use dashboard routes and are sent back to login after logout',
         {
-            tag: ['@REQ-ROLES-001', '@REQ-AUTENTICACION-005', '@REQ-NF-002'],
+            tag: [
+                '@REQ-ROLES-001',
+                '@REQ-AUTENTICACION-005',
+                '@REQ-NF-002',
+                '@cross-browser-critical',
+                '@mobile-critical',
+            ],
         },
         async ({ page }) => {
             await createTestUser(page);
@@ -44,7 +50,7 @@ test.describe('Route Protection', () => {
 
     test(
         'public auth routes remain available without a session',
-        { tag: ['@REQ-ROLES-001'] },
+        { tag: ['@REQ-ROLES-001', '@cross-browser-critical', '@mobile-critical'] },
         async ({ page, context }) => {
             await context.clearCookies();
 

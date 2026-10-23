@@ -301,7 +301,7 @@ function AccountDeletionCard({ email }: { email: string }) {
     return (
         <Card className="border-destructive/40">
             <CardHeader>
-                <CardTitle className="text-destructive flex items-center gap-2">
+                <CardTitle className="text-destructive flex items-center gap-2 dark:text-red-400">
                     <AlertTriangle className="size-5" aria-hidden />
                     {t('title')}
                 </CardTitle>

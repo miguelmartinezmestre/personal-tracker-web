@@ -57,3 +57,42 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 export function daysUntil(deadline: number): number {
     return Math.round((deadline - todayTimestamp()) / DAY_MS);
 }
+
+export type ObjectivePace = 'onTrack' | 'atRisk' | 'overdue';
+
+type PacedObjective = {
+    status: string;
+    direction: 'increase' | 'decrease';
+    deadline?: number;
+    createdAt: number;
+    startValue: number;
+    currentValue: number;
+    targetValue: number;
+};
+
+// Compares the current value with the chart's ideal pace line: start value at creation, target at the deadline.
+// shortcut: ignores progress backdated before creation, which moves the chart's line start; fix if they disagree.
+export function objectivePace(objective: PacedObjective): ObjectivePace | undefined {
+    if (objective.status !== 'active' || objective.deadline === undefined) {
+        return undefined;
+    }
+
+    if (isOverdue(objective)) {
+        return 'overdue';
+    }
+
+    const span = objective.deadline - objective.createdAt;
+
+    const elapsed =
+        span > 0 ? Math.min(1, Math.max(0, (todayTimestamp() - objective.createdAt) / span)) : 1;
+
+    const expected =
+        objective.startValue + (objective.targetValue - objective.startValue) * elapsed;
+
+    const isOnTrack =
+        objective.direction === 'increase'
+            ? objective.currentValue >= expected
+            : objective.currentValue <= expected;
+
+    return isOnTrack ? 'onTrack' : 'atRisk';
+}

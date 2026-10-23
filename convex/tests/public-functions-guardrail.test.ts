@@ -6,6 +6,7 @@ import { describe, expect, test } from 'vitest';
 import {
     findForbiddenQueries,
     findMissingContracts,
+    findNonFunctionStatements,
     findRawPublicFunctions,
     listConvexSources,
     parseSource,
@@ -18,6 +19,19 @@ const ALLOWED_RAW_PUBLIC_FUNCTIONS = new Set([
     'convex/setup.ts:getPublicPlatformSettings:query',
     'convex/setup.ts:completeSetup:mutation',
 ]);
+
+// Convex needs these at the root: schema, app and auth config, crons and the HTTP router.
+const ROOT_TECHNICAL_FILES = new Set([
+    'convex/auth.config.ts',
+    'convex/convex.config.ts',
+    'convex/crons.ts',
+    'convex/http.ts',
+    'convex/httpPolyfills.ts',
+    'convex/schema.ts',
+]);
+
+// kitcn reads the Better Auth definition from the default export of convex/auth.ts.
+const ALLOWED_ROOT_STATEMENTS = new Set(['convex/auth.ts:default']);
 
 describe('public Convex function guardrail', () => {
     test('business functions at every directory depth require RLS or an explicit exception', () => {
@@ -57,6 +71,23 @@ describe('public Convex function guardrail', () => {
         );
 
         expect(missing).toEqual([]);
+    });
+
+    test('root files hold only registered functions; helpers live in convex/features', () => {
+        const root = fileURLToPath(new URL('../..', import.meta.url));
+
+        const unexpected = readdirSync(join(root, 'convex'), { withFileTypes: true })
+            .filter(entry => entry.isFile() && entry.name.endsWith('.ts'))
+            .map(entry => `convex/${entry.name}`)
+            .filter(file => !ROOT_TECHNICAL_FILES.has(file))
+            .flatMap(file =>
+                findNonFunctionStatements(parseSource(join(root, file))).map(
+                    name => `${file}:${name}`
+                )
+            )
+            .filter(key => !ALLOWED_ROOT_STATEMENTS.has(key));
+
+        expect(unexpected).toEqual([]);
     });
 });
 

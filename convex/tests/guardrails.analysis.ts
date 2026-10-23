@@ -230,6 +230,49 @@ export function findForbiddenQueries(source: ts.SourceFile, checker?: ts.TypeChe
     return failures;
 }
 
+function isRegisteredFunction(statement: ts.Statement) {
+    return (
+        ts.isVariableStatement(statement) &&
+        statement.modifiers?.some(modifier => modifier.kind === ts.SyntaxKind.ExportKeyword) ===
+            true &&
+        statement.declarationList.declarations.every(
+            declaration =>
+                declaration.initializer !== undefined &&
+                ts.isCallExpression(declaration.initializer) &&
+                ts.isIdentifier(declaration.initializer.expression) &&
+                REGISTERED_BUILDERS.has(declaration.initializer.expression.text)
+        )
+    );
+}
+
+function statementName(statement: ts.Statement) {
+    if (ts.isExportAssignment(statement)) return 'default';
+
+    if (ts.isVariableStatement(statement)) {
+        return statement.declarationList.declarations
+            .map(declaration => declaration.name.getText())
+            .join(', ');
+    }
+
+    return (
+        ts.getNameOfDeclaration(statement as ts.DeclarationStatement)?.getText() ??
+        ts.SyntaxKind[statement.kind]
+    );
+}
+
+export function findNonFunctionStatements(source: ts.SourceFile) {
+    return source.statements
+        .filter(
+            statement =>
+                !ts.isImportDeclaration(statement) &&
+                !(
+                    ts.isExpressionStatement(statement) && ts.isStringLiteral(statement.expression)
+                ) &&
+                !isRegisteredFunction(statement)
+        )
+        .map(statementName);
+}
+
 export function findMissingContracts(source: ts.SourceFile) {
     const missing: { name: string; property: string }[] = [];
 

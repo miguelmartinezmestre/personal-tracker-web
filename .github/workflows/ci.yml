@@ -1,0 +1,91 @@
+name: CI
+
+on:
+    pull_request:
+    push:
+        branches:
+            - main
+
+permissions:
+    contents: read
+
+jobs:
+    quality:
+        runs-on: ubuntu-latest
+        timeout-minutes: 30
+
+        steps:
+            - name: Checkout
+              uses: actions/checkout@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
+
+            # The version comes from `packageManager` in package.json.
+            - name: Setup pnpm
+              uses: pnpm/action-setup@f40ffcd9367d9f12939873eb1018b921a783ffaa # v4
+
+            - name: Setup Node
+              uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+              with:
+                  node-version: 24.19.0
+                  cache: pnpm
+
+            - name: Install dependencies
+              env:
+                  PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: '1'
+              run: pnpm install --frozen-lockfile
+
+            - name: Run static checks
+              run: pnpm run checks:static
+
+            - name: Run tests and enforce coverage thresholds
+              run: pnpm run test:coverage
+
+            - name: Audit production dependencies
+              run: pnpm audit --audit-level high
+
+            - name: Build
+              env:
+                  NEXT_PUBLIC_SITE_URL: https://example.com
+                  NEXT_PUBLIC_CONVEX_URL: https://example.convex.cloud
+                  NEXT_PUBLIC_CONVEX_SITE_URL: https://example.convex.site
+              run: pnpm run build
+
+    e2e:
+        needs: quality
+        runs-on: ubuntu-latest
+        timeout-minutes: 45
+
+        steps:
+            - name: Checkout
+              uses: actions/checkout@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
+
+            - name: Setup pnpm
+              uses: pnpm/action-setup@f40ffcd9367d9f12939873eb1018b921a783ffaa # v4
+
+            - name: Setup Node
+              uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+              with:
+                  node-version: 24.19.0
+                  cache: pnpm
+
+            - name: Install dependencies
+              run: pnpm install --frozen-lockfile
+
+            - name: Install Playwright browsers
+              run: pnpm run playwright:install:ci
+
+            - name: Run end-to-end suite
+              run: pnpm run test:e2e:no-docker
+
+            # The suite deploys with `convex dev --once`, which rewrites the generated code.
+            - name: Check generated code drift
+              run: git diff --exit-code -- convex/_generated
+
+            - name: Preserve end-to-end evidence
+              if: failure()
+              uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+              with:
+                  name: e2e-evidence
+                  retention-days: 30
+                  path: |
+                      playwright-report/
+                      test-results/

@@ -1,17 +1,14 @@
 import { z } from 'zod';
 import { categoryDraftSchema } from '@/features/categories/schemas/category';
 
-const ORGANIZATION_NAME_MAX_LENGTH = 100;
-
-type OrganizationValidationKey = 'nameRequired' | 'nameTooLong';
+type OrganizationValidationKey = 'nameRequired';
 
 export function organizationSchema(message: (key: OrganizationValidationKey) => string) {
     return z.object({
         name: z
             .string()
             .trim()
-            .min(1, { error: message('nameRequired') })
-            .max(ORGANIZATION_NAME_MAX_LENGTH, { error: message('nameTooLong') }),
+            .min(1, { error: message('nameRequired') }),
     });
 }
 

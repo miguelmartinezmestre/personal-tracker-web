@@ -1,7 +1,5 @@
 const DEFAULT_SLUG_PREFIX = 'organization';
 
-const MAX_SLUG_LENGTH = 80;
-
 function stableStringHash(value: string): string {
     let hash = 0x811c9dc5;
 
@@ -21,9 +19,7 @@ export function buildOrganizationSlug(value: string): string {
         .replace(/\p{M}+/gu, '')
         .toLowerCase()
         .replace(/[^a-z0-9]+/g, '-')
-        .replace(/^-+|-+$/g, '')
-        .slice(0, MAX_SLUG_LENGTH)
-        .replace(/-+$/g, '');
+        .replace(/^-+|-+$/g, '');
 
     if (asciiSlug) {
         return asciiSlug;

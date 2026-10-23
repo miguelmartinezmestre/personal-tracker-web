@@ -15,7 +15,6 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { DeleteConfirmationDialog } from '@/components/data-table/components/delete-confirmation-dialog';
 import { QueryErrorFallback } from '@/components/ui/query-error-fallback';
-import { isOverdue } from '@/features/objectives/lib/dates';
 import {
     formatInstantDate,
     formatObjectiveDate,
@@ -25,6 +24,7 @@ import {
 import { api } from '@/convex/_generated/api';
 import EditObjectiveFormModal from '@/features/objectives/components/objective-form-edit-modal';
 import ObjectiveAccessDialog from '@/features/objectives/components/objective-access-dialog';
+import ObjectivePaceBadge from '@/features/objectives/components/objective-pace-badge';
 import ProgressChart from '@/features/objectives/components/progress-chart';
 import ProgressForm from '@/features/objectives/components/progress-form';
 import ProgressList from '@/features/objectives/components/progress-list';
@@ -156,11 +156,7 @@ export default function ObjectiveDetail({
                         >
                             {t(`statusOptions.${current.status}`)}
                         </Badge>
-                        {isOverdue(current) ? (
-                            <Badge variant="destructive" data-testid="objective-overdue">
-                                {t('statusOptions.overdue')}
-                            </Badge>
-                        ) : null}
+                        <ObjectivePaceBadge objective={current} />
                         <span data-testid="objective-progress-percent">
                             {formatProgressPercent(current.progressPercent, locale)}
                         </span>

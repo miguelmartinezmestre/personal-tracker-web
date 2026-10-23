@@ -18,7 +18,7 @@ async function switchLanguage(page: Page, locale: 'es' | 'en'): Promise<void> {
 test.describe('Language Switching', () => {
     test(
         'language preference persists after navigation',
-        { tag: ['@REQ-NF-007'] },
+        { tag: ['@REQ-NF-007', '@cross-browser-critical', '@mobile-critical'] },
         async ({ page }) => {
             await page.goto('/dashboard/home');
             await switchLanguage(page, 'es');
@@ -31,7 +31,7 @@ test.describe('Language Switching', () => {
 
     test(
         'landing navigation is translated after changing locale',
-        { tag: ['@REQ-NF-007'] },
+        { tag: ['@REQ-NF-007', '@cross-browser-critical', '@mobile-critical'] },
         async ({ page }) => {
             await page.goto('/');
             await switchLanguage(page, 'es');

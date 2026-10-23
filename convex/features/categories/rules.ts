@@ -2,7 +2,7 @@ import { ConvexError } from 'convex/values';
 import type { Doc, Id } from '../../_generated/dataModel';
 import { ERROR_CODES } from '../../shared/errorCodes';
 import { isOrganizationAdminRole } from '../organizations/roles';
-import { CATEGORY_COLOR_PATTERN, CATEGORY_ICONS, CATEGORY_NAME_MAX_LENGTH } from './constants';
+import { CATEGORY_COLOR_PATTERN, CATEGORY_ICONS } from './constants';
 
 const CATEGORY_ICON_SET = new Set<string>(CATEGORY_ICONS);
 
@@ -11,7 +11,6 @@ export function normalizeCategory(category: { name: string; color: string; icon?
 
     if (
         name.length === 0 ||
-        name.length > CATEGORY_NAME_MAX_LENGTH ||
         !CATEGORY_COLOR_PATTERN.test(category.color) ||
         (category.icon !== undefined && !CATEGORY_ICON_SET.has(category.icon))
     ) {

@@ -1,0 +1,26 @@
+{
+    "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+    "extends": ["config:recommended"],
+    "automerge": false,
+    "minimumReleaseAge": "7 days",
+    "packageRules": [
+        {
+            "matchPackageNames": ["react", "react-dom", "next", "@types/react", "@types/react-dom"],
+            "groupName": "React and Next.js"
+        },
+        {
+            "matchPackageNames": ["convex", "convex-helpers", "@convex-dev/**", "kitcn"],
+            "groupName": "Convex"
+        },
+        { "matchPackageNames": ["better-auth"], "groupName": "Authentication" },
+        {
+            "matchPackageNames": ["vitest", "@vitest/**", "@playwright/**", "@testing-library/**"],
+            "groupName": "Testing"
+        },
+        {
+            "matchPackageNames": ["@base-ui/**", "tailwindcss", "@tailwindcss/**"],
+            "groupName": "UI"
+        },
+        { "matchUpdateTypes": ["major"], "dependencyDashboardApproval": true }
+    ]
+}

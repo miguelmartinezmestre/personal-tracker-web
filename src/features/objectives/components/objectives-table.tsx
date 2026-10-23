@@ -12,11 +12,11 @@ import { Button } from '@/components/ui/button';
 import { DataTable } from '@/components/data-table/components/table';
 import { DeleteConfirmationDialog } from '@/components/data-table/components/delete-confirmation-dialog';
 import type { DataTableFeatures } from '@/components/data-table/data-table-features';
-import { isOverdue } from '@/features/objectives/lib/dates';
 import { formatObjectiveDate, formatProgressPercent } from '@/features/objectives/lib/format';
 import { api } from '@/convex/_generated/api';
 import CreateObjectiveFormModal from '@/features/objectives/components/objective-form-create-modal';
 import EditObjectiveFormModal from '@/features/objectives/components/objective-form-edit-modal';
+import ObjectivePaceBadge from '@/features/objectives/components/objective-pace-badge';
 import { useObjectives, type ObjectiveSummary } from '@/features/objectives/hooks/use-objectives';
 import {
     ALL_CATEGORIES,
@@ -71,9 +71,7 @@ export default function ObjectivesTable({
                     <Badge variant={row.original.status === 'completed' ? 'default' : 'secondary'}>
                         {t(`statusOptions.${row.original.status}`)}
                     </Badge>
-                    {isOverdue(row.original) ? (
-                        <Badge variant="destructive">{t('statusOptions.overdue')}</Badge>
-                    ) : null}
+                    <ObjectivePaceBadge objective={row.original} />
                 </div>
             ),
         },

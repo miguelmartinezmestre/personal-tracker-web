@@ -7,7 +7,7 @@ import {
 import { STRONG_PASSWORD_REGEX } from '@/convex/features/auth/passwordPolicy';
 
 export const platformConfigSchema = z.object({
-    platformName: z.string().min(1).max(100),
+    platformName: z.string().min(1),
     defaultLanguage: z.enum(['en', 'es']),
 });
 
@@ -18,7 +18,7 @@ type AdminAccountSchemaMessages = {
 export function createAdminAccountSchema(messages?: Partial<AdminAccountSchemaMessages>) {
     return z
         .object({
-            username: z.string().min(3),
+            username: z.string().trim().min(1),
             email: z.email(),
             password: z.string().min(8),
             confirmPassword: z.string().min(8),
@@ -54,7 +54,7 @@ export function createAdminAccountSchema(messages?: Partial<AdminAccountSchemaMe
 export const adminAccountSchema = createAdminAccountSchema();
 
 export const organizationSchema = z.object({
-    name: z.string().min(1).max(100),
+    name: z.string().min(1),
     logo: z.url().optional().or(z.literal('')),
 });
 

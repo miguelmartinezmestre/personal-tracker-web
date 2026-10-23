@@ -1,13 +1,23 @@
 import { AxeBuilder } from '@axe-core/playwright';
 import { test, expect } from '../../fixtures/test-base';
 
-const routes = ['home', 'organizations', 'invitations'] as const;
+// The main routes of the app (INH-ACC-01).
+const routes = [
+    'home',
+    'objectives',
+    'categories',
+    'organizations',
+    'settings',
+    'notifications',
+    'sessions',
+    'achievements',
+] as const;
 
 for (const theme of ['light', 'dark'] as const) {
     for (const route of routes) {
         test(
             `${route} has no serious or critical accessibility violations in ${theme}`,
-            { tag: ['@accessibility'] },
+            { tag: ['@accessibility', '@INH-ACC-01', '@mobile-critical'] },
             async ({ page }, testInfo) => {
                 await page.addInitScript(
                     selectedTheme => localStorage.setItem('theme', selectedTheme),
@@ -40,13 +50,24 @@ for (const theme of ['light', 'dark'] as const) {
 
 test(
     'keyboard skip link focuses the main content',
-    { tag: ['@accessibility'] },
-    async ({ page }) => {
+    {
+        tag: [
+            '@accessibility',
+            '@INH-ACC-02',
+            '@INH-COM-01',
+            '@REQ-NF-006',
+            '@cross-browser-critical',
+            '@mobile-critical',
+        ],
+    },
+    async ({ page, browserName }) => {
+        // Safari on macOS reaches buttons with Option+Tab, as its users do.
+        const tab = browserName === 'webkit' && process.platform === 'darwin' ? 'Alt+Tab' : 'Tab';
         await page.goto('/dashboard/home');
         const main = page.getByRole('main');
         await expect(main).toBeVisible();
         await expect(page.locator('[data-slot="skeleton"]:visible')).toHaveCount(0);
-        await page.keyboard.press('Tab');
+        await page.keyboard.press(tab);
         await expect(page.getByTestId('skip-to-content')).toBeFocused();
         await page.keyboard.press('Enter');
         await expect(main).toBeFocused();

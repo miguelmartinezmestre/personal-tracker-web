@@ -100,6 +100,9 @@ const ownFlagIndexes = new Set(
 const forwardedPlaywrightArgs = SCRIPT_ARGS.filter((_, index) => !ownFlagIndexes.has(index));
 const NO_DOCKER = flags['no-docker'] === true;
 
+// Inherited by every command below, it would send `convex` to a cloud deployment instead.
+delete process.env.CONVEX_DEPLOY_KEY;
+
 // Pinned like the Docker image digest, so runs without Docker are reproducible.
 const E2E_CONVEX_BACKEND_VERSION =
     process.env.E2E_CONVEX_BACKEND_VERSION ?? 'precompiled-2026-10-06-a3538c6';
@@ -123,6 +126,13 @@ const CONVEX_URL = process.env.E2E_CONVEX_URL ?? `http://127.0.0.1:${E2E_CONVEX_
 
 const CONVEX_SITE_URL =
     process.env.E2E_CONVEX_SITE_URL ?? `http://127.0.0.1:${E2E_CONVEX_SITE_PORT}`;
+
+// The suite deploys and wipes data, so it never runs against another machine.
+for (const url of [CONVEX_URL, CONVEX_SITE_URL]) {
+    if (!['127.0.0.1', 'localhost', '[::1]'].includes(new URL(url).hostname)) {
+        throw new Error(`E2E Convex URLs must point at this machine: ${url}`);
+    }
+}
 
 const FRONTEND_START_TIMEOUT_MS = 180000;
 const SHOW_NEXT_LOGS = process.env.E2E_SHOW_NEXT_LOGS === 'true';

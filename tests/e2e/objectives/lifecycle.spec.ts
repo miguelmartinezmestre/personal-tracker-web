@@ -173,7 +173,7 @@ test.describe('Objectives', () => {
 
     test(
         'reads a typed deadline, filters by it and keeps the filter on the detail link',
-        { tag: ['@REQ-OBJETIVOS-005', '@INH-OBJ-15', '@INH-OBJ-18'] },
+        { tag: ['@REQ-OBJETIVOS-005', '@REQ-OBJETIVOS-009', '@INH-OBJ-15', '@INH-OBJ-18'] },
         async ({ page }) => {
             const suffix = randomUUID().substring(0, 8);
             const dueTitle = `Due soon ${suffix}`;

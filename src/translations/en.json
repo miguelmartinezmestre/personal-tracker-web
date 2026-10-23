@@ -272,7 +272,9 @@
             "all": "All Status",
             "active": "Active",
             "completed": "Completed",
-            "overdue": "Overdue"
+            "overdue": "Overdue",
+            "onTrack": "On track",
+            "atRisk": "At risk"
         },
         "categoryOptions": {
             "all": "All Categories"
@@ -467,8 +469,7 @@
             "createdAndActive": "Organization created. You are now working in “{name}”."
         },
         "validation": {
-            "nameRequired": "Enter a name.",
-            "nameTooLong": "The name cannot be longer than 100 characters."
+            "nameRequired": "Enter a name."
         },
         "personalOrganizationName": "Personal organization",
         "categories": "Categories",
@@ -771,8 +772,7 @@
             "cancel": "Cancel"
         },
         "validation": {
-            "nameRequired": "Enter a name.",
-            "nameTooLong": "Use at most 50 characters."
+            "nameRequired": "Enter a name."
         },
         "delete": {
             "title": "Delete category",

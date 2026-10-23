@@ -12,7 +12,7 @@ async function openCommandPalette(page: Page) {
 test.describe('Command Palette', () => {
     test(
         'Cmd+K opens, filters and closes the command palette',
-        { tag: ['@REQ-NF-012'] },
+        { tag: ['@REQ-NF-012', '@INH-ACC-03'] },
         async ({ isolatedAuthenticatedPage }) => {
             await openCommandPalette(isolatedAuthenticatedPage);
 
@@ -29,17 +29,16 @@ test.describe('Command Palette', () => {
     );
 
     test(
-        'selecting a command navigates to its page',
-        { tag: ['@REQ-NF-012'] },
+        'choosing a command with the keyboard navigates to its page',
+        { tag: ['@REQ-NF-012', '@INH-ACC-03'] },
         async ({ isolatedAuthenticatedPage }) => {
             await openCommandPalette(isolatedAuthenticatedPage);
 
-            const organizationsItem = isolatedAuthenticatedPage.getByTestId(
-                'command-item-organizations'
-            );
-
-            await expect(organizationsItem).toBeVisible();
-            await organizationsItem.click();
+            await isolatedAuthenticatedPage.getByTestId('command-input').fill('organiz');
+            await expect(
+                isolatedAuthenticatedPage.getByTestId('command-item-organizations')
+            ).toBeVisible();
+            await isolatedAuthenticatedPage.keyboard.press('Enter');
 
             await isolatedAuthenticatedPage.waitForURL(/\/dashboard\/organizations/, {
                 timeout: 10000,

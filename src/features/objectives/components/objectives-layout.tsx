@@ -117,7 +117,6 @@ export default function ObjectivesLayout() {
                         onChange={event => setSearchInput(event.target.value)}
                         placeholder={t('filters.search')}
                         aria-label={t('filters.search')}
-                        maxLength={100}
                         className="sm:max-w-xs"
                         data-testid="objectives-search"
                     />

@@ -272,7 +272,9 @@
             "all": "Todos los estados",
             "active": "Activo",
             "completed": "Completado",
-            "overdue": "Atrasado"
+            "overdue": "Atrasado",
+            "onTrack": "En camino",
+            "atRisk": "En riesgo"
         },
         "categoryOptions": {
             "all": "Todas las categorías"
@@ -467,8 +469,7 @@
             "createdAndActive": "Organización creada. Ahora estás trabajando en «{name}»."
         },
         "validation": {
-            "nameRequired": "Escribe un nombre.",
-            "nameTooLong": "El nombre no puede superar los 100 caracteres."
+            "nameRequired": "Escribe un nombre."
         },
         "personalOrganizationName": "Organización personal",
         "categories": "Categorías",
@@ -771,8 +772,7 @@
             "cancel": "Cancelar"
         },
         "validation": {
-            "nameRequired": "Escribe un nombre.",
-            "nameTooLong": "Usa como máximo 50 caracteres."
+            "nameRequired": "Escribe un nombre."
         },
         "delete": {
             "title": "Eliminar categoría",

@@ -489,7 +489,7 @@ describe('objectives', () => {
         expect(await list({ categoryId: 'not-an-id' })).toEqual([]);
     });
 
-    test("filters by deadline relative to the user's day, soonest first @INH-OBJ-15", async () => {
+    test("filters by deadline relative to the user's day, soonest first @REQ-OBJETIVOS-009 @INH-OBJ-15", async () => {
         const today = Date.UTC(2026, 0, 10);
         vi.useFakeTimers({ toFake: ['Date'] });
         vi.setSystemTime(today - 12 * 60 * 60 * 1000);

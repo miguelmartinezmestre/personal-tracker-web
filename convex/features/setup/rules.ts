@@ -5,19 +5,14 @@ import type { Id } from '../../_generated/dataModel';
 import type { MutationCtx } from '../../_generated/server';
 import type { completeSetupArgsValidator } from './validators';
 
-const SETUP_NAME_MAX_LENGTH = 100;
-
 type CompleteSetupArgs = ObjectType<typeof completeSetupArgsValidator>;
 
 export function validateSetupArgs(args: CompleteSetupArgs) {
-    if (args.platformName.trim().length === 0 || args.platformName.length > SETUP_NAME_MAX_LENGTH) {
+    if (args.platformName.trim().length === 0) {
         throw new ConvexError(ERROR_CODES.VALIDATION_ERROR);
     }
 
-    if (
-        args.organizationName.trim().length === 0 ||
-        args.organizationName.length > SETUP_NAME_MAX_LENGTH
-    ) {
+    if (args.organizationName.trim().length === 0) {
         throw new ConvexError(ERROR_CODES.VALIDATION_ERROR);
     }
 

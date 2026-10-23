@@ -60,6 +60,28 @@ export default defineConfig({
             use: { ...chromeProjectUse, storageState: 'tests/.auth/admin-user.json' },
             testMatch: ['**/e2e/admin/**'],
         },
+        // The critical flows again in the other engines and on a phone (INH-COM-01).
+        {
+            name: 'cross-browser-firefox',
+            dependencies: ['setup'],
+            use: devices['Desktop Firefox'],
+            grep: /@cross-browser-critical/,
+            testMatch: ['**/e2e/**'],
+        },
+        {
+            name: 'cross-browser-webkit',
+            dependencies: ['setup'],
+            use: devices['Desktop Safari'],
+            grep: /@cross-browser-critical/,
+            testMatch: ['**/e2e/**'],
+        },
+        {
+            name: 'mobile-webkit',
+            dependencies: ['setup'],
+            use: devices['iPhone 13'],
+            grep: /@mobile-critical/,
+            testMatch: ['**/e2e/**'],
+        },
     ],
 
     testIgnore: ['**/manual/**'],

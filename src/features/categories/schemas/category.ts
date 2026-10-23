@@ -1,17 +1,13 @@
 import { z } from 'zod';
-import {
-    CATEGORY_COLOR_PATTERN,
-    CATEGORY_ICONS,
-    CATEGORY_NAME_MAX_LENGTH,
-} from '@/convex/features/categories/constants';
+import { CATEGORY_COLOR_PATTERN, CATEGORY_ICONS } from '@/convex/features/categories/constants';
 
-type CategoryValidationKey = 'nameRequired' | 'nameTooLong';
+type CategoryValidationKey = 'nameRequired';
 
 export const categoryIconSchema = z.enum(CATEGORY_ICONS);
 
 // A category being chosen or edited in a list, where an invalid name is only highlighted.
 export const categoryDraftSchema = z.object({
-    name: z.string().trim().min(1).max(CATEGORY_NAME_MAX_LENGTH),
+    name: z.string().trim().min(1),
     color: z.string().regex(CATEGORY_COLOR_PATTERN),
     icon: categoryIconSchema.optional(),
 });
@@ -21,8 +17,7 @@ export function categorySchema(message: (key: CategoryValidationKey) => string) 
         name: z
             .string()
             .trim()
-            .min(1, { error: message('nameRequired') })
-            .max(CATEGORY_NAME_MAX_LENGTH, { error: message('nameTooLong') }),
+            .min(1, { error: message('nameRequired') }),
     });
 }
 

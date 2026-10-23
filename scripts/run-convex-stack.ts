@@ -72,6 +72,9 @@ const { values: flags } = parseArgs({
 
 const { reset: RESET, stop: STOP, 'no-docker': NO_DOCKER } = flags;
 
+// Inherited by every command below, it would send `convex` to a cloud deployment instead.
+delete process.env.CONVEX_DEPLOY_KEY;
+
 if (RESET && STOP) {
     throw new Error('Choose stop or reset, not both');
 }
