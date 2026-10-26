@@ -15,7 +15,11 @@ export default function proxy(request: NextRequest) {
 
     const requestHeaders = new Headers(request.headers);
     requestHeaders.set('x-nonce', nonce);
-    requestHeaders.set('Content-Security-Policy', headers['Content-Security-Policy']);
+    const contentSecurityPolicy = headers['Content-Security-Policy'];
+
+    if (contentSecurityPolicy) {
+        requestHeaders.set('Content-Security-Policy', contentSecurityPolicy);
+    }
 
     const attachHeaders = (response: NextResponse) => {
         for (const [name, value] of Object.entries(headers)) {

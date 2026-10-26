@@ -50,6 +50,14 @@ const sanitizeMember = (member: Doc<'member'>) =>
         createdAt: member.createdAt,
     }) satisfies AuditRecord;
 
+const sanitizeAccount = (account: Doc<'account'>) =>
+    ({
+        _id: account._id,
+        userId: account.userId,
+        providerId: account.providerId,
+        hasPassword: account.password !== null && account.password !== undefined,
+    }) satisfies AuditRecord;
+
 const insertAuthAuditLog = async (
     ctx: MutationCtx,
     args: Omit<AuditEntry, 'userId' | 'organizationId' | 'resourceId'> & {
@@ -150,6 +158,17 @@ export const authAuditTriggers: BetterAuthTriggers<DataModel, BetterAuthSchema, 
         change: async (change, ctx) => {
             const mutationCtx = requireMutationCtx(ctx);
 
+            if (change.operation === 'insert') {
+                await insertAuthAuditLog(mutationCtx, {
+                    action: 'user.created',
+                    severity: 'info',
+                    resourceType: 'user',
+                    resourceId: change.newDoc._id,
+                    userId: change.newDoc._id,
+                    metadata: { after: sanitizeUser(change.newDoc) },
+                });
+            }
+
             if (change.operation === 'update') {
                 await insertAuthAuditLog(mutationCtx, {
                     action: 'user.updated',
@@ -176,9 +195,85 @@ export const authAuditTriggers: BetterAuthTriggers<DataModel, BetterAuthSchema, 
             }
         },
     },
+    account: {
+        change: async (change, ctx) => {
+            const mutationCtx = requireMutationCtx(ctx);
+            const doc = change.newDoc ?? change.oldDoc;
+
+            if (doc.providerId !== 'credential') {
+                return;
+            }
+
+            if (change.operation === 'insert') {
+                await insertAuthAuditLog(mutationCtx, {
+                    action: 'user.password_created',
+                    severity: 'info',
+                    resourceType: 'user',
+                    resourceId: doc.userId,
+                    userId: doc.userId,
+                    metadata: { after: sanitizeAccount(doc) },
+                });
+            }
+
+            if (
+                change.operation === 'update' &&
+                change.oldDoc.password !== change.newDoc.password
+            ) {
+                await insertAuthAuditLog(mutationCtx, {
+                    action: 'user.password_changed',
+                    severity: 'warning',
+                    resourceType: 'user',
+                    resourceId: change.newDoc.userId,
+                    userId: change.newDoc.userId,
+                    metadata: {
+                        before: sanitizeAccount(change.oldDoc),
+                        after: sanitizeAccount(change.newDoc),
+                    },
+                });
+            }
+
+            if (change.operation === 'delete') {
+                await insertAuthAuditLog(mutationCtx, {
+                    action: 'user.password_removed',
+                    severity: 'warning',
+                    resourceType: 'user',
+                    resourceId: change.oldDoc.userId,
+                    userId: change.oldDoc.userId,
+                    metadata: { before: sanitizeAccount(change.oldDoc) },
+                });
+            }
+        },
+    },
     member: {
         change: async (change, ctx) => {
             const mutationCtx = requireMutationCtx(ctx);
+
+            if (change.operation === 'insert') {
+                await insertAuthAuditLog(mutationCtx, {
+                    action: 'organization_member.created',
+                    severity: 'info',
+                    resourceType: 'organization_member',
+                    resourceId: change.newDoc._id,
+                    userId: change.newDoc.userId,
+                    organizationId: change.newDoc.organizationId,
+                    metadata: { after: sanitizeMember(change.newDoc) },
+                });
+            }
+
+            if (change.operation === 'update') {
+                await insertAuthAuditLog(mutationCtx, {
+                    action: 'organization_member.updated',
+                    severity: 'warning',
+                    resourceType: 'organization_member',
+                    resourceId: change.newDoc._id,
+                    userId: change.newDoc.userId,
+                    organizationId: change.newDoc.organizationId,
+                    metadata: {
+                        before: sanitizeMember(change.oldDoc),
+                        after: sanitizeMember(change.newDoc),
+                    },
+                });
+            }
 
             if (change.operation === 'delete') {
                 await mutationCtx.scheduler.runAfter(

@@ -25,6 +25,7 @@ import {
     userDeletionPhaseValidator,
 } from './features/cascades/validators';
 import { v } from 'convex/values';
+import { insertAuditLog } from './features/audit/log';
 
 export const cascadeUserDeletionInternal = internalMutation({
     args: {
@@ -32,6 +33,13 @@ export const cascadeUserDeletionInternal = internalMutation({
     },
     returns: v.null(),
     handler: async (ctx, args) => {
+        await insertAuditLog(ctx, {
+            action: 'user.deleted',
+            resourceType: 'user',
+            resourceId: args.userId,
+            userId: args.userId,
+            severity: 'critical',
+        });
         await anonymizeUser(ctx, args.userId);
         await ctx.scheduler.runAfter(0, internal.cascades.continueUserDeletionCascade, {
             userId: args.userId,

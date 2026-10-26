@@ -112,13 +112,17 @@ function PasswordCard() {
     const formRef = useRef<HTMLFormElement>(null);
 
     const changePassword = useMutation({
-        mutationFn: async (values: PasswordFormValues) =>
+        mutationFn: async (values: PasswordFormValues) => {
             throwIfAuthClientError(
                 await authClient.changePassword({
                     currentPassword: values.currentPassword,
                     newPassword: values.newPassword,
                 })
-            ),
+            );
+            // A stolen session must not survive the change. Revoking separately keeps this
+            // session's token valid, so the open page does not lose its Convex auth mid-request.
+            throwIfAuthClientError(await authClient.revokeOtherSessions());
+        },
     });
 
     const defaultValues: PasswordFormValues = {

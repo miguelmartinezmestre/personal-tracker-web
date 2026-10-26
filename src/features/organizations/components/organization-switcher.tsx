@@ -22,6 +22,7 @@ import { throwIfAuthClientError } from '@/features/auth/auth-client-response';
 import { useState } from 'react';
 import { api } from '@/convex/_generated/api';
 import { convexQuery } from '@convex-dev/react-query';
+import { queryClient } from '@/platform/convex/providers/convex-query-client';
 
 function OrganizationSwitcherMenuItems({
     isLoadingData,
@@ -149,6 +150,8 @@ export function OrganizationSwitcher({ initialActiveOrganizationId }: Organizati
         },
         onSuccess: (_data, organizationId) => {
             setOptimisticOrganizationId(organizationId);
+            // Organization-scoped queries must not flash the previous tenant's data.
+            queryClient.clear();
             router.refresh();
         },
     });

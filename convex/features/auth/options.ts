@@ -11,6 +11,7 @@ import {
     buildInvitationEmail,
     buildPasswordResetEmail,
     buildVerificationEmail,
+    normalizeInvitationEmail,
     resolveEmailLocale,
     type EmailLocale,
 } from '../email/templates';
@@ -144,7 +145,11 @@ function createSessionCreateHook(ctx: GenericCtx) {
 
 // The name is free and may repeat, but it can't be blank (decision 8).
 function rejectBlankName(path: string, name: string | undefined) {
-    if (['/sign-up/email', '/update-user'].includes(path) && name !== undefined && !name.trim()) {
+    if (!['/sign-up/email', '/update-user'].includes(path) || name === undefined) {
+        return;
+    }
+
+    if (!name.trim()) {
         throw new APIError('BAD_REQUEST', {
             code: ERROR_CODES.NAME_REQUIRED,
             message: 'The name cannot be empty.',
@@ -327,12 +332,27 @@ function createOrganizationPlugin(ctx: GenericCtx) {
                     throwInvalidOrganizationRole();
                 }
 
+                const inviteeEmail = normalizeInvitationEmail(invitation.email);
+
+                if (!inviteeEmail) {
+                    throw new APIError('BAD_REQUEST', {
+                        code: ERROR_CODES.VALIDATION_ERROR,
+                        message: 'The invitation email address is not valid.',
+                    });
+                }
+
                 if (await isProtectedDefaultOrganization(ctx, organization.id)) {
                     throw new APIError('FORBIDDEN', {
                         code: ERROR_CODES.PERSONAL_ORG_INVITE_FORBIDDEN,
                         message: 'Personal organization cannot invite members.',
                     });
                 }
+
+                return {
+                    data: {
+                        email: inviteeEmail,
+                    },
+                };
             },
             beforeAcceptInvitation: async ({ invitation, organization, user }) => {
                 if (await isProtectedDefaultOrganization(ctx, organization.id)) {
@@ -359,13 +379,22 @@ function createOrganizationPlugin(ctx: GenericCtx) {
             },
         },
         sendInvitationEmail: async ({ id, email, organization, inviter, role }, request) => {
+            const inviteeEmail = normalizeInvitationEmail(email);
+
+            if (!inviteeEmail) {
+                throw new APIError('BAD_REQUEST', {
+                    code: ERROR_CODES.VALIDATION_ERROR,
+                    message: 'The invitation email address is not valid.',
+                });
+            }
+
             const inviterName = inviter.user.name;
 
             // The inviter's language: the invitee has no preference stored yet.
             const invitationEmail = buildInvitationEmail({
                 siteUrl: getEnvs().SITE_URL,
                 invitationId: id,
-                inviteeEmail: email,
+                inviteeEmail,
                 organizationName: organization.name,
                 inviterName: inviterName ? inviterName : inviter.user.email,
                 role,

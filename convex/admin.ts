@@ -200,6 +200,18 @@ export const revokeUserSession = mutationWithRLS({
             throw new ConvexError(ERROR_CODES.FORBIDDEN);
         }
 
+        const sessionUserId = ctx.db.normalizeId('user', session.userId);
+
+        if (sessionUserId) {
+            await insertAuditLog(ctx, {
+                action: 'session.revoked_by_admin',
+                resourceType: 'session',
+                resourceId: session._id,
+                userId: sessionUserId,
+                severity: 'warning',
+            });
+        }
+
         await ctx.db.delete('session', session._id);
 
         return null;

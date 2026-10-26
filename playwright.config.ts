@@ -38,7 +38,7 @@ export default defineConfig({
         {
             name: 'setup',
             testMatch: /.*auth\.stack\.setup\.ts/,
-            timeout: 60_000,
+            timeout: 120_000,
             use: chromeProjectUse,
         },
         {

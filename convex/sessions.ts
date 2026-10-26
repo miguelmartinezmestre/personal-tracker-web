@@ -6,6 +6,7 @@ import { withNextPageCheck, withPaginationLimits } from './shared/pagination';
 import { mutationWithRLS, queryWithRLS } from './features/authorization/wrappers';
 import { currentSessionId, revokeOtherSessionsBatch } from './features/auth/sessions';
 import { sessionListItemValidator } from './features/auth/validators';
+import { insertAuditLog } from './features/audit/log';
 
 export const listMySessions = queryWithRLS({
     args: { paginationOpts: paginationOptsValidator },
@@ -52,6 +53,13 @@ export const revokeSession = mutationWithRLS({
             throw new ConvexError(ERROR_CODES.FORBIDDEN);
         }
 
+        await insertAuditLog(ctx, {
+            action: 'session.revoked',
+            resourceType: 'session',
+            resourceId: session._id,
+            userId: ctx.userId,
+            severity: 'warning',
+        });
         await ctx.db.delete('session', args.sessionId);
 
         return null;
@@ -65,12 +73,20 @@ export const revokeOtherSessions = mutationWithRLS({
     handler: async ctx => {
         const keepSessionId = await currentSessionId(ctx);
 
-        return {
-            revokedCount: await revokeOtherSessionsBatch(ctx, {
-                userId: ctx.userId,
-                keepSessionId,
-            }),
-        };
+        const revokedCount = await revokeOtherSessionsBatch(ctx, {
+            userId: ctx.userId,
+            keepSessionId,
+        });
+
+        await insertAuditLog(ctx, {
+            action: 'session.revoked_others',
+            resourceType: 'session',
+            userId: ctx.userId,
+            severity: 'warning',
+            metadata: { after: { revokedCount } },
+        });
+
+        return { revokedCount };
     },
 });
 

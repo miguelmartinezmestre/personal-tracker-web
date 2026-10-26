@@ -28,11 +28,17 @@ export function securityHeaders(options: {
         directives.push('upgrade-insecure-requests');
     }
 
-    return {
+    const headers: Record<string, string> = {
         'Content-Security-Policy': directives.join('; '),
         'X-Content-Type-Options': 'nosniff',
         'X-Frame-Options': 'DENY',
         'Referrer-Policy': 'strict-origin-when-cross-origin',
         'Permissions-Policy': 'camera=(), microphone=(), geolocation=()',
     };
+
+    if (site.protocol === 'https:' && !options.development) {
+        headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains';
+    }
+
+    return headers;
 }

@@ -6,6 +6,7 @@ const withNextIntl = createNextIntlPlugin('./src/i18n/request.ts');
 const e2eDistDir = process.env.NEXT_DIST_DIR;
 
 const nextConfig: NextConfig = {
+    poweredByHeader: false,
     reactCompiler: true,
     allowedDevOrigins: ['127.0.0.1', 'localhost'],
     experimental: {

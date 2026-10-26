@@ -7,6 +7,7 @@ import { completeSetupArgsValidator } from './features/setup/validators';
 import { getAuthUserIdentity } from 'kitcn/auth';
 import { isFirstSetupUser, validateSetupArgs } from './features/setup/rules';
 import { isPersonalOrganizationForUser } from './features/organizations/personalOrganization';
+import { insertAuditLog } from './features/audit/log';
 import { query } from './_generated/server';
 import { mutation } from './features/objectives/stats';
 import { normalizeCategory } from './features/categories/rules';
@@ -76,6 +77,14 @@ export const completeSetup = mutation({
         }
 
         await ctx.db.patch('user', userId, { role: GLOBAL_ADMIN_ROLE });
+        await insertAuditLog(ctx, {
+            action: 'user.role_changed',
+            resourceType: 'user',
+            resourceId: userId,
+            userId,
+            severity: 'critical',
+            metadata: { after: { role: GLOBAL_ADMIN_ROLE } },
+        });
 
         let reusableOrganizationId: Id<'organization'> | null = null;
         const personalOrganizationIds = new Set<Id<'organization'>>();

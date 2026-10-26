@@ -34,6 +34,30 @@ describe('Convex runtime env', () => {
         });
     });
 
+    test('rejects a weak Better Auth secret and reuse of the setup secret', async () => {
+        process.env = {
+            ...originalEnv,
+            NODE_ENV: 'development',
+            BETTER_AUTH_SECRET: 'too-short',
+        };
+
+        await expect(loadEnvModule()).rejects.toThrow(
+            'BETTER_AUTH_SECRET must contain at least 32 characters'
+        );
+
+        const shared = 's'.repeat(32);
+        process.env = {
+            ...originalEnv,
+            NODE_ENV: 'development',
+            BETTER_AUTH_SECRET: shared,
+            SETUP_SECRET: shared,
+        };
+
+        await expect(loadEnvModule()).rejects.toThrow(
+            'BETTER_AUTH_SECRET and SETUP_SECRET must be different'
+        );
+    });
+
     test('does not require JWKS in production', async () => {
         process.env = {
             ...originalEnv,

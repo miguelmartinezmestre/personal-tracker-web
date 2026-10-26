@@ -13,6 +13,7 @@ test('production CSP permits the configured subscription endpoint and nonce with
     expect(result['Content-Security-Policy']).toContain('wss://example.convex.cloud');
     expect(result['Content-Security-Policy']).not.toContain('unsafe-eval');
     expect(result['Content-Security-Policy']).toContain("frame-ancestors 'none'");
+    expect(result['Strict-Transport-Security']).toBe('max-age=31536000; includeSubDomains');
 });
 
 test('a production build on loopback does not force local requests to HTTPS', () => {
@@ -25,4 +26,5 @@ test('a production build on loopback does not force local requests to HTTPS', ()
 
     expect(result['Content-Security-Policy']).not.toContain('upgrade-insecure-requests');
     expect(result['Content-Security-Policy']).toContain('ws://127.0.0.1:4210');
+    expect(result['Strict-Transport-Security']).toBeUndefined();
 });

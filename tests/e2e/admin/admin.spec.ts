@@ -36,8 +36,7 @@ test.describe('Administration', () => {
                 await page.keyboard.press('Escape');
 
                 await row.getByTestId('admin-ban-open').click();
-                await page.getByTestId('admin-ban-duration').click();
-                await page.getByRole('option', { name: '7 days' }).click();
+                await page.getByTestId('admin-ban-duration').selectOption('7');
                 await page.getByTestId('admin-ban-submit').click();
                 await expect(row.getByTestId('admin-user-banned')).toContainText('Banned until', {
                     timeout: 15000,

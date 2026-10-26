@@ -15,6 +15,7 @@ import {
     objectiveAccessValidator,
     userGrantValidator,
 } from './features/objectives/validators';
+import { insertAuditLog } from './features/audit/log';
 
 export const getObjectiveAccess = queryWithRLS({
     args: { objectiveId: v.id('objectives') },
@@ -73,6 +74,20 @@ export const updateObjectiveAccess = mutationWithRLS({
             updatedAt: now,
         });
         await replaceUserGrants(ctx.db, objective, args.users, ctx.userId, now);
+        await insertAuditLog(ctx, {
+            action: 'objective.access_changed',
+            resourceType: 'objective',
+            resourceId: objective._id,
+            userId: objective.createdBy,
+            organizationId: objective.organizationId,
+            severity: 'warning',
+            metadata: {
+                after: {
+                    memberAccess: args.memberAccess,
+                    userGrantCount: args.users.length,
+                },
+            },
+        });
 
         return null;
     },

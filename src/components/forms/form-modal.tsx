@@ -74,7 +74,24 @@ export default function FormModal<TFormValues extends object>({
     });
 
     return (
-        <Dialog open={open} onOpenChange={setOpen}>
+        <Dialog
+            open={open}
+            onOpenChange={(nextOpen, details) => {
+                if (
+                    !nextOpen &&
+                    !['close-press', 'escape-key', 'trigger-press', 'imperative-action'].includes(
+                        details.reason
+                    )
+                ) {
+                    details.cancel();
+
+                    return;
+                }
+
+                setOpen(nextOpen);
+            }}
+            disablePointerDismissal
+        >
             <DialogTrigger render={trigger} />
             <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
                 <DialogHeader>

@@ -22,6 +22,7 @@ import { queryWithRLS } from './features/authorization/wrappers';
 import { resolveActiveMembership } from './features/authorization/authContext';
 import { withNextPageCheck, withPaginationLimits } from './shared/pagination';
 import { NEW_ACCOUNT_SESSIONS } from './features/auth/sessions';
+import { insertAuditLog } from './features/audit/log';
 
 export const getPublicInvitationStatus = query({
     args: {
@@ -455,13 +456,33 @@ export const acceptInvitationOnRegistration = internalMutation({
             return null;
         }
 
-        await ctx.db.insert('member', {
+        const memberId = await ctx.db.insert('member', {
             organizationId: invitation.organizationId,
             userId: user._id,
             role: invitation.role ?? 'member',
             createdAt: Date.now(),
         });
+
         await ctx.db.patch('invitation', invitation._id, { status: 'accepted' });
+
+        await insertAuditLog(ctx, {
+            action: 'organization_member.created',
+            resourceType: 'organization_member',
+            resourceId: memberId,
+            userId: user._id,
+            organizationId: invitation.organizationId,
+            severity: 'info',
+            metadata: { after: { role: invitation.role ?? 'member' } },
+        });
+        await insertAuditLog(ctx, {
+            action: 'invitation.accepted',
+            resourceType: 'invitation',
+            resourceId: invitation._id,
+            userId: user._id,
+            organizationId: invitation.organizationId,
+            severity: 'info',
+            metadata: { after: { status: 'accepted' } },
+        });
 
         // The first session may already exist in the personal organization; start in this one.
         const sessions = await ctx.db

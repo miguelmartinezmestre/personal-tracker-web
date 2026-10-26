@@ -12,7 +12,13 @@ export function getSafeCallbackPath(
         return fallback;
     }
 
-    if (candidate.includes('\\')) {
+    const lowerCandidate = candidate.toLowerCase();
+
+    if (
+        candidate.includes('\\') ||
+        lowerCandidate.startsWith('/%5c') ||
+        lowerCandidate.startsWith('/%2f%2f')
+    ) {
         return fallback;
     }
 

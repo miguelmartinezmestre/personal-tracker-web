@@ -139,13 +139,20 @@ function upsertEnvFile(
     const newline = existing.includes('\r\n') ? '\r\n' : '\n';
     const lines = existing.length > 0 ? existing.replace(/\r?\n$/, '').split(/\r?\n/) : [];
     const seenKeys = new Set<string>();
-    const keyMatcher = (key: string) => new RegExp(`^\\s*(?:export\\s+)?${key}\\s*=`);
+
+    const isKeyLine = (line: string, key: string) => {
+        const normalized = line.trimStart().replace(/^export\s+/, '');
+
+        return (
+            normalized.startsWith(key) && normalized.slice(key.length).trimStart().startsWith('=')
+        );
+    };
 
     const updatedLines = lines
-        .filter(line => !removedKeys.some(key => keyMatcher(key).test(line)))
+        .filter(line => !removedKeys.some(key => isKeyLine(line, key)))
         .map(line => {
             for (const [key, value] of Object.entries(updates)) {
-                if (!keyMatcher(key).test(line)) {
+                if (!isKeyLine(line, key)) {
                     continue;
                 }
 

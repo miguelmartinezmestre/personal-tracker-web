@@ -8,13 +8,6 @@ import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import { Field, FieldGroup, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
 import FormModal from '@/components/forms/form-modal';
 import { api } from '@/convex/_generated/api';
 import type { Id } from '@/convex/_generated/dataModel';
@@ -82,31 +75,27 @@ export default function BanUserDialog({ userId, name }: { userId: Id<'user'>; na
                         {field => (
                             <Field>
                                 <FieldLabel htmlFor="ban-duration">{t('duration')}</FieldLabel>
-                                <Select
+                                <select
+                                    id="ban-duration"
+                                    data-testid="admin-ban-duration"
                                     value={field.state.value}
-                                    items={durationItems}
-                                    onValueChange={value => {
-                                        const duration = DURATIONS.find(option => option === value);
+                                    onChange={event => {
+                                        const duration = DURATIONS.find(
+                                            option => option === event.target.value
+                                        );
 
                                         if (duration) {
                                             field.handleChange(duration);
                                         }
                                     }}
+                                    className="border-input bg-transparent focus-visible:border-ring focus-visible:ring-ring/50 h-9 w-fit rounded-md border px-3 py-2 text-sm shadow-xs outline-none focus-visible:ring-[3px]"
                                 >
-                                    <SelectTrigger
-                                        id="ban-duration"
-                                        data-testid="admin-ban-duration"
-                                    >
-                                        <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {durationItems.map(item => (
-                                            <SelectItem key={item.value} value={item.value}>
-                                                {item.label}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
+                                    {durationItems.map(item => (
+                                        <option key={item.value} value={item.value}>
+                                            {item.label}
+                                        </option>
+                                    ))}
+                                </select>
                             </Field>
                         )}
                     </form.Field>

@@ -45,7 +45,25 @@ export function getEnvs() {
     const SITE_URL = validateUrl('SITE_URL', env.SITE_URL, 'http://localhost:3000');
     const BETTER_AUTH_URL = validateUrl('BETTER_AUTH_URL', env.BETTER_AUTH_URL, SITE_URL);
     const JWKS = env.JWKS?.trim() || undefined;
+    const rawBetterAuthSecret: unknown = env.BETTER_AUTH_SECRET;
+
+    const BETTER_AUTH_SECRET =
+        typeof rawBetterAuthSecret === 'string'
+            ? rawBetterAuthSecret.trim() || undefined
+            : undefined;
+
     const SETUP_SECRET = env.SETUP_SECRET?.trim() || undefined;
+
+    // Better Auth only warns on a weak secret; a short value makes session/JWT
+    // forgery feasible, so refuse to start instead.
+    if (BETTER_AUTH_SECRET && BETTER_AUTH_SECRET.length < 32) {
+        throw new Error('BETTER_AUTH_SECRET must contain at least 32 characters');
+    }
+
+    if (BETTER_AUTH_SECRET && SETUP_SECRET && BETTER_AUTH_SECRET === SETUP_SECRET) {
+        throw new Error('BETTER_AUTH_SECRET and SETUP_SECRET must be different');
+    }
+
     const setupSecretIsRequired = !LOCAL_HOSTNAMES.has(new URL(SITE_URL).hostname.toLowerCase());
 
     if (setupSecretIsRequired && !SETUP_SECRET) {
@@ -62,6 +80,7 @@ export function getEnvs() {
         SITE_URL,
         BETTER_AUTH_URL,
         JWKS,
+        BETTER_AUTH_SECRET,
         SETUP_SECRET,
         ENVIRONMENT: isProduction ? 'production' : 'development',
     };
