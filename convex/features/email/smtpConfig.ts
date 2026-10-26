@@ -13,6 +13,13 @@ const MIN_PORT = 1;
 
 const MAX_PORT = 65535;
 
+// MailDev and the other loopback capture services speak plain SMTP by design.
+const LOCAL_SMTP_HOSTNAMES = new Set(['localhost', '127.0.0.1', '::1', 'maildev']);
+
+export function requiresSmtpTls(config: Pick<SmtpEmailConfig, 'host' | 'secure'>): boolean {
+    return !config.secure && !LOCAL_SMTP_HOSTNAMES.has(config.host.toLowerCase());
+}
+
 type EmailSettings = {
     EMAIL_FROM?: string;
     SMTP_HOST?: string;

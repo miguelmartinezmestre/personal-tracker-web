@@ -3,7 +3,7 @@
 import { v } from 'convex/values';
 import { internalAction } from './_generated/server';
 import nodemailer from 'nodemailer';
-import { getSmtpEmailConfig } from './features/email/smtpConfig';
+import { getSmtpEmailConfig, requiresSmtpTls } from './features/email/smtpConfig';
 
 export const sendEmail = internalAction({
     args: {
@@ -20,6 +20,9 @@ export const sendEmail = internalAction({
             host: config.host,
             port: config.port,
             secure: config.secure,
+            // Without this, Nodemailer silently accepts a STARTTLS downgrade on port 587.
+            requireTLS: requiresSmtpTls(config),
+            tls: { minVersion: 'TLSv1.2' },
             auth: {
                 user: config.user,
                 pass: config.password,

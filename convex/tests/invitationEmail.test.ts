@@ -1,7 +1,20 @@
 import { describe, expect, test } from 'vitest';
-import { buildInvitationEmail, resolveEmailLocale } from '../features/email/templates';
+import {
+    buildInvitationEmail,
+    normalizeInvitationEmail,
+    resolveEmailLocale,
+} from '../features/email/templates';
 
 describe('invitation email helpers', () => {
+    test('accepts exactly one valid mailbox and rejects address-list tricks', () => {
+        expect(normalizeInvitationEmail(' Person@Example.COM ')).toBe('person@example.com');
+        expect(normalizeInvitationEmail('victim@example.com, attacker@evil.example')).toBeNull();
+        expect(
+            normalizeInvitationEmail('Victim (x(y) <evil@evil.example>) <v@victim.example>')
+        ).toBeNull();
+        expect(normalizeInvitationEmail('not-an-email')).toBeNull();
+    });
+
     test('builds a transactional invitation email payload', () => {
         expect(
             buildInvitationEmail({

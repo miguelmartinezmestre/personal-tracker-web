@@ -1,3 +1,12 @@
+import { z } from 'zod';
+
+/** Normalizes an invitation address, or returns null when it is not a single valid email. */
+export function normalizeInvitationEmail(value: string): string | null {
+    const result = z.email().safeParse(value.trim());
+
+    return result.success ? result.data.toLowerCase() : null;
+}
+
 export function buildInvitationUrl(siteUrl: string, invitationId: string): string {
     return new URL(`/invitations/${encodeURIComponent(invitationId)}`, siteUrl).toString();
 }

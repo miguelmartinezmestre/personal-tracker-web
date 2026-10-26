@@ -3,7 +3,7 @@ import type { AddressInfo } from 'node:net';
 import { afterEach, describe, expect, test, vi } from 'vitest';
 import { internal } from '../_generated/api';
 import { initConvexTest } from './test.helper';
-import { getSmtpEmailConfig } from '../features/email/smtpConfig';
+import { getSmtpEmailConfig, requiresSmtpTls } from '../features/email/smtpConfig';
 
 // Minimal SMTP server that accepts every command and records the session for assertions.
 async function startSmtpSink() {
@@ -101,6 +101,13 @@ describe('SMTP email configuration', () => {
                 SMTP_PASSWORD: 'secret',
             }).secure
         ).toBe(false);
+    });
+
+    test('requires STARTTLS for remote plaintext SMTP, but not for local capture', () => {
+        expect(requiresSmtpTls({ host: 'smtp.example.com', secure: false })).toBe(true);
+        expect(requiresSmtpTls({ host: 'smtp.example.com', secure: true })).toBe(false);
+        expect(requiresSmtpTls({ host: 'maildev', secure: false })).toBe(false);
+        expect(requiresSmtpTls({ host: '127.0.0.1', secure: false })).toBe(false);
     });
 
     test('rejects invalid SMTP ports', () => {
