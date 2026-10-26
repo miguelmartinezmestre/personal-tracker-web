@@ -21,13 +21,8 @@ import {
 } from './command';
 import { waitForConvexBackend } from './convex-stack';
 
-// Runs Convex and MailDev as plain processes, without Docker. The backend binary is the one the
-// Convex CLI uses for local deployments, kept in the same cache so both share downloads.
-
-// Node versions the local backend accepts for "use node" actions.
 const LOCAL_BACKEND_NODE_MAJORS = [20, 22, 24];
 
-// Same instance name as the Docker image, so admin keys look the same in both stacks.
 const INSTANCE_NAME = 'convex-self-hosted';
 
 export const UNSUPPORTED_NODE_MESSAGE =
@@ -113,8 +108,6 @@ export interface LocalProcess {
     stop: () => Promise<void>;
 }
 
-// An isolated, throwaway backend: SQLite and file storage live in a temporary directory that
-// `stop` deletes, so nothing is shared with the developer's local deployment.
 export async function startLocalBackend(options: {
     version: string;
     port: string;

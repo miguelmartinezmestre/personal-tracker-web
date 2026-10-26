@@ -164,7 +164,6 @@ export const completeSetup = mutation({
 
         const now = Date.now();
 
-        // The admin chose them in the wizard, so the setup organization starts with them too.
         for (const category of categories.values()) {
             await ctx.db.insert('platformCategories', {
                 ...category,
@@ -172,7 +171,6 @@ export const completeSetup = mutation({
                 updatedAt: now,
             });
 
-            // A reused organization may already have a category with that name.
             const sameName = await ctx.db
                 .query('categories')
                 .withIndex('by_organization_name', q =>

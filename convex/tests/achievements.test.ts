@@ -104,7 +104,6 @@ describe('achievements', () => {
             earnedAt: null,
         });
 
-        // Completing counts for the creator, even when someone else logs the progress.
         await as(member).mutation(api.progress.createProgress, {
             objectiveId,
             updatedValue: 10,
@@ -164,10 +163,8 @@ describe('achievements', () => {
         const creatorAchievements = await achievementsOf(creator);
         expect(creatorAchievements.earned).toContain('streak_3');
         expect(creatorAchievements.byCode.get('streak_7')?.progress).toBe(3);
-        // The organization was active all six days in a row.
         expect(creatorAchievements.byCode.get('organization_streak_7')?.progress).toBe(6);
 
-        // Their three days ended before yesterday, so the streak is lost.
         const memberAchievements = await achievementsOf(member);
         expect(memberAchievements.earned).not.toContain('streak_3');
         expect(memberAchievements.byCode.get('streak_3')?.progress).toBe(0);

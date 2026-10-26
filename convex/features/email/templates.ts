@@ -1,6 +1,5 @@
 import { z } from 'zod';
 
-/** Normalizes an invitation address, or returns null when it is not a single valid email. */
 export function normalizeInvitationEmail(value: string): string | null {
     const result = z.email().safeParse(value.trim());
 
@@ -22,10 +21,6 @@ function isEmailLocale(value: string | null | undefined): value is EmailLocale {
     return value === 'en' || value === 'es';
 }
 
-/**
- * Picks the language of an auth email: the requester's `locale` cookie (set by the language
- * switcher), then the platform default, then English — the same order the app uses.
- */
 export function resolveEmailLocale(
     request: Request | undefined,
     platformDefault?: string | null

@@ -16,11 +16,6 @@ import { useLocale, useTranslations } from 'next-intl';
 
 const MODES = ['difference', 'value'] as const;
 
-/**
- * The entry fields shared by the new-progress form and the edit dialog. Each entry is typed as a
- * difference (+3, −1.2) or as the new value (88), which is stored as its difference from
- * `baseValue` (decision 11).
- */
 export function ProgressFields({
     form,
     idPrefix,
@@ -53,7 +48,6 @@ export function ProgressFields({
                                     return;
                                 }
 
-                                // The typed amount keeps its meaning in the other form.
                                 const amount = form.getFieldValue('amount');
 
                                 if (Number.isFinite(amount)) {
@@ -111,7 +105,6 @@ export function ProgressFields({
                                         step="any"
                                         value={value}
                                         onBlur={field.handleBlur}
-                                        // An empty input is NaN so the schema reports it as required.
                                         onChange={event =>
                                             field.handleChange(
                                                 event.target.value === ''

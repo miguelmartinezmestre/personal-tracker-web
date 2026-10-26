@@ -3,7 +3,6 @@ import { rlsDeny, rlsWhen, type RlsHelpers, type RlsInsertDoc } from './rlsHelpe
 
 type QueryLike = RlsHelpers['ctx'];
 
-// Each user reaches only their own; notifications are written by internal functions alone.
 export function notificationTableRules({ userId, isActiveOrganization }: RlsHelpers) {
     const isOwnInActiveOrganization = (_ctx: QueryLike, notification: Doc<'notifications'>) =>
         rlsWhen(

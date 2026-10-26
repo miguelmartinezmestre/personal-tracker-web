@@ -39,7 +39,6 @@ describe('notifications', () => {
         return user;
     }
 
-    // Achievements unlocked along the way have their own tests.
     const keysOf = async (user: TestUserData) =>
         (await as(user).query(api.notifications.listNotifications, { paginationOpts: page })).page
             .filter(notification => notification.type !== 'achievement')
@@ -79,7 +78,6 @@ describe('notifications', () => {
             users: [{ userId: granted.docId, access: 'view' }],
         });
 
-        // Passing 25 and 50 % at once tells only the last milestone.
         await as(creator).mutation(api.progress.createProgress, {
             objectiveId,
             updatedValue: 6,
@@ -156,7 +154,6 @@ describe('notifications', () => {
         const [ownFirst, othersId] = await t.run(async ctx => {
             const ids = [];
 
-            // More than one batch of 100, without objectives (REQ-NOTIFICACIONES-004).
             for (let index = 0; index < 150; index++) {
                 ids.push(
                     await ctx.db.insert('notifications', {

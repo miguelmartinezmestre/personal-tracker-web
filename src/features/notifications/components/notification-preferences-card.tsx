@@ -13,7 +13,6 @@ import { api } from '@/convex/_generated/api';
 
 const NOTIFICATION_TYPES = ['deadline', 'progress', 'status', 'achievement'] as const;
 
-/** Which notifications the user gets, the same in every organization (decision 14). */
 export function NotificationPreferencesCard() {
     const t = useTranslations('Settings.notifications');
     const preferences = useQuery(convexQuery(api.notifications.getNotificationPreferences, {}));

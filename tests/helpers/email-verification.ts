@@ -3,8 +3,6 @@ import { z } from 'zod';
 
 type EmailKind = 'verify-email' | 'reset-password' | 'invitation';
 
-// MailDev returns every captured email, bodies included, in arrival order. `time` comes from the
-// Date header and has second precision.
 const maildevEmailSchema = z.object({
     time: z.string().catch(''),
     to: z.array(z.object({ address: z.string().catch('') })).catch([]),
@@ -137,7 +135,6 @@ export async function waitForInvitationUrl(
 export async function verifyEmailFromInvitationPage(page: Page, email: string): Promise<void> {
     const verificationRequired = page.getByTestId('invitation-verification-required');
     const acceptButton = page.getByTestId('invitation-accept-button').first();
-    // Unverified accounts see only the verification prompt; verified ones see the invitations.
     await expect(verificationRequired.or(acceptButton)).toBeVisible({ timeout: 15000 });
 
     if (!(await verificationRequired.isVisible())) {

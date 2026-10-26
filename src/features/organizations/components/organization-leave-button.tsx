@@ -29,8 +29,6 @@ export default function OrganizationLeaveButton({
     const leaveOrganization = useLeaveOrganization();
     const isActive = session.data?.session.activeOrganizationId === organizationId;
     const personalOrganizationId = personalOrganization.data ?? undefined;
-    // Without both answers we cannot tell whether to switch first; leaving the active
-    // organization without a fallback would end the session's organization context.
     const isReady = !session.isPending && !personalOrganization.isPending;
     const missingFallback = isActive && !personalOrganizationId;
 

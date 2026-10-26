@@ -28,10 +28,6 @@ export type MemberAccess = (typeof MEMBER_ACCESS_LEVELS)[number];
 
 export type UserAccess = { userId: Id<'user'>; name: string; access: 'view' | 'edit' };
 
-/**
- * Who sees and edits an objective besides its creator, the owner and the admins: the member role
- * as a whole and specific users (decision 3). Edit always includes view.
- */
 export function AccessEditor({
     memberAccess,
     onMemberAccessChange,

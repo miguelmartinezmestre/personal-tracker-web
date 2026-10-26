@@ -9,7 +9,6 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { api } from '@/convex/_generated/api';
 import { AchievementCard } from '@/features/achievements/components/achievement-card';
 
-/** Every achievement with its progress; the organization ones are the active organization's. */
 export default function AchievementsPage() {
     const t = useTranslations('Achievements');
     const achievements = useQuery(convexQuery(api.achievements.getAchievements, {}));

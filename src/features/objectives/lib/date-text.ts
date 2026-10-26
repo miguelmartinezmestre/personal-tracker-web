@@ -60,10 +60,6 @@ export function dateInputToLocalDate(value: string): Date | undefined {
     return match ? new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3])) : undefined;
 }
 
-/**
- * Reads free text such as "mañana" or "2 weeks from now" in the interface language and returns
- * the calendar day as `YYYY-MM-DD`, or undefined unless the whole text is a date.
- */
 export function parseDateText(
     text: string,
     locale: string,
@@ -76,7 +72,6 @@ export function parseDateText(
         forwardDate: options.forwardDate,
     });
 
-    // A partial match ("pasado" ignored in "pasado mañana") would pick the wrong day.
     if (!result || result.index !== 0 || result.text.length !== trimmed.length) {
         return undefined;
     }
@@ -84,7 +79,6 @@ export function parseDateText(
     return localDateToInput(result.start.date());
 }
 
-// Numeric, so the text written for a picked day reads back as the same day.
 export function formatDateText(value: string, locale: string): string {
     const date = dateInputToLocalDate(value);
 

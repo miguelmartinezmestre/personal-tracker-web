@@ -1,8 +1,7 @@
 import { defineConfig } from 'vitest/config';
 import path from 'node:path';
 
-// Workers inherit the zone at spawn time. A zone ahead of UTC makes date code that confuses
-// the local and UTC calendar days fail around midnight instead of passing on UTC machines.
+// Set before workers spawn: a zone ahead of UTC exposes local/UTC calendar-day mix-ups.
 process.env.TZ = 'Europe/Madrid';
 
 export default defineConfig({

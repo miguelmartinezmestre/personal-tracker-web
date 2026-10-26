@@ -202,7 +202,6 @@ test.describe('Objectives', () => {
             await page.getByTestId('objective-save-button').click();
             await expect(openRow).toBeVisible({ timeout: 15000 });
 
-            // Nothing is expected yet on the day it is created; without a deadline there is no pace.
             const paceIn = (title: string) =>
                 page.getByRole('row').filter({ hasText: title }).getByTestId('objective-pace');
 

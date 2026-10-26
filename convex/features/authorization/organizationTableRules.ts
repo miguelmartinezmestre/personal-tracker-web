@@ -151,11 +151,9 @@ export function organizationTableRules(helpers: RlsHelpers) {
                 );
             },
         },
-        // Organization data, so the global admin has no access of its own (decision 13).
         categories: {
             read: (_ctx: QueryLike, category: Doc<'categories'>) =>
                 rlsWhen(isActiveOrganization(category.organizationId)),
-            // Any organization of theirs, for the categories chosen right after creating one.
             insert: async (_ctx: QueryLike, category: RlsInsertDoc<'categories'>) =>
                 isActiveOrganization(category.organizationId) ||
                 (await isMemberOfOrganization(category.organizationId)),
@@ -171,8 +169,6 @@ export function organizationTableRules(helpers: RlsHelpers) {
             insert: () => rlsWhen(isGlobalAdmin),
             modify: () => rlsWhen(isGlobalAdmin),
         },
-        // Append-only: entries are written by the functions they describe and never changed or
-        // deleted (decision 15); only the global admin reads them.
         auditLogs: {
             read: () => rlsWhen(isGlobalAdmin),
             insert: rlsAllow,

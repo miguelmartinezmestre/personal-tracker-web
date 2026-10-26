@@ -65,7 +65,6 @@ const BUILD_FINGERPRINT_ENV_KEYS = [
     'SMTP_PASSWORD',
 ];
 
-// Own flags are removed; everything else, `--project` included, is forwarded to Playwright.
 // pnpm may insert a bare `--` before forwarded arguments, after the script's own flags.
 const SCRIPT_ARGS = process.argv.slice(2).filter(arg => arg !== '--');
 const OWN_FLAGS = new Set(['rebuild', 'no-docker']);
@@ -82,7 +81,6 @@ const { values, tokens } = parseArgs({
     tokens: true,
 });
 
-// Lenient parsing keeps Playwright's flags in `values`; only the ones this script reads are checked.
 const flags = z
     .object({
         rebuild: z.boolean().optional(),
@@ -103,7 +101,6 @@ const NO_DOCKER = flags['no-docker'] === true;
 // Inherited by every command below, it would send `convex` to a cloud deployment instead.
 delete process.env.CONVEX_DEPLOY_KEY;
 
-// Pinned like the Docker image digest, so runs without Docker are reproducible.
 const E2E_CONVEX_BACKEND_VERSION =
     process.env.E2E_CONVEX_BACKEND_VERSION ?? 'precompiled-2026-10-06-a3538c6';
 
@@ -127,7 +124,6 @@ const CONVEX_URL = process.env.E2E_CONVEX_URL ?? `http://127.0.0.1:${E2E_CONVEX_
 const CONVEX_SITE_URL =
     process.env.E2E_CONVEX_SITE_URL ?? `http://127.0.0.1:${E2E_CONVEX_SITE_PORT}`;
 
-// The suite deploys and wipes data, so it never runs against another machine.
 for (const url of [CONVEX_URL, CONVEX_SITE_URL]) {
     if (!['127.0.0.1', 'localhost', '[::1]'].includes(new URL(url).hostname)) {
         throw new Error(`E2E Convex URLs must point at this machine: ${url}`);
@@ -139,7 +135,6 @@ const SHOW_NEXT_LOGS = process.env.E2E_SHOW_NEXT_LOGS === 'true';
 const FRONTEND_LOG_TAIL_LIMIT = 120;
 let frontendProcess: LongRunningProcess | null = null;
 
-// Backend and MailDev when running without Docker.
 const localProcesses: Array<LocalProcess> = [];
 let cleanupInProgress = false;
 let receivedTerminationSignal = false;
@@ -379,11 +374,12 @@ async function captureFailureLogs(): Promise<void> {
             frontendLogTail.join('\n')
         );
 
-        // Without Docker the backend and MailDev already write their own logs there.
         if (!NO_DOCKER) {
             const backendLog = await dockerComposeCapture(
                 ['logs', '--no-color', '--tail', '1000'],
-                { ignoreExitCode: true }
+                {
+                    ignoreExitCode: true,
+                }
             );
 
             writeFileSync(`reports/e2e/backend-${BROWSER_PROJECT ?? 'all'}.log`, backendLog);
@@ -447,7 +443,6 @@ async function startLocalStack(browserLabel: string): Promise<{
         throw new Error(UNSUPPORTED_NODE_MESSAGE);
     }
 
-    // Unlike `docker compose down`, nothing here may kill whatever already holds the ports.
     if (await isListening(buildUrl(CONVEX_URL, '/version'))) {
         throw new Error(`Something is already listening on ${CONVEX_URL}; stop it first.`);
     }
@@ -554,7 +549,6 @@ async function main(): Promise<void> {
         convexUrl: CONVEX_URL,
         convexSiteUrl: CONVEX_SITE_URL,
         siteUrl,
-        // Outside Docker the backend reaches MailDev on the host.
         smtp: NO_DOCKER ? { host: '127.0.0.1', port: E2E_MAILDEV_SMTP_PORT } : undefined,
         allowLocalHttp: true,
         extra: {
@@ -597,7 +591,6 @@ async function main(): Promise<void> {
 
     console.log('Starting frontend...');
     frontendLogTail = [];
-    // `next` directly: `pnpm dev` wraps `convex dev --start` and does not accept `--port`.
     const frontendCommand = E2E_FRONTEND_MODE === 'production' ? 'start' : 'dev';
 
     const frontend = startProcess('next', [frontendCommand, '--port', frontendPort], {

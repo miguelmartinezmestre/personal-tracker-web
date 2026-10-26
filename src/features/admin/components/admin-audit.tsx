@@ -39,7 +39,6 @@ const SEVERITY_VARIANTS = {
     critical: 'destructive',
 } as const;
 
-/** The audit log, newest first, filtered by resource type and by organization. */
 export default function AdminAudit() {
     const t = useTranslations('Admin.audit');
     const locale = useLocale();

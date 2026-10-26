@@ -5,7 +5,6 @@ import { metricCap, type AchievementMetric } from './definitions';
 
 type Db = QueryCtx['db'];
 
-// Completed by the end of its deadline day, in UTC like every civil date.
 export function isEarlyBirdCompletion(objective: Doc<'objectives'>): boolean {
     return (
         objective.completedAt !== undefined &&
@@ -14,7 +13,6 @@ export function isEarlyBirdCompletion(objective: Doc<'objectives'>): boolean {
     );
 }
 
-// Consecutive UTC days with progress, ending today or, while today has none yet, yesterday.
 async function countStreak(hasProgressOn: (day: number) => Promise<boolean>, cap: number) {
     const today = startOfUtcDay(Date.now());
     let day = (await hasProgressOn(today)) ? today : today - DAY_MS;
@@ -28,7 +26,6 @@ async function countStreak(hasProgressOn: (day: number) => Promise<boolean>, cap
     return streak;
 }
 
-// Individual metrics span all the user's organizations; trashed objectives never count.
 export async function achievementMetrics(
     db: Db,
     userId: Id<'user'>,

@@ -14,7 +14,6 @@ import { usePaginatedList } from '@/components/data-table/hooks/use-paginated-li
 import { api } from '@/convex/_generated/api';
 import type { Id } from '@/convex/_generated/dataModel';
 
-/** The organization's categories, loaded page by page, after a first option such as "none". */
 export function CategorySelect({
     id,
     value,
@@ -32,7 +31,6 @@ export function CategorySelect({
     onValueChange: (value: string) => void;
     onBlur?: () => void;
     firstOption: { value: string; label: string };
-    // A category that may not be on the pages loaded so far.
     currentCategory?: { id: Id<'categories'>; name: string };
     placeholder?: string;
     isInvalid?: boolean;

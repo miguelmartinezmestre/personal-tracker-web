@@ -28,7 +28,6 @@ export const getPublicInvitationStatus = query({
     args: {
         invitationId: v.string(),
     },
-    // The organization name is only shown to whoever holds a valid invitation link.
     returns: v.object({
         isValid: v.boolean(),
         organizationName: v.optional(v.string()),
@@ -118,12 +117,10 @@ export const getCurrentSession = query({
     },
 });
 
-/** The caller's personal organization, which leaving the active organization falls back to. */
 export const getPersonalOrganizationId = queryWithRLS({
     args: {},
     returns: v.union(v.id('organization'), v.null()),
     handler: async ctx => {
-        // Usually found by its slug; a slug collision at creation gave it a suffixed one instead.
         const bySlug = await ctx.dbForIntegrityChecks
             .query('organization')
             .withIndex('slug', q => q.eq('slug', buildDefaultOrganizationSlug(ctx.userId)))
@@ -235,7 +232,6 @@ export const getUserInvitations = queryWithRLS({
     args: { paginationOpts: paginationOptsValidator },
     returns: paginationResultValidator(userInvitationValidator),
     handler: async (ctx, args) => {
-        // Unverified accounts still get the invitations that don't ask for a verified email.
         const user = await ctx.dbForIntegrityChecks.get('user', ctx.userId);
 
         if (!user) {
@@ -294,7 +290,6 @@ export const getUserInvitations = queryWithRLS({
                 paginationOpts: args.paginationOpts,
                 isLive: isListed,
             },
-            // Newest expiry first, so once one has expired every later one has too.
             {
                 ...result,
                 isDone:
@@ -420,7 +415,6 @@ export const getOrganizationPendingInvitations = queryWithRLS({
                 paginationOpts: args.paginationOpts,
                 isLive: doc => doc.expiresAt > now,
             },
-            // Newest expiry first, so once one has expired every later one has too.
             { ...result, isDone: result.isDone || live.length < result.page.length },
             live.map(invitation => ({
                 id: invitation._id,
@@ -432,8 +426,6 @@ export const getOrganizationPendingInvitations = queryWithRLS({
     },
 });
 
-// Called right after signing up from an invitation link; one that needs a verified email waits
-// in the invitations page instead (decision 9).
 export const acceptInvitationOnRegistration = internalMutation({
     args: { invitationId: v.string(), userId: v.string() },
     returns: v.null(),
@@ -484,7 +476,6 @@ export const acceptInvitationOnRegistration = internalMutation({
             metadata: { after: { status: 'accepted' } },
         });
 
-        // The first session may already exist in the personal organization; start in this one.
         const sessions = await ctx.db
             .query('session')
             .withIndex('userId', q => q.eq('userId', user._id))

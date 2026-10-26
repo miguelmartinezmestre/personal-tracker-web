@@ -151,7 +151,6 @@ export const deleteCategory = mutationWithRLS({
     },
 });
 
-// What the owner chose from the catalog when creating the organization or signing up (decision 13).
 export const addChosenCategories = mutationWithRLS({
     args: { organizationId: v.id('organization'), categories: v.array(categoryInputValidator) },
     returns: v.null(),
@@ -176,7 +175,6 @@ export const addChosenCategories = mutationWithRLS({
         for (const input of args.categories) {
             const category = normalizeCategory(input);
 
-            // Repeated names, also from a retried request, are added once.
             const sameName = await ctx.dbForIntegrityChecks
                 .query('categories')
                 .withIndex('by_organization_name', q =>

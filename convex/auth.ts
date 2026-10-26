@@ -85,8 +85,6 @@ export const ensureDefaultOrganizationForUser = internalMutation({
             throw new ConvexError(ERROR_CODES.INTERNAL_ERROR);
         }
 
-        // Every account keeps a personal organization, even when it joined another one first
-        // (decision 6); the session starts in the first organization the user belongs to.
         let firstOrganizationId: Id<'organization'> | null = null;
 
         for await (const membership of ctx.db
@@ -212,7 +210,6 @@ export const recoverAffectedOrganizationSessions = internalMutation({
     },
 });
 
-/** Whether the user already belongs to another organization with this name (case-insensitive). */
 export const userHasOrganizationNamed = internalQuery({
     returns: v.boolean(),
     args: {
@@ -288,7 +285,6 @@ export const isDefaultOrganization = internalQuery({
     },
 });
 
-/** Everything the account deletion endpoint checks before deleting the session user. */
 export const getAccountDeletionTarget = internalQuery({
     args: { userId: v.string() },
     returns: v.union(
@@ -327,7 +323,6 @@ export const getAccountDeletionTarget = internalQuery({
 
 export default defineAuth((ctx: GenericCtx) => buildBetterAuthOptions(ctx));
 
-// What stops the current user from deleting the account, shown before asking to confirm it.
 export const getAccountDeletionStatus = queryWithRLS({
     args: {},
     returns: v.object({

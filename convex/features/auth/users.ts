@@ -19,7 +19,6 @@ export function normalizeRegistrationEmail(email: string) {
     return email.trim().toLowerCase();
 }
 
-// An admin never changes their own role or ban, so the platform can't lose its last admin.
 export async function requireOtherUser(
     ctx: { role: string; userId: Id<'user'>; db: MutationCtx['db'] },
     userId: Id<'user'>

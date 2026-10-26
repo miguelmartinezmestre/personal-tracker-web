@@ -38,14 +38,12 @@ const GENERATED_DIRECTORIES = [
     join('infrastructure', 'data'),
 ] as const;
 
-// Where `convex dev` keeps a CLI-managed local deployment: its SQLite database, files and keys.
 const CLI_LOCAL_DEPLOYMENT_DIRECTORY = join('.convex', 'local', 'default');
 
 const CONVEX_PORT = process.env.CONVEX_PORT ?? process.env.PORT ?? '3210';
 const CONVEX_SITE_PORT = process.env.CONVEX_SITE_PORT ?? process.env.SITE_PROXY_PORT ?? '3211';
 const DASHBOARD_PORT = process.env.CONVEX_DASHBOARD_PORT ?? process.env.DASHBOARD_PORT ?? '6791';
 
-// Same variables MailDev reads, so `pnpm mail:local` and the backend agree on the ports.
 const MAILDEV_SMTP_PORT = process.env.MAILDEV_SMTP_PORT ?? '1025';
 const MAILDEV_WEB_PORT = process.env.MAILDEV_WEB_PORT ?? '1080';
 const CONVEX_URL = process.env.CONVEX_SELF_HOSTED_URL ?? `http://127.0.0.1:${CONVEX_PORT}`;
@@ -267,14 +265,6 @@ async function cleanup(): Promise<void> {
     await dockerCompose(['down', '--remove-orphans'], { ignoreExitCode: true });
 }
 
-// ------------------------------------------------------------
-// --no-docker: a local deployment run by the Convex CLI itself
-// ------------------------------------------------------------
-// `convex dev` downloads the backend binary, keeps its state in .convex/local/default and serves
-// its own dashboard, so MySQL and the dashboard container are not needed. The backend only runs
-// while a `convex dev` process does: this script configures and deploys it once, and afterwards
-// `pnpm dev` starts it again with the same data and variables.
-
 let convexDev: LongRunningProcess | undefined;
 
 async function mainWithoutDocker(): Promise<void> {
@@ -306,8 +296,6 @@ async function mainWithoutDocker(): Promise<void> {
     console.log(`  - Convex site: ${CONVEX_SITE_URL}`);
     console.log(`  - MailDev UI (\`pnpm mail:local\`): http://127.0.0.1:${MAILDEV_WEB_PORT}`);
     console.log(`  - App origin for auth: ${APP_URL}`);
-    // The first push fails until the variables below exist; `--until-success` keeps the backend up,
-    // retries when they change and exits after the first successful deploy.
     convexDev = startProcess(
         'convex',
         [
@@ -338,7 +326,6 @@ async function mainWithoutDocker(): Promise<void> {
     const instanceName = await fetchWithTimeout(buildUrl(CONVEX_URL, '/instance_name'));
     const deploymentName = (await instanceName.text()).trim();
 
-    // The Docker profile shares these secrets; a reset here must not rotate them under it.
     const { betterAuthSecret, jwks } = await generateAuthSecrets(storedCredentials);
     writeLocalStackCredentials(process.cwd(), {
         mysqlRootPassword: storedCredentials?.mysqlRootPassword,

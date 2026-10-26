@@ -44,7 +44,6 @@ function AchievementRow({ achievement }: { achievement: Achievement }) {
     );
 }
 
-// The latest achievements earned and the closest ones to earn (INH-DAS-06).
 export function AchievementsWidget() {
     const t = useTranslations('Achievements.widget');
     const achievements = useQuery(convexQuery(api.achievements.getAchievements, {}));

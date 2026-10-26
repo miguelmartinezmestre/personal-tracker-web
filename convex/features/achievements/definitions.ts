@@ -18,7 +18,6 @@ export type Achievement = {
     points: number;
 };
 
-// 14 individual and 5 organization achievements (INH-LOG-02); names live in the translations.
 export const ACHIEVEMENTS: readonly Achievement[] = [
     {
         code: 'first_objective',
@@ -193,7 +192,6 @@ export const ACHIEVEMENTS: readonly Achievement[] = [
     },
 ];
 
-// Counting past the highest threshold changes nothing, so every metric stops there (INH-LOG-05).
 export function metricCap(metric: AchievementMetric): number {
     return Math.max(
         ...ACHIEVEMENTS.filter(achievement => achievement.metric === metric).map(

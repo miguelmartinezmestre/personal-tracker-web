@@ -10,7 +10,6 @@ type SettingsValidationKey =
     | 'passwordUnchanged';
 
 export function profileSchema(message: (key: SettingsValidationKey) => string) {
-    // Free and possibly repeated, only not blank (decision 8).
     return z.object({
         name: z
             .string()

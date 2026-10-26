@@ -128,7 +128,6 @@ describe('organization deletion cascade', () => {
             role: 'owner',
         });
 
-        // Better Auth sets the deleting session's active organization to null before deleting.
         const actorSession = await createTestSession(t, {
             userId: actor.docId,
             activeOrganizationId: null,

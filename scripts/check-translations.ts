@@ -10,7 +10,6 @@ function prefixChildPaths(children: Record<string, string[][]>): string[][] {
     return Object.entries(children).flatMap(([key, paths]) => paths.map(path => [key, ...path]));
 }
 
-// Parses a translation tree straight into its leaf paths: { a: { b: 'x' } } -> [['a', 'b']].
 const translationPathsSchema: z.ZodType<string[][]> = z.lazy(() =>
     z.union([
         z.string().transform(() => [[]]),

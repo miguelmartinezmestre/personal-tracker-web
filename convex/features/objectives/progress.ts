@@ -8,7 +8,6 @@ import { RESULTING_VALUES_BATCH_SIZE } from './constants';
 import { measurement, requireObjective, requireOrganizationId, roundStoredValue } from './records';
 import type { AccessActor } from './access';
 
-// Where an entry sits in the history: by date, then by when it was logged.
 export type ProgressPosition = { updateDate: number; creationTime: number };
 
 export const positionOf = (entry: Doc<'progressUpdates'>): ProgressPosition => ({
@@ -16,7 +15,6 @@ export const positionOf = (entry: Doc<'progressUpdates'>): ProgressPosition => (
     creationTime: entry._creationTime,
 });
 
-// Progress changes adjust the total by their difference, without walking the history.
 export async function applyDifference(
     ctx: MutationCtx,
     objective: Doc<'objectives'>,
@@ -42,7 +40,6 @@ export async function requireEditableEntry(
 
     const { objective, access } = await requireObjective(ctx.db, ctx, entry.objective);
 
-    // Correcting anyone's entries is editing the objective (P4); a completed one is closed (decision 11).
     if (!access.canEdit) {
         throw new ConvexError(ERROR_CODES.NOT_AUTHORIZED_PROGRESS);
     }
@@ -124,7 +121,6 @@ async function entriesFrom(
     return [...sameDay, ...later];
 }
 
-// Rewrites the value after each entry from `from` on (all when null), 100 per transaction, then in the background.
 // shortcut: two overlapping background runs on one objective can leave stale values; add a per-objective lock if that shows up.
 export async function recalculateResultingValues(
     ctx: MutationCtx,

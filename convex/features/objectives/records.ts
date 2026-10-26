@@ -22,16 +22,11 @@ export function requireOrganizationId(
     return organizationId;
 }
 
-export /**
- * Totals are updated incrementally with binary floats, so sums such as 0.1 + 0.2 pick up
- * rounding noise that would otherwise accumulate across edits. A double holds 15 significant
- * digits exactly, so rounding there drops the noise without altering any entered value.
- */
-function roundStoredValue(value: number): number {
+// Incremental float totals gather noise (0.1 + 0.2); 15 digits drop it and keep every input.
+export function roundStoredValue(value: number): number {
     return Number(value.toPrecision(15));
 }
 
-// Flooring keeps an active objective below 100%, which only a reached target shows.
 export function progressPercent(objective: {
     status: ObjectiveStatus;
     startValue: number;
@@ -42,12 +37,10 @@ export function progressPercent(objective: {
         return 100;
     }
 
-    // The target is always on the far side of the start, so the sign also covers decreasing ones.
     const ratio =
         (objective.currentValue - objective.startValue) /
         (objective.targetValue - objective.startValue);
 
-    // Rounding the ratio first keeps float noise such as 28.999999999999996 from flooring a step.
     const percent = Math.floor(roundStoredValue(ratio * 100));
 
     return Math.min(Math.max(percent, 0), 100);
@@ -96,7 +89,6 @@ export function toProgressEntry(entry: Doc<'progressUpdates'>, canEdit: boolean)
     };
 }
 
-// The most recent entries (newest first) as a chronological cumulative series.
 export function progressHistoryPoints(newestFirst: readonly Doc<'progressUpdates'>[]) {
     return newestFirst
         .map(entry => ({
@@ -177,7 +169,6 @@ export function resolvedObjectiveFields(
     };
 }
 
-// Reaching the target closes the objective for good, so only active objectives get here.
 export function measurement(
     objective: { direction: ObjectiveDirection; targetValue: number },
     currentValue: number,
@@ -196,8 +187,6 @@ export function progressComment(value: string | null | undefined): string | unde
     return optionalText(value);
 }
 
-// An objective the actor cannot see is reported exactly like one that doesn't exist; one in the
-// trash only exists for restoring or purging it.
 export async function requireObjective(
     db: QueryCtx['db'],
     actor: AccessActor,

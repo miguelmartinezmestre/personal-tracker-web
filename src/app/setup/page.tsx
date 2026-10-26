@@ -9,7 +9,6 @@ export const generateMetadata = translatedPageTitle('Setup', 'title');
 
 export const dynamic = 'force-dynamic';
 
-// The proposal is in the platform's default language, which may differ from the wizard's.
 async function categoryProposal(locale: 'en' | 'es') {
     const t = await getTranslations({ locale, namespace: 'Categories.defaults' });
 

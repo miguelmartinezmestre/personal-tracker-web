@@ -16,7 +16,6 @@ type ObjectiveValidationKey =
 type ProgressValidationKey =
     'amountRequired' | 'amountZero' | 'valueUnchanged' | 'dateInvalid' | 'dateFuture';
 
-// Dates are typed as text and kept as `YYYY-MM-DD` once read, so anything else is unreadable.
 function dateTextSchema(message: string) {
     return z.string().refine(value => dateInputToUtcTimestamp(value) !== undefined, {
         error: message,
@@ -36,10 +35,6 @@ export const accessSchema = z.object({
 
 export type AccessFormValues = z.infer<typeof accessSchema>;
 
-/**
- * A new deadline cannot be in the past. `keptDeadline` is the one the objective already has, so
- * an overdue objective can still be edited without moving its deadline.
- */
 export function objectiveFormSchema(
     message: (key: ObjectiveValidationKey) => string,
     keptDeadline = ''
@@ -59,7 +54,6 @@ export function objectiveFormSchema(
             deadline: z.union([
                 z.literal(''),
                 dateTextSchema(message('dateInvalid')).refine(
-                    // Date inputs use ISO strings, so lexical order matches calendar order.
                     value => value === keptDeadline || value >= todayDateInput(),
                     { error: message('deadlinePast') }
                 ),
@@ -68,7 +62,6 @@ export function objectiveFormSchema(
                 .number({ error: message('dueSoonDaysInvalid') })
                 .int({ error: message('dueSoonDaysInvalid') })
                 .min(1, { error: message('dueSoonDaysInvalid') }),
-            // Only set when creating; later changes go through the permissions dialog.
             memberAccess: accessSchema.shape.memberAccess,
             users: accessSchema.shape.users,
         })
@@ -83,10 +76,6 @@ export function objectiveFormSchema(
 
 export type ObjectiveFormValues = z.infer<ReturnType<typeof objectiveFormSchema>>;
 
-/**
- * `baseValue` is what a "new value" entry is compared with: the current total for a new entry,
- * or the total just before the entry being corrected.
- */
 export function progressFormSchema(
     message: (key: ProgressValidationKey) => string,
     baseValue: number

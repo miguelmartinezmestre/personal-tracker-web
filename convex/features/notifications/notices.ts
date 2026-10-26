@@ -4,13 +4,11 @@ import { progressPercent } from '../objectives/records';
 import { DAY_MS } from '../objectives/rules';
 import type { Notice } from './validators';
 
-// The 100 % is the completion notice instead (decision 19).
 const MILESTONES = [25, 50, 75];
 
 const formatDate = (date: number) =>
     new Intl.DateTimeFormat('en', { dateStyle: 'medium', timeZone: 'UTC' }).format(date);
 
-// Completing or passing a milestone; a jump over several gives only the last one.
 export function progressNotice(before: Doc<'objectives'>, after: Doc<'objectives'>): Notice | null {
     const title = after.title;
 
@@ -39,7 +37,6 @@ export function progressNotice(before: Doc<'objectives'>, after: Doc<'objectives
     };
 }
 
-// When it becomes due soon, on the day and the day after, so each stage is told once.
 export function deadlineNotice(objective: Doc<'objectives'>, today: number): Notice | null {
     if (objective.deadline === undefined) {
         return null;

@@ -16,7 +16,6 @@ import {
 import { insertAuditLog } from './features/audit/log';
 import { auditEntryValidator } from './features/audit/validators';
 
-// Every admin function checks the role on the server, besides the route guard (INH-PER-04).
 export const listUsers = queryWithRLS({
     args: { search: v.optional(v.string()), paginationOpts: paginationOptsValidator },
     returns: paginationResultValidator(adminUserValidator),
@@ -42,7 +41,6 @@ export const listUsers = queryWithRLS({
                 .paginate(paginationOpts);
         }
 
-        // Deleted accounts only remain as a name for shared organizations (decision 4).
         return {
             ...result,
             page: result.page.filter(user => user.deletedAt === undefined).map(toAdminUser),
@@ -69,12 +67,10 @@ export const setUserRole = mutationWithRLS({
     },
 });
 
-// Blocks at once, as every request checks the ban; sessions then go in batches of 100.
 export const banUser = mutationWithRLS({
     args: {
         userId: v.id('user'),
         reason: v.optional(v.string()),
-        // Omitted for a permanent ban.
         durationDays: v.optional(v.number()),
     },
     returns: v.null(),
@@ -124,7 +120,6 @@ export const continueBanSessionRevocation = internalMutation({
     },
 });
 
-// Revoked sessions don't come back: the user signs in again.
 export const unbanUser = mutationWithRLS({
     args: { userId: v.id('user') },
     returns: v.null(),
@@ -218,7 +213,6 @@ export const revokeUserSession = mutationWithRLS({
     },
 });
 
-// Only the global admin reads the log, metadata included (INH-ADM-06).
 export const listAuditLogs = queryWithRLS({
     args: {
         resourceType: v.optional(v.string()),
@@ -252,7 +246,6 @@ export const listAuditLogs = queryWithRLS({
             .order('desc')
             .paginate(withPaginationLimits(args.paginationOpts));
 
-        // With both filters the type uses the index and the organization is checked per page.
         const entries = result.page.filter(
             entry => !args.organizationId || entry.organizationId === args.organizationId
         );

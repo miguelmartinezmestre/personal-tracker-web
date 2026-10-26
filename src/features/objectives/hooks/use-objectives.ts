@@ -18,7 +18,6 @@ export function useObjectives(
         status,
         search,
         categoryId: category === ALL_CATEGORIES ? undefined : category,
-        // The deadline filter is relative to the user's own day, which only the client knows.
         deadline: deadline === 'all' ? undefined : { filter: deadline, today: todayTimestamp() },
     });
 }

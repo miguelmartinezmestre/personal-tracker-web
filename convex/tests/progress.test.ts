@@ -196,7 +196,6 @@ describe('progress', () => {
         });
         expect(await get(increasing)).toMatchObject({ currentValue: 10, status: 'completed' });
 
-        // Deleting a step back in a decreasing objective can also reach the target.
         const decreasing = await createObjective({
             direction: 'decrease',
             startValue: 10,
@@ -264,7 +263,6 @@ describe('progress', () => {
                     updateDate,
                 });
 
-            // From UTC+14 it is already tomorrow.
             await expect(dated(today + TIME.DAY_MS)).resolves.toMatchObject({ updatedValue: 1 });
             await expect(dated(Date.UTC(2010, 0, 1))).resolves.toMatchObject({ updatedValue: 1 });
             await expect(dated(today + 2 * TIME.DAY_MS)).rejects.toThrow('FUTURE_DATE_NOT_ALLOWED');

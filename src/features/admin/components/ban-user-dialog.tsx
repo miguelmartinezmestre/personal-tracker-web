@@ -18,7 +18,6 @@ const banSchema = z.object({ reason: z.string(), duration: z.enum(DURATIONS) });
 
 type BanFormValues = z.infer<typeof banSchema>;
 
-/** A permanent or temporary ban; a temporary one stops blocking once it expires (INH-ADM-03). */
 export default function BanUserDialog({ userId, name }: { userId: Id<'user'>; name: string }) {
     const t = useTranslations('Admin.ban');
     const tCommon = useTranslations('Common');

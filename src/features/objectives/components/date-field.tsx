@@ -16,11 +16,6 @@ import { dateInputToUtcTimestamp } from '@/features/objectives/lib/dates';
 
 type Draft = { text: string; value: string; month: Date };
 
-/**
- * Free-text date ("mañana", "2 weeks from now") read in the interface language, with a calendar
- * that always shows the day understood so it can be confirmed or corrected (decision 17).
- * `value` is `YYYY-MM-DD`, '' when empty, or the raw text while it isn't a date.
- */
 export function DateField({
     id,
     value,
@@ -40,7 +35,6 @@ export function DateField({
     min?: string;
     max?: string;
     required?: boolean;
-    // Bare weekdays such as "friday" mean the next one, as deadlines look ahead.
     forwardDate?: boolean;
     isInvalid: boolean;
     testId: string;
@@ -55,7 +49,6 @@ export function DateField({
         month: selected ?? new Date(),
     }));
 
-    // A value set from outside (a form reset) replaces what was being typed.
     const current =
         draft.value === value
             ? draft
@@ -110,7 +103,6 @@ export function DateField({
                 month={current.month}
                 onMonthChange={month => setDraft({ ...current, month })}
                 onSelect={(day: Date | undefined) => {
-                    // Clicking the chosen day again clears it, unless a date is required.
                     if (!day && required) {
                         return;
                     }

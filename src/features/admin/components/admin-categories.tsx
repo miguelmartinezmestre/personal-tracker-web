@@ -14,7 +14,6 @@ import { CategoryFormModal } from '@/features/categories/components/category-for
 
 const NEW_CATEGORY = { name: '', color: '#6366F1', icon: 'tag' } as const;
 
-/** The catalog organizations choose from; changing it never touches their copies (INH-ADM-07). */
 export default function AdminCategories() {
     const t = useTranslations('Admin.categories');
     const tCategories = useTranslations('Categories');

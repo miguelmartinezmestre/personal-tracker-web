@@ -5,7 +5,6 @@ type CategoryValidationKey = 'nameRequired';
 
 export const categoryIconSchema = z.enum(CATEGORY_ICONS);
 
-// A category being chosen or edited in a list, where an invalid name is only highlighted.
 export const categoryDraftSchema = z.object({
     name: z.string().trim().min(1),
     color: z.string().regex(CATEGORY_COLOR_PATTERN),

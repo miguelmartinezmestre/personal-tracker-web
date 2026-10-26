@@ -28,7 +28,6 @@ async function recordChange(
     });
 }
 
-// Titles, comments and names are free text, so only ids, numbers and states are kept.
 const sanitizeObjective = (objective: Doc<'objectives'>) =>
     ({
         status: objective.status,

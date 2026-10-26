@@ -6,8 +6,7 @@ import { CheckIcon, ChevronDownIcon, ChevronUpIcon } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 
-// Bare re-export: SelectPrimitive.Root is GENERIC (<Value, Multiple>), which
-// breaks the usual ComponentProps pattern; the bare re-export sidesteps it.
+// SelectPrimitive.Root is generic (<Value, Multiple>), which a ComponentProps wrapper breaks.
 const Select = SelectPrimitive.Root
 
 function SelectValue({

@@ -15,7 +15,6 @@ const PROCESS_STOP_TIMEOUT_MS = 10_000;
 export interface RunCommandOptions {
     env?: NodeJS.ProcessEnv;
     input?: string;
-    // Also written to this file, which is truncated first.
     logFile?: string;
     ignoreExitCode?: boolean;
 }
@@ -36,7 +35,6 @@ function truncatedLogFile(logFile: string) {
     mkdirSync(dirname(logFile), { recursive: true });
     writeFileSync(logFile, '');
 
-    // Both streams append to the same file, so neither overwrites the other.
     return { file: logFile, append: true };
 }
 
@@ -49,7 +47,6 @@ function commandOptions(options: RunCommandOptions): Options {
     };
 }
 
-// Streams the output to the terminal.
 export async function runCommand(
     command: string,
     args: Array<string>,
@@ -63,7 +60,6 @@ export async function runCommand(
     });
 }
 
-// Returns stdout and stderr interleaved.
 export async function runCommandCapture(
     command: string,
     args: Array<string>,
@@ -76,8 +72,6 @@ export async function runCommandCapture(
 
 export type LongRunningProcess = ResultPromise;
 
-// Starts a process that outlives the call. It is killed with `killSignal` if this script exits
-// first, and `stopProcess` falls back to SIGKILL when it does not stop in time.
 export function startProcess(
     command: string,
     args: Array<string>,
@@ -85,7 +79,6 @@ export function startProcess(
         env?: NodeJS.ProcessEnv;
         killSignal?: NodeJS.Signals;
         logFile?: string;
-        // `inherit` shows the output; `pipe` leaves it to the caller's listeners.
         output?: 'inherit' | 'pipe';
     } = {}
 ): LongRunningProcess {
@@ -146,8 +139,6 @@ export async function isListening(url: string): Promise<boolean> {
     }
 }
 
-// Polls `url` until `isReady` accepts a response. Gives up early when `process` exits, since the
-// service it was meant to start will never answer.
 export async function waitForHttp(
     url: string,
     options: {

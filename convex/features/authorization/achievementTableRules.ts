@@ -3,7 +3,6 @@ import { rlsDeny, rlsWhen, type RlsHelpers } from './rlsHelpers';
 
 type QueryLike = RlsHelpers['ctx'];
 
-// Awarded only by internal functions; each user reads their own and their organization's.
 export function achievementTableRules({ userId, isActiveOrganization }: RlsHelpers) {
     return {
         obtainedAchievements: {

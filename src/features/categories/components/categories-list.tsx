@@ -17,7 +17,6 @@ type ListedCategory<TId extends string> = {
     canManage: boolean;
 };
 
-/** Categories with their color and icon, and edit and delete for those the user may change. */
 export function CategoriesList<TId extends string>({
     categories,
     onUpdate,

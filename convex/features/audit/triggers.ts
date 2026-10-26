@@ -72,7 +72,6 @@ const insertAuthAuditLog = async (
         return;
     }
 
-    // Sessions and accounts are platform-wide: only organization events carry one.
     const organizationId = args.organizationId
         ? (ctx.db.normalizeId('organization', args.organizationId) ?? undefined)
         : undefined;

@@ -11,7 +11,6 @@ export type NotificationType = Infer<typeof notificationTypeValidator>;
 
 const messageParamsValidator = v.record(v.string(), v.union(v.string(), v.number()));
 
-// What every recipient of the same event gets; `message` is the English fallback (INH-NOT-05).
 export const noticeValidator = v.object({
     notificationType: notificationTypeValidator,
     messageKey: v.string(),

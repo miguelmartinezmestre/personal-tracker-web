@@ -29,14 +29,12 @@ function renderWithHistory(
             queries: {
                 staleTime: Number.POSITIVE_INFINITY,
                 retry: false,
-                // Tests render seeded data only; a fetch means a query was not seeded.
                 queryFn: ({ queryKey }) =>
                     Promise.reject(new Error(`Unseeded query: ${JSON.stringify(queryKey)}`)),
             },
         },
     });
 
-    // SAFETY: Convex ids are opaque strings and these only key seeded queries, never the backend.
     queryClient.setQueryData(
         convexQuery(api.progress.getProgressHistory, { objectiveId }).queryKey,
         {

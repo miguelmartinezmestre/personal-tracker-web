@@ -21,7 +21,6 @@ test.describe('Categories', () => {
             const renamed = `Books ${suffix}`;
 
             await page.goto('/dashboard/categories', { waitUntil: 'domcontentloaded' });
-            // Organizations start without categories until someone chooses or creates them.
             await expect(page.getByTestId('categories-empty')).toBeVisible({ timeout: 15000 });
             await createCategory(page, name);
 
@@ -43,7 +42,9 @@ test.describe('Categories', () => {
             await page.getByTestId('objective-save-button').click();
             await expect(
                 page.getByTestId('objective-row-link').filter({ hasText: title })
-            ).toBeVisible({ timeout: 15000 });
+            ).toBeVisible({
+                timeout: 15000,
+            });
 
             await page.goto('/dashboard/categories', { waitUntil: 'domcontentloaded' });
             await renamedRow.getByTestId('category-delete-button').click();
@@ -72,7 +73,6 @@ test.describe('Categories', () => {
                 await newcomer.getByTestId('register-confirm-password-input').fill(user.password);
                 await newcomer.getByTestId('register-button').click();
 
-                // The setup proposed the catalog in English, the default language; it lists by name.
                 const firstName = newcomer.getByTestId('category-draft-name-0');
                 await expect(firstName).toHaveValue('Career', { timeout: 30000 });
                 await newcomer.getByTestId('category-draft-remove-0').click();
@@ -99,13 +99,17 @@ test.describe('Categories', () => {
             await page.getByTestId('organization-save-button').click();
             await expect(page.getByTestId('organization-switcher')).toContainText(
                 `Club ${suffix}`,
-                { timeout: 15000 }
+                {
+                    timeout: 15000,
+                }
             );
 
             await page.goto('/dashboard/categories', { waitUntil: 'domcontentloaded' });
             await expect(
                 page.getByTestId('category-row').filter({ hasText: 'Career' })
-            ).toBeVisible({ timeout: 15000 });
+            ).toBeVisible({
+                timeout: 15000,
+            });
         }
     );
 });

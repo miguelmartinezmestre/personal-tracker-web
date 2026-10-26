@@ -9,7 +9,6 @@ import { achievementNotice } from './features/notifications/notices';
 import { requireOrganizationId } from './features/objectives/records';
 import { achievementValidator } from './features/achievements/validators';
 
-// The user's achievements and those of the active organization, with points and progress.
 export const getAchievements = queryWithRLS({
     args: {},
     returns: v.object({
@@ -71,7 +70,6 @@ export const getAchievements = queryWithRLS({
     },
 });
 
-// Scheduled after creating or completing an objective and after logging progress (INH-OBJ-13).
 export const evaluateAchievements = internalMutation({
     args: {
         userId: v.id('user'),

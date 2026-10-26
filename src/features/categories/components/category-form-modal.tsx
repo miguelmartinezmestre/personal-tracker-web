@@ -9,7 +9,6 @@ import { Input } from '@/components/ui/input';
 import { CategoryIconSelect } from '@/features/categories/components/category-icon-select';
 import { categorySchema, type CategoryDraft } from '@/features/categories/schemas/category';
 
-/** Creates or edits one category, of the organization or of the platform catalog. */
 export function CategoryFormModal({
     trigger,
     title,

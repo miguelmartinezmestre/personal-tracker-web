@@ -50,7 +50,6 @@ export default function FormModal<TFormValues extends object>({
     const formRef = useRef<HTMLFormElement>(null);
 
     const setOpen = (nextOpen: boolean) => {
-        // Closing without saving discards the draft, so reopening shows the stored values.
         if (!nextOpen) {
             form.reset();
         }
@@ -64,7 +63,6 @@ export default function FormModal<TFormValues extends object>({
             try {
                 await onSubmit(value);
             } catch {
-                // The mutation cache already reports the error; keep the dialog open to retry.
                 return;
             }
 
@@ -99,7 +97,6 @@ export default function FormModal<TFormValues extends object>({
                     {description && <DialogDescription>{description}</DialogDescription>}
                 </DialogHeader>
 
-                {/* The schema messages replace the browser's own validation bubbles. */}
                 <form
                     ref={formRef}
                     noValidate

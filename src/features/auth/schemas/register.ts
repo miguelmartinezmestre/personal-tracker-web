@@ -15,7 +15,6 @@ export function createRegisterSchema(messages: RegisterValidationMessages) {
             email: z.email({ error: messages.invalidEmail }),
             password: z.string().min(8, { error: messages.shortPassword }),
             confirmPassword: z.string().min(8, { error: messages.shortPassword }),
-            // Free and possibly repeated, only not blank (decision 8).
             username: z.string().trim().min(1, { error: messages.nameRequired }),
         })
         .superRefine((values, ctx) => {

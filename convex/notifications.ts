@@ -22,7 +22,6 @@ import {
     notificationValidator,
 } from './features/notifications/validators';
 
-// Newest first, only the user's own in the active organization (REQ-NOTIFICACIONES-003).
 export const listNotifications = queryWithRLS({
     args: { paginationOpts: paginationOptsValidator },
     returns: paginationResultValidator(notificationValidator),
@@ -96,7 +95,6 @@ export const setNotificationRead = mutationWithRLS({
     },
 });
 
-// The first 100 at once and the rest in the background (INH-NOT-06).
 export const markAllNotificationsRead = mutationWithRLS({
     args: {},
     returns: v.null(),
@@ -178,7 +176,6 @@ export const updateNotificationPreferences = mutationWithRLS({
     },
 });
 
-// Everyone in the organization, or only those who can see the objective, in batches of 100.
 export const notifyMembers = internalMutation({
     args: {
         organizationId: v.id('organization'),
@@ -236,14 +233,12 @@ export const notifyMembers = internalMutation({
     },
 });
 
-// Daily, from crons.ts; at most one deadline notice per objective and day (INH-NOT-02).
 export const sendDeadlineNotifications = internalMutation({
     args: { today: v.optional(v.number()), cursor: v.optional(v.string()) },
     returns: v.null(),
     handler: async (ctx, args) => {
         const today = args.today ?? startOfUtcDay(Date.now());
 
-        // The due-soon warning has no upper bound, so every upcoming deadline is read, 100 at a time.
         const objectives = await ctx.db
             .query('objectives')
             .withIndex('by_status_deletedAt_deadline', q =>

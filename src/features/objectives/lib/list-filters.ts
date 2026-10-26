@@ -9,7 +9,6 @@ export const ALL_CATEGORIES = 'all';
 export type ObjectiveListFilters = {
     status: (typeof OBJECTIVE_STATUS_FILTERS)[number];
     deadline: (typeof OBJECTIVE_DEADLINE_FILTERS)[number];
-    // A category id, or ALL_CATEGORIES.
     category: string;
 };
 
@@ -19,7 +18,6 @@ function oneOf<T extends string>(options: readonly T[], value: SearchParamValue)
     return options.find(option => option === value);
 }
 
-// The filters live only in the URL, so links that drop them also reset them.
 export function parseObjectiveListFilters(params: {
     status?: SearchParamValue;
     deadline?: SearchParamValue;
@@ -56,7 +54,6 @@ export function objectivesListHref(filters: ObjectiveListFilters): Route {
     return query ? `/dashboard/objectives?${query}` : '/dashboard/objectives';
 }
 
-// The detail link carries the filters so its "back" link can return to the same view.
 export function objectiveDetailHref(id: string, filters: ObjectiveListFilters): Route {
     const query = filterQuery(filters);
     const path = `/dashboard/objectives/${id}`;

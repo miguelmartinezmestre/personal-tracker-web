@@ -35,7 +35,6 @@ export default function ObjectiveDetail({
     listHref,
 }: {
     objectiveId: string;
-    // The list URL the user came from, so going back keeps its status filter.
     listHref: Route;
 }) {
     const t = useTranslations('Objectives');
@@ -68,7 +67,6 @@ export default function ObjectiveDetail({
     }
 
     const current = objective.data;
-    // A completed objective is closed: it can still be deleted, but not edited.
     const canEditNow = current.canEdit && current.status === 'active';
 
     const deleteButton = (
@@ -167,7 +165,6 @@ export default function ObjectiveDetail({
                             {formatObjectiveValue(current.currentValue, locale)} /{' '}
                             {formatObjectiveValue(current.targetValue, locale)}
                             {unitSuffix}
-                            {/* Without the start, "50 / 100" next to 0% reads as a mistake. */}
                             {current.startValue !== 0
                                 ? ` · ${t('initialValue')}: ${formatObjectiveValue(current.startValue, locale)}${unitSuffix}`
                                 : null}

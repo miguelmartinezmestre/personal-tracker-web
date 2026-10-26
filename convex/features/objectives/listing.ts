@@ -162,7 +162,6 @@ function byDeadline(
     };
 }
 
-// A deadline filter lists the soonest first; otherwise the newest objectives come first.
 export async function paginateObjectives(
     db: DatabaseReader,
     organizationId: Id<'organization'>,
@@ -187,7 +186,6 @@ export async function paginateObjectives(
             indexKey: listing.indexKey,
             paginationOpts,
             order,
-            // The next-page check reads past the range end, so documents beyond it don't count.
             isLive: range
                 ? doc => doc.deadline !== undefined && doc.deadline < range.to
                 : undefined,
@@ -223,7 +221,6 @@ export async function searchObjectives(
         return result;
     }
 
-    // Search filter fields only take equalities, so the deadline range is checked per page.
     // shortcut: a page can come back short or empty, move to an index if searches get slow.
     return {
         ...result,

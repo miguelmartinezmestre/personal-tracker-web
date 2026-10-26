@@ -234,7 +234,6 @@ describe('convex invitations (better-auth)', () => {
             expect((await ctx.db.get('invitation', open))?.status).toBe('accepted');
         });
 
-        // The personal organization is created as well, while the session starts in the new one.
         const activeOrganizationId = await t.mutation(
             internal.auth.ensureDefaultOrganizationForUser,
             {

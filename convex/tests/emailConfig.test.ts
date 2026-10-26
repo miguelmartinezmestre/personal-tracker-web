@@ -5,7 +5,6 @@ import { internal } from '../_generated/api';
 import { initConvexTest } from './test.helper';
 import { getSmtpEmailConfig, requiresSmtpTls } from '../features/email/smtpConfig';
 
-// Minimal SMTP server that accepts every command and records the session for assertions.
 async function startSmtpSink() {
     const received: string[] = [];
 
@@ -47,7 +46,6 @@ async function startSmtpSink() {
     });
 
     await new Promise<void>(resolve => server.listen(0, '127.0.0.1', resolve));
-    // SAFETY: a server listening on a TCP port reports AddressInfo; only pipe servers report a string.
     const { port } = server.address() as AddressInfo;
 
     return { port, received, close: () => server.close() };
@@ -138,7 +136,6 @@ describe('SMTP email configuration', () => {
         };
 
         const t = initConvexTest();
-        // Only the scheduler's timers: nodemailer drives the SMTP session with real setImmediate.
         vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
 
         try {
@@ -156,7 +153,6 @@ describe('SMTP email configuration', () => {
             });
             expect(scheduledJobs[0].args).toEqual([args]);
 
-            // Fires the due scheduler timer only, so nodemailer's socket timeouts never run.
             vi.advanceTimersByTime(0);
             await t.finishInProgressScheduledFunctions();
             expect(smtp.received).toEqual(

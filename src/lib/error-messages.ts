@@ -195,7 +195,6 @@ export function resolveErrorMessage(
 }
 
 export function getErrorLocale(): ErrorLocale {
-    // The root layout sets <html lang> from the same cookie-then-platform-default rule as the UI.
     if (!('document' in globalThis)) {
         return 'en';
     }

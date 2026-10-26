@@ -8,7 +8,6 @@ import { convexQuery } from '@convex-dev/react-query';
 import { api } from '@/convex/_generated/api';
 import { Button } from '@/components/ui/button';
 
-/** Signed-in visitors get a way back to their dashboard instead of a login link. */
 export function NotFoundAccountAction() {
     const t = useTranslations('HomePage');
     const session = useQuery(convexQuery(api.organizations.getCurrentSession, {}));

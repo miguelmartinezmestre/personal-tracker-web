@@ -60,7 +60,6 @@ export default function ProgressList({ objective }: { objective: ObjectiveSummar
             cell: ({ row }) => (
                 <>
                     {formatObjectiveDate(row.original.updateDate, locale)}
-                    {/* The comment column is hidden on narrow screens, so show it here instead. */}
                     {row.original.comment ? (
                         <span className="text-muted-foreground block max-w-48 whitespace-normal wrap-anywhere sm:hidden">
                             {row.original.comment}
@@ -88,7 +87,6 @@ export default function ProgressList({ objective }: { objective: ObjectiveSummar
                     return null;
                 }
 
-                // Every row has the same buttons, so screen readers need to know which entry.
                 const entryLabel = `${formatAmount(entry)} · ${formatObjectiveDate(entry.updateDate, locale)}`;
 
                 return (
@@ -168,7 +166,6 @@ function EditProgressModal({
 }) {
     const t = useTranslations('UpdateProgress');
     const tCommon = useTranslations('Common');
-    // A corrected "new value" replaces this entry, so it is compared with the total before it.
     const baseValue = roundValue(entry.resultingValue - entry.updatedValue);
     const formSchema = useProgressFormSchema(baseValue);
 

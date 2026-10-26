@@ -9,7 +9,6 @@ export async function toOrganizationSummaries(
 ) {
     const organizations = await Promise.all(
         memberships.map(async member => {
-            // An organization being deleted loses its row before its memberships.
             const org = await ctx.dbForIntegrityChecks.get('organization', member.organizationId);
 
             if (!org) {

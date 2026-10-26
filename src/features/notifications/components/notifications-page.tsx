@@ -32,7 +32,6 @@ const TYPE_ICONS = {
     achievement: Award,
 } as const;
 
-/** The user's notifications in the active organization, newest first (REQ-NOTIFICACIONES-003). */
 export default function NotificationsPage() {
     const t = useTranslations('Notifications');
     const tAchievements = useTranslations('Achievements.items');

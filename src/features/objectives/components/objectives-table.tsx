@@ -25,8 +25,6 @@ import {
 } from '@/features/objectives/lib/list-filters';
 import { useLocale, useTranslations } from 'next-intl';
 
-// On phones the filters already say the status and the deadline is on the detail page, which
-// leaves room for the actions.
 const MOBILE_HIDDEN_COLUMNS = {
     status: 'hidden sm:table-cell',
     deadline: 'hidden md:table-cell',

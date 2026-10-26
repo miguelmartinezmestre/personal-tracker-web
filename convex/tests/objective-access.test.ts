@@ -85,7 +85,11 @@ describe('objective permissions', () => {
         ).toMatchObject({ memberAccess: 'view', canEdit: true, canManage: true });
         expect(
             await as(member).query(api.objectives.getObjective, { id: objectiveId })
-        ).toMatchObject({ memberAccess: 'view', canEdit: false, canManage: false });
+        ).toMatchObject({
+            memberAccess: 'view',
+            canEdit: false,
+            canManage: false,
+        });
         expect(await listIds(member)).toEqual([objectiveId]);
         await t.run(async ctx => {
             expect(await ctx.db.get('objectives', objectiveId)).toMatchObject({
@@ -124,7 +128,11 @@ describe('objective permissions', () => {
 
         expect(
             await as(member).query(api.objectives.getObjective, { id: objectiveId })
-        ).toMatchObject({ currentValue: 4, canEdit: true, canManage: false });
+        ).toMatchObject({
+            currentValue: 4,
+            canEdit: true,
+            canManage: false,
+        });
         await expect(
             as(member).mutation(api.objectiveAccess.updateObjectiveAccess, {
                 objectiveId,
@@ -157,7 +165,11 @@ describe('objective permissions', () => {
         await logProgress(admin, objectiveId);
         expect(
             await as(owner).query(api.objectives.getObjective, { id: objectiveId })
-        ).toMatchObject({ currentValue: 1, canEdit: true, canManage: true });
+        ).toMatchObject({
+            currentValue: 1,
+            canEdit: true,
+            canManage: true,
+        });
         await expect(logProgress(teammate, objectiveId)).rejects.toThrow('NOT_AUTHORIZED_PROGRESS');
     });
 
@@ -214,7 +226,10 @@ describe('objective permissions', () => {
         ).rejects.toThrow('VALIDATION_ERROR');
         expect(
             await as(owner).query(api.objectiveAccess.getObjectiveAccess, { objectiveId })
-        ).toEqual({ memberAccess: 'view', users: [] });
+        ).toEqual({
+            memberAccess: 'view',
+            users: [],
+        });
     });
 
     test('the global admin role gives no access to objectives @REQ-NF-003', async () => {

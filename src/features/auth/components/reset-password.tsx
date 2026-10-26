@@ -38,7 +38,6 @@ export default function ResetPassword({ resetPasswordKey }: ResetPasswordProps) 
     });
 
     const [registerError, setRegisterError] = useState('');
-    // An unusable link can only be fixed by asking for a new one.
     const [linkUnusable, setLinkUnusable] = useState(false);
 
     const resetPasswordDefaultValues: ResetPasswordFormValues = {

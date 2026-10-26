@@ -26,7 +26,6 @@ export async function anonymizeUser(ctx: MutationCtx, userId: Id<'user'>) {
     }
 
     const now = Date.now();
-    // The name stays in the minimal record, so shared organizations still show who did what.
     await ctx.db.patch('user', userId, {
         email: `deleted-${String(userId)}@deleted.invalid`,
         emailVerified: false,
@@ -73,7 +72,6 @@ export async function deleteUserAccountsBatch(
     return rows.length;
 }
 
-// Their notification preferences go with the last batch (decision 4).
 export async function deleteUserNotificationsBatch(
     ctx: MutationCtx,
     userId: Id<'user'>
@@ -149,8 +147,6 @@ export async function deleteUserMembershipsBatch(
     return memberships.length;
 }
 
-// Owners have already handed shared organizations over, so leaving only deletes the personal
-// organization and those nobody else is left in (decisions 4 and 5).
 async function deleteMembership(
     ctx: MutationCtx,
     membership: { _id: Id<'member'>; organizationId: Id<'organization'> },

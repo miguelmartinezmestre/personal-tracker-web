@@ -23,7 +23,6 @@ import { PersonalCategoriesStep } from '@/features/categories/components/persona
 
 interface RegisterFormProps {
     invitationToken?: string | null;
-    // Without it, signing up from the invitation joins its organization at once (decision 9).
     invitationRequiresVerification?: boolean;
 }
 
@@ -117,7 +116,6 @@ export default function RegisterForm({
         },
     });
 
-    // Signing in from here should bring the invited person back to the invitation.
     const loginHref: Route = invitationToken
         ? `/login?${new URLSearchParams({ callbackUrl: getInvitationCallbackPath(invitationToken) }).toString()}`
         : '/login';
@@ -162,7 +160,6 @@ export default function RegisterForm({
         return <PersonalCategoriesStep onDone={() => router.push('/dashboard/home')} />;
     }
 
-    // The account exists now; resubmitting would only fail, so leave just the next step.
     if (verificationSent) {
         return (
             <Alert data-testid="register-verification-sent">

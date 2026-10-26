@@ -109,7 +109,10 @@ describe('trash', () => {
         expect(await trashIds(owner)).toEqual([]);
         expect(
             await as(member).query(api.objectives.getObjective, { id: objectiveId })
-        ).toMatchObject({ currentValue: 4, progressPercent: 40 });
+        ).toMatchObject({
+            currentValue: 4,
+            progressPercent: 40,
+        });
         expect(
             (await as(member).query(api.progress.getProgressHistory, { objectiveId })).points
         ).toHaveLength(1);
@@ -149,7 +152,6 @@ describe('trash', () => {
         try {
             await as(owner).mutation(api.trash.purgeObjective, { id: objectiveId });
 
-            // A purge in progress hides the objective from the trash and blocks restoring it.
             expect(await trashIds(owner)).toEqual([]);
             await expect(
                 as(owner).mutation(api.trash.restoreObjective, { id: objectiveId })

@@ -15,7 +15,6 @@ import { api } from '@/convex/_generated/api';
 import type { ObjectiveSummary } from '@/features/objectives/hooks/use-objectives';
 import { formatInstantDate, formatProgressPercent } from '@/features/objectives/lib/format';
 
-/** Deleted objectives, which their creator, the owner and the admins restore or purge (P3). */
 export default function ObjectivesTrash() {
     const t = useTranslations('Objectives');
     const locale = useLocale();

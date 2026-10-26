@@ -21,7 +21,6 @@ type InvitationStatus = 'ready' | 'accepting' | 'accepted' | 'error';
 
 interface InvitationContentProps {
     token: string;
-    // Pending and not expired when the page was rendered.
     invitationValid: boolean;
     organizationName?: string | undefined;
     requireEmailVerification: boolean;
@@ -140,7 +139,6 @@ export default function InvitationContent({
         return <InvitationLoginRequired token={token} organizationName={organizationName} />;
     }
 
-    // The inviter asked for a verified email; the invitations page offers the verification email.
     if (
         requireEmailVerification &&
         sessionQuery.data?.user &&

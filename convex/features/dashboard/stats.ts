@@ -13,10 +13,6 @@ export function average(sum: number, count: number): number {
     return count === 0 ? 0 : Math.round(sum / count);
 }
 
-/**
- * Private objectives the user can see without managing the organization: their own and those
- * shared with them individually. The aggregate only counts what the member role sees (P10).
- */
 export async function visiblePrivateObjectives(
     db: QueryCtx['db'],
     organizationId: Id<'organization'>,
@@ -63,7 +59,6 @@ export async function visibilityGroups(
     const isManager = isOrganizationAdminRole(ctx.memberRole);
 
     return {
-        // Owner and admins see private objectives too, so those come from the aggregates as well.
         memberCanView: isManager ? [true, false] : [true],
         privateObjectives: isManager
             ? []

@@ -1,4 +1,3 @@
-// Three fraction digits cover the smallest allowed target (0.001).
 export function formatObjectiveValue(value: number, locale: string): string {
     return new Intl.NumberFormat(locale, { maximumFractionDigits: 3 }).format(value);
 }
@@ -12,7 +11,6 @@ export function formatObjectiveDate(
     return new Intl.DateTimeFormat(locale, { dateStyle, timeZone: 'UTC' }).format(timestamp);
 }
 
-// Differences carry their sign so "−1.2" and "+3" read as changes, not totals.
 export function formatDifference(value: number, locale: string): string {
     return new Intl.NumberFormat(locale, {
         maximumFractionDigits: 3,
@@ -20,12 +18,10 @@ export function formatDifference(value: number, locale: string): string {
     }).format(value);
 }
 
-// Instants such as the completion time fall on the viewer's own calendar day.
 export function formatInstantDate(timestamp: number, locale: string): string {
     return new Intl.DateTimeFormat(locale, { dateStyle: 'medium' }).format(timestamp);
 }
 
-/** A 0–100 progress value written the way the locale writes percentages ("75 %" in Spanish). */
 export function formatProgressPercent(percent: number, locale: string): string {
     return new Intl.NumberFormat(locale, { style: 'percent', maximumFractionDigits: 0 }).format(
         percent / 100

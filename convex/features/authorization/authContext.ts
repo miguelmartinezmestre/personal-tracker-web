@@ -56,8 +56,7 @@ export async function resolveAuthContext(ctx: QueryCtx | MutationCtx): Promise<A
         throw new ConvexError(ERROR_CODES.AUTH_REQUIRED);
     }
 
-    // Better Auth clears the active organization before a delete hook can refuse, and does not
-    // roll it back; a session without one is still signed in.
+    // Better Auth clears the active organization before a delete hook can refuse, with no rollback.
     const activeOrganizationId = session.activeOrganizationId
         ? ctx.db.normalizeId('organization', session.activeOrganizationId)
         : null;

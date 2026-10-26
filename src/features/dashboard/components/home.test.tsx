@@ -26,7 +26,6 @@ function renderHome(stats: DashboardStats) {
             queries: {
                 staleTime: Number.POSITIVE_INFINITY,
                 retry: false,
-                // Tests render seeded data only; a fetch means a query was not seeded.
                 queryFn: ({ queryKey }) =>
                     Promise.reject(new Error(`Unseeded query: ${JSON.stringify(queryKey)}`)),
             },

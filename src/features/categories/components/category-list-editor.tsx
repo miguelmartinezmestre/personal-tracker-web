@@ -11,7 +11,6 @@ import { categoryDraftSchema, type CategoryDraft } from '@/features/categories/s
 
 const NEW_CATEGORY_COLOR = '#6366F1';
 
-/** Categories chosen from a proposal, to edit, remove or add to before saving them together. */
 export function CategoryListEditor({
     value,
     onChange,
@@ -48,7 +47,6 @@ export function CategoryListEditor({
             )}
             <ul className="max-h-[400px] space-y-3 overflow-y-auto pr-1">
                 {value.map((category, index) => (
-                    // Every field is controlled, so index keys keep the right values on removal.
                     <li key={index} className="flex items-center gap-2 rounded-md border p-2">
                         <Input
                             value={category.name}

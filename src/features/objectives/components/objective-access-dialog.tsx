@@ -12,7 +12,6 @@ import { AccessEditor } from '@/features/objectives/components/access-editor';
 import type { ObjectiveSummary } from '@/features/objectives/hooks/use-objectives';
 import { accessSchema, type AccessFormValues } from '@/features/objectives/schemas/objective';
 
-/** The creator, owner and admins choose who else sees or edits the objective (decision 3). */
 export default function ObjectiveAccessDialog({ objective }: { objective: ObjectiveSummary }) {
     const t = useTranslations('Objectives.access');
     const tCommon = useTranslations('Common');

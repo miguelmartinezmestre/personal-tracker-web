@@ -1,7 +1,6 @@
 import { AxeBuilder } from '@axe-core/playwright';
 import { test, expect } from '../../fixtures/test-base';
 
-// The main routes of the app (INH-ACC-01).
 const routes = [
     'home',
     'objectives',

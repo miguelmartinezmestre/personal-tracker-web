@@ -16,7 +16,6 @@ test.describe('Notifications', () => {
         async ({ page }) => {
             const title = `Swim ${randomUUID().substring(0, 8)}`;
 
-            // Milestones and achievements off, so only the completion is told.
             await page.goto('/dashboard/settings', { waitUntil: 'domcontentloaded' });
 
             for (const type of ['progress', 'achievement']) {

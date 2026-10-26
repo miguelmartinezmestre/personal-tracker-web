@@ -29,7 +29,6 @@ type ProgressChartObjective = {
 };
 
 type SeriesPoint = {
-    // Several entries can share a day, so the date alone cannot identify a point.
     key: string;
     kind: 'start' | 'update';
     date: number;
@@ -43,10 +42,8 @@ type PacePoint = { kind: 'pace'; date: number; value: number };
 const TICK_STEP_DAYS = [1, 2, 7, 14, 30, 61, 91, 182];
 const MAX_DATE_TICKS = 7;
 
-// From this span on, ticks fall on 1 January and only the year is labelled.
 const YEAR_TICKS_MIN_DAYS = 2 * 365;
 
-// Points sit on UTC day boundaries; ticks between them would repeat the same day label.
 function dayTicks(min: number, max: number): number[] {
     const first = Math.ceil(min / DAY_MS);
     const last = Math.floor(max / DAY_MS);
@@ -64,7 +61,6 @@ function dayTicks(min: number, max: number): number[] {
     return ticks;
 }
 
-// A fixed number of days drifts against leap years, so long spans step by whole years instead.
 function yearTicks(min: number, max: number): number[] {
     let firstYear = new Date(min).getUTCFullYear();
 
@@ -111,7 +107,6 @@ function buildSeries(objective: ProgressChartObjective, points: readonly History
         comment: point.comment,
     }));
 
-    // Progress dates are UTC days, so a same-day start is drawn one day earlier to keep it visible.
     series.unshift({
         key: 'start',
         kind: 'start',
@@ -174,7 +169,6 @@ export default function ProgressChart({ objective }: { objective: ProgressChartO
             timeZone: 'UTC',
         });
 
-        // Decreasing objectives and negative values put the target below the start.
         const bounds = [
             objective.startValue,
             objective.targetValue,
@@ -277,7 +271,6 @@ export default function ProgressChart({ objective }: { objective: ProgressChartO
             },
         });
 
-        // A deadline at or before the first point leaves no pace line to explain.
         return { definition, hasPace: pace.length > 0 };
     }, [points, locale, objective, t]);
 

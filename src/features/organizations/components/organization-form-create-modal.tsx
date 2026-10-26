@@ -27,7 +27,6 @@ export default function CreateOrganizationFormModal() {
     const router = useRouter();
     const catalog = useQuery(convexQuery(api.platformCategories.listPlatformCategories, {}));
 
-    // The whole catalog to trim or extend (decision 13); the button waits, as typing fixes defaults.
     const defaultValues: CreateOrganization = {
         name: '',
         categories: catalog.data?.map(toCategoryDraft) ?? [],
@@ -56,7 +55,6 @@ export default function CreateOrganizationFormModal() {
             }}
             onSubmit={async (values: CreateOrganization) => {
                 await createOrganization.mutateAsync(values);
-                // Better Auth makes the new organization the active one.
                 toast.success(t('toast.createdAndActive', { name: values.name.trim() }));
                 router.refresh();
             }}

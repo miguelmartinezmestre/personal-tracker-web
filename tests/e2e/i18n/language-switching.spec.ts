@@ -35,7 +35,6 @@ test.describe('Language Switching', () => {
         async ({ page }) => {
             await page.goto('/');
             await switchLanguage(page, 'es');
-            // This project runs signed in, so the navbar offers the dashboard instead of auth.
             await expect(page.locator('[data-testid="navbar-dashboard-link"]:visible')).toHaveText(
                 'Ir al panel'
             );

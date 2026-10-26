@@ -2,7 +2,6 @@ import { formatObjectiveDate } from '@/features/objectives/lib/format';
 
 type MessageParams = Record<string, string | number>;
 
-// What each message key needs; anything else falls back to the stored English text (INH-NOT-05).
 const REQUIRED_PARAMS = {
     objectiveCompleted: { title: 'string' },
     progressMilestone: { title: 'string', percent: 'number' },

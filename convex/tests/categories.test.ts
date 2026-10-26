@@ -129,7 +129,6 @@ describe('categories', () => {
             category: health,
         });
 
-        // The category's creator can't see this objective, yet it still blocks the deletion.
         const objectiveId = await as(member).mutation(api.objectives.createObjective, {
             title: 'Private goal',
             categoryId,
@@ -150,7 +149,6 @@ describe('categories', () => {
 
     test('organizations start without categories and keep a copy of what the owner chose @REQ-CATEGORIAS-002 @INH-ADM-07', async () => {
         const admin = await joinAs('member', 'platform-admin', 'globalAdmin');
-        // Active in an organization they were invited to, as right after an invited sign-up.
         const user = await joinAs('member', 'new-user', 'user', await createOrganization());
 
         await expect(
@@ -174,7 +172,6 @@ describe('categories', () => {
 
         expect(await categoriesOf(personalId)).toEqual([]);
 
-        // Repeated names, as from a retried request, are added once.
         const chosen = [
             { ...health, name: 'Salud' },
             { ...health, name: 'Salud' },

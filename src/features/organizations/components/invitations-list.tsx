@@ -23,7 +23,6 @@ import type { Invitation } from '@/features/organizations/hooks/use-invitations'
 import { convexQuery } from '@convex-dev/react-query';
 import { api } from '@/convex/_generated/api';
 
-// Narrow screens keep the organization and the buttons; the rest is secondary.
 const MOBILE_HIDDEN_COLUMNS = {
     role: 'hidden sm:table-cell',
     invitedBy: 'hidden md:table-cell',
@@ -171,7 +170,6 @@ export function InvitationsList() {
 
     const pendingInvitations = invitations;
 
-    // Invitations that ask for a verified email only reach verified accounts (decision 9).
     const verificationAlert = requiresEmailVerification ? (
         <VerificationAlert
             verificationSent={verificationSent}

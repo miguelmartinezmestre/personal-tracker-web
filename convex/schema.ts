@@ -22,11 +22,9 @@ const auditMetadataSnapshot = v.union(
 export default defineSchema({
     ...authSchema.tables,
 
-    // Insert and read only: never updated or deleted, not even with its organization (decision 15).
     auditLogs: defineTable({
         userId: v.id('user'),
         actorUserId: v.optional(v.id('user')),
-        // Platform actions, such as a global admin banning a user, belong to no organization.
         organizationId: v.optional(v.id('organization')),
         action: v.string(),
         resourceType: v.string(),
@@ -57,7 +55,6 @@ export default defineSchema({
         .index('by_organization', ['organizationId'])
         .index('by_organization_name', ['organizationId', 'name']),
 
-    // The catalog organizations choose from; what they choose is copied, never linked (decision 13).
     platformCategories: defineTable({
         name: v.string(),
         color: v.string(),
@@ -74,10 +71,8 @@ export default defineSchema({
         categoryId: v.optional(v.id('categories')),
         unit: v.optional(v.string()),
         deadline: v.optional(v.number()),
-        // Days before the deadline from which the objective counts as due soon; only with a deadline.
         dueSoonDays: v.optional(v.number()),
         direction: objectiveDirectionValidator,
-        // What the member role may do; owner, admins and the creator always have full access.
         memberCanView: v.boolean(),
         memberCanEdit: v.boolean(),
         startValue: v.number(),
@@ -85,8 +80,6 @@ export default defineSchema({
         targetValue: v.number(),
         status: v.union(v.literal('active'), v.literal('completed')),
         completedAt: v.optional(v.number()),
-        // In the trash from `deletedAt`; a purge in progress holds `purgeToken` so stale batches
-        // stop and the objective can no longer be restored.
         deletedAt: v.optional(v.number()),
         deletedBy: v.optional(v.id('user')),
         purgeToken: v.optional(v.string()),
@@ -94,8 +87,6 @@ export default defineSchema({
         createdAt: v.number(),
         updatedAt: v.number(),
     })
-        // Every combination of the status and category filters, newest first or by deadline.
-        // `deletedAt` stays undefined until the objective goes to the trash, which it then orders.
         .index('by_organization_deletedAt_createdAt', ['organizationId', 'deletedAt', 'createdAt'])
         .index('by_organization_deletedAt_status_createdAt', [
             'organizationId',
@@ -136,31 +127,25 @@ export default defineSchema({
             'categoryId',
             'deadline',
         ])
-        // Objectives completed lately, for the dashboard activity.
         .index('by_organization_deletedAt_completedAt', [
             'organizationId',
             'deletedAt',
             'completedAt',
         ])
-        // A member's own private objectives, for the dashboard.
         .index('by_organization_creator_memberCanView_deletedAt', [
             'organizationId',
             'createdBy',
             'memberCanView',
             'deletedAt',
         ])
-        // Any objective blocks deleting its category, even private or in the trash.
         .index('by_category', ['categoryId'])
-        // The creator's own objectives in every organization, for their achievements.
         .index('by_creator_deletedAt_status', ['createdBy', 'deletedAt', 'status'])
-        // Active deadlines across organizations, for the daily notifications.
         .index('by_status_deletedAt_deadline', ['status', 'deletedAt', 'deadline'])
         .searchIndex('search_title', {
             searchField: 'title',
             filterFields: ['organizationId', 'deletedAt', 'status', 'categoryId'],
         }),
 
-    // One row per (objective, user) with an individual permission; edit always comes with view.
     objectivePermissions: defineTable({
         objectiveId: v.id('objectives'),
         organizationId: v.id('organization'),
@@ -174,7 +159,6 @@ export default defineSchema({
         .index('by_user_organization', ['userId', 'organizationId'])
         .index('by_organization', ['organizationId']),
 
-    // Earned once and kept for good (INH-LOG-03).
     obtainedAchievements: defineTable({
         userId: v.id('user'),
         achievement: v.string(),
@@ -185,14 +169,12 @@ export default defineSchema({
         organizationId: v.id('organization'),
         achievement: v.string(),
         earnedAt: v.number(),
-        // Whoever did what unlocked it (INH-LOG-04).
         contributedBy: v.id('user'),
     }).index('by_organization_achievement', ['organizationId', 'achievement']),
 
     notifications: defineTable({
         userId: v.id('user'),
         organizationId: v.id('organization'),
-        // Optional: an achievement of the user or the organization has none (REQ-NOTIFICACIONES-004).
         objective: v.optional(v.id('objectives')),
         read: v.boolean(),
         notificationDate: v.number(),
@@ -203,7 +185,6 @@ export default defineSchema({
         .index('by_objective_type_date', ['objective', 'notificationType', 'notificationDate'])
         .index('by_organization', ['organizationId']),
 
-    // One row per user who changed a default; every kind of notification is on until then.
     notificationPreferences: defineTable({
         userId: v.id('user'),
         deadline: v.boolean(),
@@ -218,7 +199,6 @@ export default defineSchema({
         createdBy: v.id('user'),
         updatedValue: v.number(),
         updateDate: v.number(),
-        // The objective's value right after this entry, in date order (decision 11).
         resultingValue: v.number(),
         comment: v.optional(v.string()),
         createdAt: v.number(),
@@ -295,7 +275,6 @@ export default defineSchema({
         expiresAt: v.number(),
         createdAt: v.number(),
         inviterId: v.id('user'),
-        // Chosen by whoever invites; off by default (decision 9).
         requireEmailVerification: v.optional(v.boolean()),
     })
         .index('organizationId', ['organizationId'])

@@ -39,7 +39,6 @@ export const objectiveSummaryValidator = v.object({
     updatedAt: v.number(),
     memberAccess: accessLevelValidator,
     canEdit: v.boolean(),
-    // Managing covers deleting the objective and changing who can see or edit it.
     canManage: v.boolean(),
 });
 
@@ -81,7 +80,6 @@ export const progressHistoryValidator = v.object({
             comment: v.optional(v.string()),
         })
     ),
-    // Only the most recent entries are returned; older ones are left out of the series.
     isTruncated: v.boolean(),
 });
 

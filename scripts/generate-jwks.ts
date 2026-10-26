@@ -19,7 +19,6 @@ async function main() {
 
     const jwks = z.array(z.looseObject({ publicKey: z.string(), privateKey: z.string() })).min(1);
 
-    // The latest JWKS comes back either as the array or as that array encoded in a JSON string.
     const value = z
         .union([jwks, z.string().transform(text => jwks.parse(JSON.parse(text)))])
         .parse(JSON.parse(raw));

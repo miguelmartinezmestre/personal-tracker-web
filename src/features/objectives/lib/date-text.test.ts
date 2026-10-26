@@ -1,7 +1,6 @@
 import { expect, test } from 'vitest';
 import { formatDateText, parseDateText } from './date-text';
 
-// Thursday 22 October 2026, mid-morning in the test time zone.
 const now = new Date(2026, 9, 22, 10);
 
 test.each([

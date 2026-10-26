@@ -10,7 +10,6 @@ export async function expectOnLogin(page: Page): Promise<void> {
 }
 
 export async function expectErrorAlert(page: Page, message?: string | RegExp): Promise<void> {
-    // Only the destructive Alert variant: every Button and Input carries `aria-invalid:ring-destructive`.
     const errorAlert = page.locator('[data-slot="alert"][class*="text-destructive"]').first();
     await expect(errorAlert).toBeVisible();
 

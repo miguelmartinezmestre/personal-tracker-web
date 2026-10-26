@@ -20,7 +20,6 @@ export function normalizeCategory(category: { name: string; color: string; icon?
     return { name, color: category.color, icon: category.icon };
 }
 
-// Edited and deleted only by its creator, the owner and the admins (REQ-CATEGORIAS-003).
 export function canManageCategory(
     actor: { userId: Id<'user'>; memberRole: string | null },
     category: Doc<'categories'>

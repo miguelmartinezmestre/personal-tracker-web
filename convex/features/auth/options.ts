@@ -44,7 +44,6 @@ function throwReservedPersonalOrganizationIdentity() {
     });
 }
 
-// Better Auth stores a role list as "owner,admin"; the app compares exact single roles.
 function throwInvalidOrganizationRole() {
     throw new APIError('BAD_REQUEST', {
         code: ERROR_CODES.VALIDATION_ERROR,
@@ -143,7 +142,6 @@ function createSessionCreateHook(ctx: GenericCtx) {
     };
 }
 
-// The name is free and may repeat, but it can't be blank (decision 8).
 function rejectBlankName(path: string, name: string | undefined) {
     if (!['/sign-up/email', '/update-user'].includes(path) || name === undefined) {
         return;
@@ -157,7 +155,6 @@ function rejectBlankName(path: string, name: string | undefined) {
     }
 }
 
-// Signing up from an invitation link joins its organization straight away (decision 9).
 function createUserCreateHook(ctx: GenericCtx) {
     return {
         after: async (user: { id: string }, endpoint?: { body?: unknown } | null) => {
@@ -390,7 +387,6 @@ function createOrganizationPlugin(ctx: GenericCtx) {
 
             const inviterName = inviter.user.name;
 
-            // The inviter's language: the invitee has no preference stored yet.
             const invitationEmail = buildInvitationEmail({
                 siteUrl: getEnvs().SITE_URL,
                 invitationId: id,
@@ -426,7 +422,6 @@ export function buildBetterAuthOptions(ctx: GenericCtx): AuthOptions {
                 enabled: false,
             },
         },
-        // Sessions last seven days and are renewed on each day they are used (decision 18).
         session: {
             expiresIn: 7 * 24 * 60 * 60,
             updateAge: 24 * 60 * 60,

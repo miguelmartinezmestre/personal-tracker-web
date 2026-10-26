@@ -66,7 +66,6 @@ export const revokeSession = mutationWithRLS({
     },
 });
 
-// Signs out everywhere else, 100 sessions per transaction (INH-AUT-10).
 export const revokeOtherSessions = mutationWithRLS({
     args: {},
     returns: v.object({ revokedCount: v.number() }),

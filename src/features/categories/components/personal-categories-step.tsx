@@ -17,7 +17,6 @@ import {
 } from '@/features/categories/schemas/category';
 import { usePersonalOrganizationId } from '@/features/organizations/hooks/use-organizations';
 
-/** Right after signing up: the categories of the new personal organization (decision 13). */
 export function PersonalCategoriesStep({ onDone }: { onDone: () => void }) {
     const t = useTranslations('Categories.choose');
     const catalog = useQuery(convexQuery(api.platformCategories.listPlatformCategories, {}));

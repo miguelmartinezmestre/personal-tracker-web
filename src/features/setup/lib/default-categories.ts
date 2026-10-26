@@ -1,6 +1,5 @@
 import type { CategoryDraft } from '@/features/categories/schemas/category';
 
-// The catalog the setup proposes; each name comes from `Categories.defaults` in the default language.
 export const CATEGORY_PROPOSAL = [
     { key: 'Health', color: '#EF4444', icon: 'heart' },
     { key: 'Career', color: '#3B82F6', icon: 'briefcase' },

@@ -4,7 +4,6 @@ export const organizationMemberSchema = z.object({
     email: z.email(),
     role: z.enum(['owner', 'admin', 'member']),
     organizationId: z.string(),
-    // Off by default: accepting doesn't need a verified email unless the inviter asks (decision 9).
     requireEmailVerification: z.boolean(),
 });
 

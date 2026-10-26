@@ -35,8 +35,6 @@ export function useOrganizationByIdentifier(identifier: string) {
     );
 }
 
-// Slugs are unique across all users, so two people can pick the same name; a short suffix keeps
-// them apart. Personal organizations own the `personal-organization-` prefix.
 function buildUniqueOrganizationSlug(name: string): string {
     const slug = `${buildOrganizationSlug(name)}-${crypto.randomUUID().slice(0, 6)}`;
 
@@ -102,8 +100,6 @@ export function useLeaveOrganization() {
     return useMutation({
         meta: { handlesErrorsLocally: true },
         mutationFn: async (values: { organizationId: string; fallbackOrganizationId?: string }) => {
-            // Leaving the active organization would leave the session without one, so switch
-            // to the fallback (the personal organization) first.
             if (values.fallbackOrganizationId) {
                 const switched = await authClient.organization.setActive({
                     organizationId: values.fallbackOrganizationId,
@@ -117,7 +113,6 @@ export function useLeaveOrganization() {
             });
 
             if (result.error && values.fallbackOrganizationId) {
-                // The user is still a member (e.g. the only owner): put them back where they were.
                 await authClient.organization.setActive({ organizationId: values.organizationId });
             }
 

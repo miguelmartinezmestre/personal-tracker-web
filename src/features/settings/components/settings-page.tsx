@@ -119,8 +119,7 @@ function PasswordCard() {
                     newPassword: values.newPassword,
                 })
             );
-            // A stolen session must not survive the change. Revoking separately keeps this
-            // session's token valid, so the open page does not lose its Convex auth mid-request.
+            // Revoked apart so a stolen session dies while this one keeps its Convex auth token.
             throwIfAuthClientError(await authClient.revokeOtherSessions());
         },
     });
@@ -215,7 +214,6 @@ function PasswordCard() {
     );
 }
 
-// Says what is deleted and what stays before asking for the email and password (INH-AUT-16).
 function AccountDeletionCard({ email }: { email: string }) {
     const t = useTranslations('Settings.deletion');
     const router = useRouter();

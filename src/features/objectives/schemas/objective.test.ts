@@ -2,7 +2,6 @@ import { expect, test } from 'vitest';
 import { todayDateInput } from '../lib/dates';
 import { objectiveFormSchema, progressFormSchema } from './objective';
 
-// Echoing the key lets the tests check which message each rule shows.
 const message = <TKey extends string>(key: TKey) => key;
 
 function progressErrors(entry: {

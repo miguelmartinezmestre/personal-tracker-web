@@ -2,13 +2,8 @@ import type { Id } from '../../_generated/dataModel';
 import type { QueryCtx } from '../../_generated/server';
 import { isPersonalOrganizationForUser } from '../organizations/personalOrganization';
 
-// Memberships per user and members per organization read here, far above realistic counts.
 const MAX_MEMBERSHIPS = 200;
 
-/**
- * Shared organizations where the user is the only owner and someone else would stay behind:
- * they must hand ownership over before deleting the account (decision 5).
- */
 export async function organizationsNeedingNewOwner(db: QueryCtx['db'], userId: Id<'user'>) {
     const names: string[] = [];
 

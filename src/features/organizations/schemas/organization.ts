@@ -12,7 +12,6 @@ export function organizationSchema(message: (key: OrganizationValidationKey) => 
     });
 }
 
-// The owner chooses its categories from the platform catalog when creating it (decision 13).
 export function newOrganizationSchema(message: (key: OrganizationValidationKey) => string) {
     return organizationSchema(message).extend({
         categories: z.array(categoryDraftSchema),

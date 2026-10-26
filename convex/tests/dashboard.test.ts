@@ -221,7 +221,12 @@ describe('dashboard stats', () => {
         await ownerIdentity.mutation(api.objectives.deleteObjective, { id: removed });
         await expect(
             ownerIdentity.query(api.dashboard.getDashboardStats, {})
-        ).resolves.toMatchObject({ total: 1, active: 1, completed: 0, averageProgress: 0 });
+        ).resolves.toMatchObject({
+            total: 1,
+            active: 1,
+            completed: 0,
+            averageProgress: 0,
+        });
     });
 
     const create = (title: string, extra: { targetValue?: number; deadline?: number } = {}) =>

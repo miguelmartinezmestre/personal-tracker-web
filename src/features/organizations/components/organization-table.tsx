@@ -28,7 +28,6 @@ export default function OrganizationsTable() {
         {
             accessorKey: 'name',
             header: t('name'),
-            // Personal organizations cannot be renamed, so show their default name translated.
             cell: ({ row }) =>
                 row.original.isPersonal ? t('personalOrganizationName') : row.original.name,
         },

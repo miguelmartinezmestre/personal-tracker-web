@@ -12,7 +12,6 @@ import { isActiveAccount } from './users';
 
 export const SESSION_RECOVERY_BATCH_SIZE = 20;
 
-// Other members' sessions are repaired by the organization deletion cascade's sessions phase.
 type SessionRecoveryPhase = 'actor-null' | 'actor-unset' | 'actor-deleted';
 
 export type SessionRecoveryResult = {

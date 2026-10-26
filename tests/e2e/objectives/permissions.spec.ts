@@ -34,7 +34,6 @@ test.describe('Objective permissions', () => {
                 const sharedTitle = `Shared ${suffix}`;
                 const privateTitle = `Private ${suffix}`;
                 await createObjective(page, sharedTitle, 'view');
-                // Creating the organization made it the owner's active one.
                 await expect(page.getByTestId('organization-switcher')).toContainText(
                     collaborator.organizationName
                 );
@@ -55,7 +54,9 @@ test.describe('Objective permissions', () => {
                 await sharedRow.click();
                 await expect(memberPage.getByTestId('objective-detail-title')).toHaveText(
                     sharedTitle,
-                    { timeout: 15000 }
+                    {
+                        timeout: 15000,
+                    }
                 );
                 await expect(memberPage.getByTestId('progress-form')).toHaveCount(0);
                 await expect(memberPage.getByTestId('objective-edit-open')).toHaveCount(0);
@@ -76,7 +77,6 @@ test.describe('Objective permissions', () => {
                     timeout: 15000,
                 });
 
-                // The new permission reaches the open page without reloading.
                 await expect(memberPage.getByTestId('progress-form')).toBeVisible({
                     timeout: 15000,
                 });
@@ -84,7 +84,9 @@ test.describe('Objective permissions', () => {
                 await memberPage.getByTestId('progress-save-button').click();
                 await expect(memberPage.getByTestId('objective-progress-percent')).toContainText(
                     '20',
-                    { timeout: 15000 }
+                    {
+                        timeout: 15000,
+                    }
                 );
             } finally {
                 await collaborator.context.close();

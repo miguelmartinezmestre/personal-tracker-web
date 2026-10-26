@@ -25,7 +25,6 @@ interface InvitationActionsProps {
     isResponseDisabled: boolean;
 }
 
-/** Accept (after confirming the organization switch) and reject buttons for one invitation. */
 export function InvitationActions({
     invitation,
     onAccept,
@@ -54,7 +53,6 @@ export function InvitationActions({
                     aria-label={t('accept')}
                 >
                     <Check aria-hidden />
-                    {/* Icon-only on narrow screens so both buttons fit beside the name. */}
                     <span className="hidden sm:inline">{t('accept')}</span>
                 </Button>
                 <Button

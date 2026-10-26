@@ -16,16 +16,13 @@ import {
     waitForHttp,
 } from './command';
 
-// Where the backend reaches MailDev, the local SMTP server that captures outgoing mail.
 export interface SmtpCapture {
     host: string;
     port: string;
 }
 
-// Inside the compose network the backend reaches MailDev by its service name.
 const DOCKER_MAILDEV_SMTP: SmtpCapture = { host: 'maildev', port: '1025' };
 
-// MailDev requires these credentials: the compose files and `pnpm mail:local` set the same ones.
 const MAILDEV_SMTP_CREDENTIALS = { user: 'maildev', password: 'maildev' } as const;
 
 const SMTP_CAPTURE_KEYS = [
@@ -49,7 +46,6 @@ function smtpCaptureEnv(capture: SmtpCapture): Record<(typeof SMTP_CAPTURE_KEYS)
 }
 
 const credentialsSchema = z.object({
-    // Only the Docker stack has MySQL; the CLI-managed local deployment keeps its own storage.
     mysqlRootPassword: z.string().min(1).optional(),
     betterAuthSecret: z.string().min(1).optional(),
     jwks: z.string().min(1).optional(),
@@ -240,8 +236,7 @@ export async function bootstrapConvexCredentials(
     return { adminKey, ...(await generateAuthSecrets(previous)) };
 }
 
-// The Convex CLI refuses to run when both selection styles are present, and it reads .env.local
-// for whichever is missing from the process. An empty value counts as unset and blocks that read.
+// The other style is set empty: the CLI would read it from .env.local and refuse both at once.
 export type ConvexDeploymentTarget =
     { kind: 'self-hosted'; adminKey: string } | { kind: 'cli-local'; deploymentName: string };
 
@@ -330,9 +325,7 @@ export async function configureConvexEnv(
     }
 }
 
-// Sends every variable in one `convex env set` call. A CLI-managed backend lives only as long as
-// the `convex dev` that started it, and that process exits as soon as a push succeeds, so the
-// variables a push depends on must not arrive one at a time.
+// All at once: `convex dev` exits after the first successful push, taking its backend with it.
 export async function configureConvexEnvAtOnce(
     commandEnv: NodeJS.ProcessEnv,
     siteUrl: string,

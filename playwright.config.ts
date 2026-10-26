@@ -60,7 +60,6 @@ export default defineConfig({
             use: { ...chromeProjectUse, storageState: 'tests/.auth/admin-user.json' },
             testMatch: ['**/e2e/admin/**'],
         },
-        // The critical flows again in the other engines and on a phone (INH-COM-01).
         {
             name: 'cross-browser-firefox',
             dependencies: ['setup'],

@@ -30,8 +30,7 @@ export function timestampToDateInput(timestamp: number | undefined): string {
     return new Date(timestamp).toISOString().slice(0, 10);
 }
 
-// "Today" is the user's local calendar day, stored like deadlines as that day's UTC midnight;
-// the UTC day differs around midnight.
+// The user's local day as its UTC midnight, like deadlines; the UTC day differs around midnight.
 export function todayTimestamp(): number {
     const now = new Date();
 
@@ -42,7 +41,6 @@ export function todayDateInput(): string {
     return timestampToDateInput(todayTimestamp());
 }
 
-// A deadline set to today is still on time; it is overdue from the next local day.
 export function isOverdue(objective: { status: string; deadline?: number }): boolean {
     return (
         objective.status === 'active' &&
@@ -53,7 +51,6 @@ export function isOverdue(objective: { status: string; deadline?: number }): boo
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
-// Whole days from the user's today to the deadline: negative once it has passed.
 export function daysUntil(deadline: number): number {
     return Math.round((deadline - todayTimestamp()) / DAY_MS);
 }
@@ -70,7 +67,6 @@ type PacedObjective = {
     targetValue: number;
 };
 
-// Compares the current value with the chart's ideal pace line: start value at creation, target at the deadline.
 // shortcut: ignores progress backdated before creation, which moves the chart's line start; fix if they disagree.
 export function objectivePace(objective: PacedObjective): ObjectivePace | undefined {
     if (objective.status !== 'active' || objective.deadline === undefined) {

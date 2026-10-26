@@ -234,7 +234,6 @@ describe('convex setup', () => {
 
             expect(updatedUser?.role).toBe('globalAdmin');
 
-            // The existing non-personal organization is renamed, not replaced.
             expect(result.organizationId).toBe(orgId);
 
             const organization = await t.run(async ctx => {
@@ -243,7 +242,6 @@ describe('convex setup', () => {
 
             expect(organization?.name).toBe('My Company');
 
-            // The wizard's categories form the platform catalog and start the setup organization.
             const [catalog, categories] = await t.run(async ctx => [
                 await ctx.db.query('platformCategories').collect(),
                 await ctx.db.query('categories').collect(),

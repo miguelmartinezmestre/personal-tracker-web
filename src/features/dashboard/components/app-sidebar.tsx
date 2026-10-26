@@ -89,7 +89,6 @@ const baseProjects: ProjectNavItem[] = [
     },
 ];
 
-// Only the global admin sees the administration entry (REQ-ROLES-002).
 const adminProject: ProjectNavItem = { name: 'admin', url: '/dashboard/admin', icon: ShieldCheck };
 
 export function AppSidebar() {

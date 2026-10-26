@@ -2,7 +2,6 @@ import { randomUUID } from 'crypto';
 import { expect, test } from '@playwright/test';
 import { createTestUser } from '../../helpers/test-helpers';
 
-// Runs signed in as the global admin created by the setup project.
 test.describe('Administration', () => {
     test(
         'bans a user for a while, closes their sessions, unbans them and logs it',

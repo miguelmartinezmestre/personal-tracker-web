@@ -4,7 +4,6 @@ import type { FieldErrorIssue } from '@/components/ui/field';
 import { Field, FieldError, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 
-/** A labelled text or password input of a settings form. */
 export function SettingsTextField({
     name,
     label,

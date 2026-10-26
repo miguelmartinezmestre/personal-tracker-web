@@ -32,7 +32,6 @@ export default function CategoryChart({ categories }: { categories: readonly Cat
             label: category.name === null ? t('uncategorized') : category.name,
         }));
 
-        // Counts are whole numbers, so the axis only offers integer ticks.
         const maxTotal = Math.max(1, ...rows.map(row => row.total));
         const step = Math.ceil(maxTotal / MAX_TICKS);
 

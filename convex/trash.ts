@@ -17,7 +17,6 @@ export const listTrash = queryWithRLS({
         const organizationId = requireOrganizationId(ctx.organizationId);
         const isManager = isOrganizationAdminRole(ctx.memberRole);
 
-        // Most recently deleted first; members only see the trash of the objectives they created.
         const result = await ctx.db
             .query('objectives')
             .withIndex('by_organization_deletedAt_createdAt', q =>
@@ -37,7 +36,6 @@ export const listTrash = queryWithRLS({
                 prefix: [organizationId],
                 indexKey: doc => [doc.organizationId, doc.deletedAt, doc.createdAt],
                 paginationOpts: args.paginationOpts,
-                // The next-page check would otherwise walk into the live objectives below.
                 isLive: doc => doc.deletedAt !== undefined && isManaged(doc),
             },
             result,
@@ -86,7 +84,6 @@ export const continuePurgeObjective = internalMutation({
     handler: async (ctx, args) => {
         const objective = await ctx.db.get('objectives', args.objectiveId);
 
-        // A continuation from an earlier purge has nothing left to do.
         if (objective?.purgeToken !== args.purgeToken) {
             return null;
         }

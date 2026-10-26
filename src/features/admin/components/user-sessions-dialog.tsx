@@ -76,7 +76,6 @@ function SessionsList({ userId }: { userId: Id<'user'> }) {
     );
 }
 
-/** Any user's sessions, with the device, IP and expiry, each one revocable (INH-ADM-02). */
 export default function UserSessionsDialog({ userId, name }: { userId: Id<'user'>; name: string }) {
     const t = useTranslations('Admin.sessions');
     const [open, setOpen] = useState(false);

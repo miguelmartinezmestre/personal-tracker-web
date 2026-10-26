@@ -15,7 +15,6 @@ import { CategoryFormModal } from '@/features/categories/components/category-for
 
 const NEW_CATEGORY = { name: '', color: '#6366F1', icon: 'tag' } as const;
 
-/** The active organization's categories: any member adds them (REQ-CATEGORIAS-001). */
 export default function CategoriesPage() {
     const t = useTranslations('Categories');
     const categories = usePaginatedList(api.categories.listCategories, {});

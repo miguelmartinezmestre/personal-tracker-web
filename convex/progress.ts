@@ -42,7 +42,6 @@ export const listProgress = queryWithRLS({
             .order('desc')
             .paginate(withPaginationLimits(args.paginationOpts));
 
-        // Entries of a completed objective are closed to everyone.
         const canEdit = access.canEdit && objective.status === 'active';
 
         return await withNextPageCheck(
@@ -92,7 +91,6 @@ export const createProgress = mutationWithRLS({
         const organizationId = requireOrganizationId(ctx.organizationId);
         const { objective, access } = await requireObjective(ctx.db, ctx, args.objectiveId);
 
-        // Logging progress is editing the objective, and a completed one is closed (decision 11).
         if (!access.canEdit) {
             throw new ConvexError(ERROR_CODES.NOT_AUTHORIZED_PROGRESS);
         }
@@ -111,7 +109,6 @@ export const createProgress = mutationWithRLS({
             createdBy: ctx.userId,
             updatedValue: args.updatedValue,
             updateDate: args.updateDate,
-            // Right for the latest day; a backdated entry is corrected with those after it.
             resultingValue: roundStoredValue(objective.currentValue + args.updatedValue),
             comment: progressComment(args.comment),
             createdAt: now,
@@ -163,7 +160,6 @@ export const updateProgress = mutationWithRLS({
         });
 
         await applyDifference(ctx, objective, args.updatedValue - entry.updatedValue, now);
-        // Everything from the earlier of its old and new days changes.
         await recalculateResultingValues(ctx, objective._id, {
             ...positionOf(entry),
             updateDate: Math.min(entry.updateDate, args.updateDate),

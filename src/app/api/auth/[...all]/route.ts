@@ -2,9 +2,7 @@ import { handler } from '../../../../features/auth/auth-server';
 
 const SESSION_COOKIE = /(?:^|;\s*)(?:__Secure-)?better-auth\.session_token=/;
 
-// The Convex auth client asks for a token while the session is still loading. Without a session
-// cookie or bearer token there is nothing to exchange, so answer directly instead of letting
-// Better Auth reply 401 on every public page load.
+// Without a session cookie or bearer token, answer here instead of a Better Auth 401 per page.
 function isAnonymousTokenRequest(request: Request): boolean {
     return (
         new URL(request.url).pathname.endsWith('/convex/token') &&

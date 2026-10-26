@@ -93,7 +93,6 @@ export const tables = {
         expiresAt: v.number(),
         createdAt: v.number(),
         inviterId: v.id('user'),
-        // Chosen by whoever invites; off by default (decision 9).
         requireEmailVerification: v.optional(v.boolean()),
     })
         .index('organizationId', ['organizationId'])

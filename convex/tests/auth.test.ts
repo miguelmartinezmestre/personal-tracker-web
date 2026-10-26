@@ -152,7 +152,6 @@ describe('convex auth', () => {
             await t.query(internal.auth.isDefaultOrganization, { organizationId: _organizationId })
         ).toBe(false);
 
-        // Runs on every sign-in: later calls reuse the organization instead of creating another.
         await expect(
             t.mutation(internal.auth.ensureDefaultOrganizationForUser, { userId: user.docId })
         ).resolves.toBe(organizationId);
@@ -192,7 +191,6 @@ describe('convex auth', () => {
 
         expect(await check('  acme team ')).toBe(true);
         expect(await check('Other team')).toBe(false);
-        // Renaming an organization to its own name is not a duplicate.
         expect(await check('Acme Team', organizationId)).toBe(false);
     });
 

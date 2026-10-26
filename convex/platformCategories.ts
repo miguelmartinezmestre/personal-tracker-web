@@ -6,7 +6,6 @@ import { MAX_CHOSEN_CATEGORIES } from './features/categories/constants';
 import { normalizeCategory } from './features/categories/rules';
 import { categoryInputValidator } from './features/categories/validators';
 
-// Every user reads it to choose their organization's categories; only the global admin edits it.
 export const listPlatformCategories = queryWithRLS({
     args: {},
     returns: v.array(
@@ -65,7 +64,6 @@ export const createPlatformCategory = mutationWithRLS({
     },
 });
 
-// Organizations keep their copies untouched (INH-ADM-07).
 export const updatePlatformCategory = mutationWithRLS({
     args: { id: v.id('platformCategories'), category: categoryInputValidator },
     returns: v.null(),

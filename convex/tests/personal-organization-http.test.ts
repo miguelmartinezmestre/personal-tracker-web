@@ -89,7 +89,6 @@ describe('organization rules enforced through the Better Auth endpoints', () => 
 
         const cookie = await signIn(owner);
 
-        // Signing in writes a sanitized audit entry: allowlisted fields only, no personal data.
         const audit = await t.run(ctx =>
             ctx.db
                 .query('auditLogs')
@@ -111,9 +110,6 @@ describe('organization rules enforced through the Better Auth endpoints', () => 
         expect(await t.run(ctx => ctx.db.get('member', memberId))).toMatchObject({
             role: 'member',
         });
-
-        // invite-member is not exercised here: convex-test rejects the `select: undefined` that
-        // Better Auth passes to the adapter (crud-invites.mjs:128) before the hook runs.
 
         const singleRole = await t.fetch(
             '/api/auth/organization/update-member-role',
@@ -143,7 +139,6 @@ describe('organization rules enforced through the Better Auth endpoints', () => 
         expect(response.status).toBe(403);
         expect(await t.run(ctx => ctx.db.get('organization', organizationId))).not.toBeNull();
 
-        // Better Auth clears the active organization before the hook refuses and keeps it cleared.
         const current = await t.fetch('/api/auth/get-session', {
             headers: { cookie, origin: ORIGIN },
         });

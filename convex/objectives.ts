@@ -35,7 +35,6 @@ import { recalculateResultingValues } from './features/objectives/progress';
 export const listObjectives = queryWithRLS({
     args: {
         status: v.optional(v.union(v.literal('all'), v.literal('active'), v.literal('completed'))),
-        // The category comes from the URL, so a malformed one just matches nothing.
         categoryId: v.optional(v.string()),
         deadline: v.optional(v.object({ filter: deadlineFilterValidator, today: v.number() })),
         search: v.optional(v.string()),
@@ -47,7 +46,6 @@ export const listObjectives = queryWithRLS({
         const categoryId = args.categoryId && ctx.db.normalizeId('categories', args.categoryId);
         let status = args.status ?? 'all';
 
-        // Only active objectives can be overdue.
         if (args.deadline?.filter === 'overdue') {
             if (status === 'completed') {
                 return { page: [], isDone: true, continueCursor: '' };
@@ -69,7 +67,6 @@ export const listObjectives = queryWithRLS({
 
         const search = args.search?.trim();
 
-        // Matches come by relevance, so the next-page check of the indexes doesn't apply.
         const result = search
             ? await searchObjectives(ctx.db, organizationId, search, filters, args.paginationOpts)
             : await paginateObjectives(ctx.db, organizationId, filters, args.paginationOpts);
@@ -79,7 +76,6 @@ export const listObjectives = queryWithRLS({
 });
 
 export const getObjective = queryWithRLS({
-    // The id comes from the URL, so a malformed one is reported as not found.
     args: { id: v.string() },
     returns: v.union(objectiveSummaryValidator, v.null()),
     handler: async (ctx, args) => {
@@ -90,7 +86,6 @@ export const getObjective = queryWithRLS({
             return null;
         }
 
-        // Objectives the user may not see are filtered out by row-level security.
         const objective = await ctx.db.get('objectives', objectiveId);
 
         if (
@@ -124,7 +119,6 @@ export const createObjective = mutationWithRLS({
         direction: v.optional(objectiveDirectionValidator),
         startValue: v.number(),
         targetValue: v.number(),
-        // By default every member can see the objective but not edit it (decision 3).
         memberAccess: v.optional(accessLevelValidator),
         users: v.optional(v.array(userGrantValidator)),
     },
@@ -204,14 +198,12 @@ export const updateObjective = mutationWithRLS({
         const fields = resolvedObjectiveFields(existing, args);
         validateObjectiveValues(fields.direction, fields.startValue, fields.targetValue);
 
-        // An objective whose deadline already passed can still be edited without moving it.
         if (fields.deadline !== undefined && fields.deadline !== existing.deadline) {
             validateDeadline(fields.deadline, now);
         }
 
         await validateCategory(ctx.db, fields.categoryId, existing.organizationId);
 
-        // A new start moves the recorded progress with it; the new bounds may already be reached.
         const current = measurement(
             fields,
             roundStoredValue(existing.currentValue - existing.startValue + fields.startValue),
@@ -244,7 +236,6 @@ export const updateObjective = mutationWithRLS({
     },
 });
 
-// Deleting moves the objective to the trash, where it keeps its data (INH-PAP-01).
 export const deleteObjective = mutationWithRLS({
     args: { id: v.id('objectives') },
     returns: v.null(),

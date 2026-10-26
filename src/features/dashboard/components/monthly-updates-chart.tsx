@@ -19,7 +19,6 @@ export default function MonthlyUpdatesChart({
     const locale = useLocale();
 
     const rows = useMemo(() => {
-        // Months are UTC calendar months, so they are labelled in UTC.
         const format = new Intl.DateTimeFormat(locale, {
             month: 'short',
             year: '2-digit',
@@ -34,7 +33,6 @@ export default function MonthlyUpdatesChart({
 
     const definition = useMemo(() => {
         const formatNumber = new Intl.NumberFormat(locale);
-        // Counts are whole numbers, so the axis only offers integer ticks.
         const maxCount = Math.max(1, ...rows.map(row => row.count));
         const step = Math.ceil(maxCount / MAX_TICKS);
 
@@ -85,7 +83,6 @@ export default function MonthlyUpdatesChart({
                 ariaLabel={t('monthlyProgressAria')}
                 className="text-muted-foreground text-xs"
             />
-            {/* The same data as text for screen readers (INH-DAS-07). */}
             <table className="sr-only">
                 <caption>{t('monthlyProgress')}</caption>
                 <thead>

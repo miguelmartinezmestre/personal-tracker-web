@@ -27,16 +27,10 @@ export function memberAccessLevel(objective: {
     return objective.memberCanView ? 'view' : 'none';
 }
 
-// Granting edit grants view, and taking view away takes edit with it (decision 3).
 export function memberAccessFields(level: AccessLevel) {
     return { memberCanView: level !== 'none', memberCanEdit: level === 'edit' };
 }
 
-/**
- * Owner, admins and the creator have full access to an objective of their organization; the
- * member role and individual users get what the objective grants them. The global admin role
- * gives nothing here (decision 1).
- */
 export async function objectiveAccess(
     db: QueryCtx['db'],
     actor: AccessActor,
@@ -68,7 +62,6 @@ export async function objectiveAccess(
     };
 }
 
-// The cheap part of `objectiveAccess`, for row-level reads that run on every listed objective.
 export async function canViewObjective(
     db: QueryCtx['db'],
     actor: AccessActor,

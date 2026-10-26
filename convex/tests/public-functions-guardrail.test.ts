@@ -20,7 +20,6 @@ const ALLOWED_RAW_PUBLIC_FUNCTIONS = new Set([
     'convex/setup.ts:completeSetup:mutation',
 ]);
 
-// Convex needs these at the root: schema, app and auth config, crons and the HTTP router.
 const ROOT_TECHNICAL_FILES = new Set([
     'convex/auth.config.ts',
     'convex/convex.config.ts',
@@ -30,7 +29,6 @@ const ROOT_TECHNICAL_FILES = new Set([
     'convex/schema.ts',
 ]);
 
-// kitcn reads the Better Auth definition from the default export of convex/auth.ts.
 const ALLOWED_ROOT_STATEMENTS = new Set(['convex/auth.ts:default']);
 
 describe('public Convex function guardrail', () => {

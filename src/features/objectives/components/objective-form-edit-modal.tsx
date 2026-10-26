@@ -21,7 +21,6 @@ export default function EditObjectiveFormModal({
     compactTrigger = false,
 }: {
     objective: ObjectiveSummary;
-    // Icon-only trigger on small screens, for table rows.
     compactTrigger?: boolean;
 }) {
     const t = useTranslations('Objectives');

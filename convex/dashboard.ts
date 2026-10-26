@@ -52,11 +52,9 @@ export const getDashboardStats = queryWithRLS({
             categories.push(category);
         }
 
-        // Owner and admins see every objective, so the private ones also come from the aggregate.
         const isManager = isOrganizationAdminRole(ctx.memberRole);
         const visibilities = isManager ? [true, false] : [true];
 
-        // Per visibility: the whole set, the completed ones, then active and completed per category.
         const queries: StatsQuery[] = visibilities.flatMap(visible => [
             { namespace, bounds: { prefix: [false, visible] } },
             { namespace, bounds: { prefix: [false, visible, 'completed'] } },
@@ -120,7 +118,6 @@ export const getDashboardStats = queryWithRLS({
             ...(byCategory.get(category._id) ?? emptyTotals()),
         }));
 
-        // Objectives without a category, or pointing at one that no longer exists, are the rest.
         const uncategorized = {
             categoryId: null,
             name: null,
@@ -205,7 +202,6 @@ export const getMonthlyUpdates = queryWithRLS({
     handler: async ctx => {
         const now = new Date();
 
-        // Progress dates are calendar days stored as UTC midnight, so months are UTC months too.
         const months = Array.from({ length: MONTHS_SHOWN }, (_, index) =>
             new Date(
                 Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - MONTHS_SHOWN + 1 + index, 1)
@@ -220,7 +216,6 @@ export const getMonthlyUpdates = queryWithRLS({
             const organizationId = ctx.organizationId;
             const since = Date.parse(`${months[0]}-01T00:00:00Z`);
 
-            // Row-level security leaves out the entries of objectives the user can't see.
             const entries = await ctx.db
                 .query('progressUpdates')
                 .withIndex('by_organization_date', q =>
@@ -243,7 +238,6 @@ export const getMonthlyUpdates = queryWithRLS({
     },
 });
 
-// Active objectives by deadline, overdue first; the client turns dates into days left (P7).
 export const getUpcomingDeadlines = queryWithRLS({
     args: {},
     returns: v.array(upcomingDeadlineValidator),
@@ -275,7 +269,6 @@ export const getUpcomingDeadlines = queryWithRLS({
     },
 });
 
-// What happened in the visible objectives over the last seven days (decision 18).
 export const getRecentActivity = queryWithRLS({
     args: {},
     returns: v.object({ created: v.number(), updates: v.number(), completed: v.number() }),

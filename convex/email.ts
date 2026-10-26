@@ -3,10 +3,7 @@ import { internal } from './_generated/api';
 import { internalMutation } from './_generated/server';
 import { v } from 'convex/values';
 
-// A mutation, not a Node action: on a self-hosted backend a Node action reaches the scheduler
-// through CONVEX_CLOUD_ORIGIN, which is the host-facing URL and is not reachable from inside the
-// container when the published port differs (as in the e2e stack). Only the SMTP delivery itself
-// needs Node, and it makes no calls back into Convex.
+// A mutation, not a Node action: self-hosted Node actions reach the scheduler via a host-only URL.
 export const sendTransactionalEmail = internalMutation({
     args: {
         to: v.union(v.string(), v.array(v.string())),

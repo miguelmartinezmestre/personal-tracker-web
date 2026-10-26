@@ -34,7 +34,9 @@ export function accountDeletionPlugin(ctx: GenericCtx) {
 
                     const target = await runnableCtx.runQuery(
                         internal.auth.getAccountDeletionTarget,
-                        { userId: rawUserId }
+                        {
+                            userId: rawUserId,
+                        }
                     );
 
                     if (!target) {

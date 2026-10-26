@@ -5,7 +5,6 @@ import type { MutationCtx, QueryCtx } from '../../_generated/server';
 import { progressNotice } from './notices';
 import type { NotificationType } from './validators';
 
-// Each user chooses which kinds they get, the same in all their organizations (decision 14).
 export async function isNotificationEnabled(
     db: QueryCtx['db'],
     userId: Id<'user'>,
@@ -19,7 +18,6 @@ export async function isNotificationEnabled(
     return preferences?.[type] ?? true;
 }
 
-// Everyone who can see the objective hears of it, in batches of 100 members (P1, decision 14).
 export async function notifyObjectiveProgress(
     ctx: MutationCtx,
     change: Change<DataModel, 'objectives'>

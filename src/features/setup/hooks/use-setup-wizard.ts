@@ -36,7 +36,6 @@ export type CategoryProposals = Record<PlatformConfig['defaultLanguage'], Catego
 
 interface SetupState {
     currentStep: number;
-    // Null until edited, so the proposal follows the default language chosen in the first step.
     data: Omit<SetupData, 'categories'> & { categories: CategoryDraft[] | null };
 }
 

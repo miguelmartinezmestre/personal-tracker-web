@@ -1,6 +1,5 @@
 import ts from 'typescript';
 
-// Returns an error message for the first key repeated inside one object, or null.
 export function findDuplicateTranslationKey(text: string, filename: string): string | null {
     const source = ts.parseJsonText(filename, text);
     let duplicate: string | null = null;

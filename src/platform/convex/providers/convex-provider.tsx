@@ -51,7 +51,6 @@ function AuthShield({ children }: { children: React.ReactNode }) {
         };
     }, [authLoading, isAuthenticated, isPublic, router]);
 
-    // Do not leave one account's data in the cache for the next sign-in on this browser.
     useEffect(() => {
         if (!authLoading && !isAuthenticated) {
             queryClient.clear();

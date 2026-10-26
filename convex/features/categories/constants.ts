@@ -1,4 +1,3 @@
-// Bounds the platform catalog and each batch an organization chooses from it.
 export const MAX_CHOSEN_CATEGORIES = 100;
 export const CATEGORY_COLOR_PATTERN = /^#[0-9A-Fa-f]{6}$/;
 

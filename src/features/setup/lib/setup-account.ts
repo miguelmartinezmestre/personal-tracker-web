@@ -8,11 +8,6 @@ type SetupAuthClient = {
     signIn: Pick<typeof authClient.signIn, 'email'>;
 };
 
-/**
- * Creates the setup admin account, or signs into it when an earlier attempt created it but failed
- * before completing setup: every route redirects to /setup until then, so there is no other way
- * back in. Returns the sign-up error to show, or null once the admin is signed in.
- */
 export async function createOrResumeSetupAccount(
     client: SetupAuthClient,
     admin: AdminAccount,

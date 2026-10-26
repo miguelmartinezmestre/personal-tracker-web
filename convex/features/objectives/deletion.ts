@@ -6,7 +6,6 @@ import type { AccessActor } from './access';
 import { OBJECTIVE_DELETION_BATCH_SIZE } from './constants';
 import { requireObjective, requireOrganizationId } from './records';
 
-// Restoring and purging are for whoever could delete it: its creator, the owner and the admins (P3).
 export async function requireManagedTrashObjective(
     ctx: MutationCtx & AccessActor,
     objectiveId: Id<'objectives'>
@@ -21,7 +20,6 @@ export async function requireManagedTrashObjective(
         throw new ConvexError(ERROR_CODES.NOT_AUTHORIZED_OBJECTIVE);
     }
 
-    // Once a purge has started the objective is on its way out and can't come back.
     if (objective.purgeToken !== undefined) {
         throw new ConvexError(ERROR_CODES.OBJECTIVE_NOT_FOUND);
     }
@@ -29,11 +27,6 @@ export async function requireManagedTrashObjective(
     return objective;
 }
 
-/**
- * Deletes one batch of the objective's progress, permissions and notifications (INH-NOT-08), and
- * the objective itself once they are gone. Returns false while rows remain, so the caller
- * reschedules.
- */
 export async function deleteObjectiveBatch(
     db: MutationCtx['db'],
     objectiveId: Id<'objectives'>

@@ -1,8 +1,5 @@
 'use client';
 
-// shadcn-style Field primitives for composing forms with external form state
-// (TanStack Form). Presentational only; see .agents/skills/shadcn/rules/forms.md.
-
 import * as React from 'react';
 import { cn } from '@/lib/utils';
 import { Label } from '@/components/ui/label';
@@ -65,7 +62,6 @@ function FieldDescription({ className, ...props }: React.ComponentProps<'p'>) {
     );
 }
 
-// Every form validates with a Standard Schema (zod), so field errors are its issues.
 export type FieldErrorIssue = { message: string } | undefined;
 
 function FieldError({

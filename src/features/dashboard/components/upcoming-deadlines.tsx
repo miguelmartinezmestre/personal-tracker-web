@@ -14,7 +14,6 @@ type UpcomingDeadline = {
     dueSoonDays: number;
 };
 
-/** Days left to each deadline, flagged as due soon within the objective's own warning (decision 18). */
 export default function UpcomingDeadlines({ objectives }: { objectives: UpcomingDeadline[] }) {
     const t = useTranslations('DashboardHome.deadlines');
     const locale = useLocale();

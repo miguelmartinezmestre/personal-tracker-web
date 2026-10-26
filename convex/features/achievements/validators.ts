@@ -12,7 +12,6 @@ export const achievementValidator = v.object({
     tier: v.union(v.literal('bronze'), v.literal('silver'), v.literal('gold')),
     threshold: v.number(),
     points: v.number(),
-    // Worked out on every read and capped at the threshold (INH-LOG-05).
     progress: v.number(),
     earnedAt: v.union(v.number(), v.null()),
 });

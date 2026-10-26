@@ -11,7 +11,6 @@ import AdminAudit from '@/features/admin/components/admin-audit';
 import AdminCategories from '@/features/admin/components/admin-categories';
 import AdminUsers from '@/features/admin/components/admin-users';
 
-/** Platform administration, only for the global admin; every function checks it again. */
 export default function AdminPage() {
     const t = useTranslations('Admin');
     const user = useQuery(convexQuery(api.auth.getCurrentUser, {}));

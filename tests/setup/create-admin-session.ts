@@ -7,7 +7,6 @@ import {
     type TestUserData,
 } from '../helpers/test-helpers';
 
-// The admin E2E project reuses this signed-in state of the global admin.
 const ADMIN_USER_FILE = 'tests/.auth/admin-user.json';
 
 async function fillSetupInput(

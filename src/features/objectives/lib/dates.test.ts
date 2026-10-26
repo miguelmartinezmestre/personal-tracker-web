@@ -7,7 +7,6 @@ afterEach(() => {
 
 test('uses the local calendar day when it differs from the UTC day', () => {
     vi.useFakeTimers();
-    // 00:30 on 7 October in Madrid is still 6 October in UTC.
     vi.setSystemTime(new Date('2026-10-06T22:30:00Z'));
     expect(todayDateInput()).toBe('2026-10-07');
 
@@ -30,7 +29,6 @@ test('compares progress with the ideal pace from creation to the deadline @REQ-O
     vi.useFakeTimers();
     vi.setSystemTime(new Date('2026-10-06T12:00:00Z'));
 
-    // Halfway between creation on 1 October and the deadline on 11 October.
     const objective = {
         status: 'active',
         direction: 'increase' as const,
@@ -56,7 +54,6 @@ test('compares progress with the ideal pace from creation to the deadline @REQ-O
     );
     expect(objectivePace({ ...objective, status: 'completed', currentValue: 100 })).toBeUndefined();
     expect(objectivePace({ ...objective, deadline: undefined, currentValue: 0 })).toBeUndefined();
-    // Nothing is expected yet on the day the objective is created.
     expect(
         objectivePace({
             ...objective,

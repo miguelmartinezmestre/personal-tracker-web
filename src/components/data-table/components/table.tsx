@@ -23,7 +23,6 @@ interface DataTableProps<TData extends RowData> {
     onRetry?: () => void;
     pagination?: PaginatedList;
     emptyMessage?: ReactNode;
-    // Extra classes for a column's header and cells, keyed by column id (e.g. to hide on mobile).
     columnClassNames?: Partial<Record<string, string>>;
 }
 

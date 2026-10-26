@@ -44,7 +44,6 @@ function SessionDevice({ userAgent }: { userAgent: string | null }) {
     );
 }
 
-/** The user's own sessions: when they started and were last used, from where, and closing them. */
 export default function SessionsPage() {
     const t = useTranslations('Sessions');
     const locale = useLocale();

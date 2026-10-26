@@ -20,7 +20,6 @@ import { useTranslations } from 'next-intl';
 export default function ProgressForm({ objective }: { objective: ObjectiveSummary }) {
     const t = useTranslations('UpdateProgress');
     const tCommon = useTranslations('Common');
-    // A "new value" is compared with the current total, whatever the entry's date (P6).
     const formSchema = useProgressFormSchema(objective.currentValue);
     const formRef = useRef<HTMLFormElement>(null);
 
@@ -58,7 +57,6 @@ export default function ProgressForm({ objective }: { objective: ObjectiveSummar
                     comment: value.comment.trim() || undefined,
                 });
             } catch {
-                // The mutation cache already reports the error; keep the values to retry.
                 return;
             }
 

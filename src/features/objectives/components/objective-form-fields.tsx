@@ -25,13 +25,10 @@ export function ObjectiveFormFields({
 }: {
     form: TanStackFormApi<ObjectiveFormValues>;
     keptDeadline?: string;
-    // The objective's own category, which may not be on the pages loaded so far.
     currentCategory?: { id: Id<'categories'>; name: string };
-    // Who can see and edit it is chosen when creating; afterwards it has its own dialog.
     withAccess?: boolean;
 }) {
     const t = useTranslations('Objectives');
-    // The calendar offers today onwards, or the deadline an overdue objective already keeps.
     const today = todayDateInput();
     const minDeadline = keptDeadline && keptDeadline < today ? keptDeadline : today;
 
@@ -242,7 +239,6 @@ function NumberField({
             {field => {
                 const errors = getFieldErrors(form, field);
                 const isInvalid = errors.length > 0;
-                // An emptied input is stored as NaN so the schema reports it as required.
                 const value = Number.isFinite(field.state.value) ? field.state.value : '';
 
                 return (

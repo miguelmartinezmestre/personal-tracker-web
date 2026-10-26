@@ -20,8 +20,6 @@ export function usePaginatedList<Query extends PaginatedQueryReference>(
         // Convex's own isLoading is also true while loading more, which would blank the list.
         isLoading: pagination.status === 'LoadingFirstPage',
         isFetching,
-        // The backend only reports more when a next page really exists, and flips this back when
-        // one appears, so the button can stay put and just enable or disable.
         canLoadMore: pagination.status === 'CanLoadMore',
         loadMore: () => pagination.loadMore(PAGE_SIZE),
     };

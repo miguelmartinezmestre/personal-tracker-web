@@ -6,7 +6,6 @@ import { MAX_OBJECTIVE_GRANTS } from './constants';
 
 export type UserGrant = { userId: Id<'user'>; access: 'view' | 'edit' };
 
-/** Makes the objective's individual permissions exactly `grants`, all for current members. */
 export async function replaceUserGrants(
     db: MutationCtx['db'],
     objective: Doc<'objectives'>,

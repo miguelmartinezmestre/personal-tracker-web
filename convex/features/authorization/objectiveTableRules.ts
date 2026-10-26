@@ -32,7 +32,6 @@ export function objectiveTableRules(helpers: RlsHelpers) {
     };
 
     return {
-        // Objectives are scoped by their own permissions, with no global admin bypass (decision 1).
         objectives: {
             read: (_ctx: QueryLike, objective: Doc<'objectives'>) =>
                 canViewObjective(ctx.db, helpers, objective),
@@ -50,7 +49,6 @@ export function objectiveTableRules(helpers: RlsHelpers) {
             modify: (_ctx: QueryLike, permission: Doc<'objectivePermissions'>) =>
                 canManageObjectiveById(permission.objectiveId),
         },
-        // Progress is visible with its objective; looked up once per objective in a request.
         progressUpdates: {
             read: (_ctx: QueryLike, progressUpdate: Doc<'progressUpdates'>) =>
                 canViewObjectiveById(progressUpdate.objective),

@@ -68,7 +68,6 @@ export default function TopObjectivesChart({ objectives }: { objectives: RankedO
                 ariaLabel={t('topObjectivesAria')}
                 className="text-muted-foreground text-xs"
             />
-            {/* The same data as text for screen readers (INH-DAS-07). */}
             <table className="sr-only">
                 <caption>{t('topObjectives')}</caption>
                 <thead>

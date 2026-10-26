@@ -26,7 +26,6 @@ import {
 } from 'lucide-react';
 import type { CATEGORY_ICONS } from '@/convex/features/categories/constants';
 
-// Typed by string to look up stored icons; `satisfies` still makes the catalog complete.
 const CATEGORY_ICON_COMPONENTS: Partial<Record<string, LucideIcon>> = {
     tag: Tag,
     heart: Heart,

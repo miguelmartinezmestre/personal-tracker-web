@@ -161,7 +161,6 @@ test.describe('Memoria setup + UI screenshots', () => {
         await page.waitForURL(/\/dashboard\/home(\?|$)/, { timeout: 45_000 });
         await waitForDashboardReady(page);
 
-        // Landing / auth / dashboard refreshes
         await page.goto('/');
         await page.waitForLoadState('networkidle');
         await captureFigure(page, 'landing-page-hero.png');
@@ -213,7 +212,6 @@ test.describe('Memoria setup + UI screenshots', () => {
         await page.waitForTimeout(600);
         await captureFigure(page, 'invitaciones-lista.png');
 
-        // Mobile views
         await page.setViewportSize({ width: 390, height: 844 });
         await page.goto('/login');
         await page.waitForLoadState('networkidle');

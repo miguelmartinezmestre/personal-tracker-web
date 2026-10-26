@@ -105,7 +105,6 @@ function OrganizationSwitcherMenuItems({
     });
 }
 
-// Personal organizations cannot be renamed, so their stored name is always the default one.
 function organizationDisplayName(
     organization: Pick<Organization, 'name' | 'isPersonal'> | null | undefined,
     labels: { personal: string; none: string }
@@ -150,7 +149,6 @@ export function OrganizationSwitcher({ initialActiveOrganizationId }: Organizati
         },
         onSuccess: (_data, organizationId) => {
             setOptimisticOrganizationId(organizationId);
-            // Organization-scoped queries must not flash the previous tenant's data.
             queryClient.clear();
             router.refresh();
         },

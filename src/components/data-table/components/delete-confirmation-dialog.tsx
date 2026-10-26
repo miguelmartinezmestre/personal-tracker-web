@@ -44,7 +44,6 @@ export function DeleteConfirmationDialog({
         setInternalIsLoading(true);
 
         try {
-            // Callers report their own errors, so the dialog closes either way.
             await onConfirm();
             setOpen(false);
         } finally {

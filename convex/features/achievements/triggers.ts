@@ -5,7 +5,6 @@ import type { MutationCtx } from '../../_generated/server';
 import { isResultingValueRecalculation } from '../objectives/progress';
 import { isEarlyBirdCompletion } from './metrics';
 
-// Creating and completing an objective count for its creator (INH-LOG-04, INH-OBJ-13).
 export async function evaluateObjectiveAchievements(
     ctx: MutationCtx,
     change: Change<DataModel, 'objectives'>
@@ -22,7 +21,6 @@ export async function evaluateObjectiveAchievements(
     }
 }
 
-// Logging or correcting progress counts for the author of the entry (INH-PRO-06).
 export async function evaluateProgressAchievements(
     ctx: MutationCtx,
     change: Change<DataModel, 'progressUpdates'>

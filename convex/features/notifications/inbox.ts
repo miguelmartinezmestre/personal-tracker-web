@@ -2,7 +2,6 @@ import type { Id } from '../../_generated/dataModel';
 import type { MutationCtx } from '../../_generated/server';
 import { NOTIFICATION_BATCH_SIZE } from './constants';
 
-// Read entries leave the unread index, so each batch starts over without skipping any.
 export async function markReadBatch(
     db: MutationCtx['db'],
     userId: Id<'user'>,

@@ -51,7 +51,6 @@ function SheetContent({
         data-side={side}
         className={cn(
           "bg-background fixed z-50 flex flex-col gap-4 shadow-lg transition duration-500 ease-in-out data-closed:duration-300",
-          // Geometry per side
           side === "left" &&
             "inset-y-0 left-0 h-full w-3/4 border-r sm:max-w-sm data-open:translate-x-0 data-closed:-translate-x-full data-starting-style:-translate-x-full data-ending-style:-translate-x-full",
           side === "right" &&

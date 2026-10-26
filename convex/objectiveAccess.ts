@@ -51,7 +51,6 @@ export const getObjectiveAccess = queryWithRLS({
     },
 });
 
-// The creator, owner and admins decide who else sees or edits the objective (decision 3).
 export const updateObjectiveAccess = mutationWithRLS({
     args: {
         objectiveId: v.id('objectives'),
@@ -93,7 +92,6 @@ export const updateObjectiveAccess = mutationWithRLS({
     },
 });
 
-// Leaving an organization takes the individual permissions with it; objectives stay (P8).
 export const removeMemberAccess = internalMutation({
     args: { userId: v.id('user'), organizationId: v.id('organization') },
     returns: v.null(),

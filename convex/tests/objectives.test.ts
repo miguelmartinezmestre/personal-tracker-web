@@ -245,7 +245,6 @@ describe('objectives', () => {
         vi.useFakeTimers({ toFake: ['Date'] });
 
         try {
-            // At 05:00 UTC it is still yesterday from UTC-12 onwards.
             vi.setSystemTime(today + 5 * 60 * 60 * 1000);
             await expect(
                 ownerIdentity.mutation(api.objectives.createObjective, {
@@ -375,7 +374,6 @@ describe('objectives', () => {
 
         expect(full.isDone).toBe(true);
 
-        // Newest first, so an older objective lands right after the page.
         await t.run(ctx =>
             ctx.db.insert('objectives', {
                 organizationId,
@@ -543,7 +541,6 @@ describe('objectives', () => {
             expect((await ids('week', { search: 'due' })).sort()).toEqual(
                 [dueToday, dueInWeek].sort()
             );
-            // The objective due next month follows in the index but is outside the range.
             expect((await list('month', {}, 3)).isDone).toBe(true);
         } finally {
             vi.useRealTimers();

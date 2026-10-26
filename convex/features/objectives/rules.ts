@@ -9,7 +9,6 @@ const HOUR_MS = 60 * 60 * 1000;
 
 export const DAY_MS = 24 * HOUR_MS;
 
-// Civil dates are the UTC midnight of the user's local day, and local time spans UTC-12 to UTC+14.
 const EARLIEST_UTC_OFFSET_MS = 12 * HOUR_MS;
 
 const LATEST_UTC_OFFSET_MS = 14 * HOUR_MS;
@@ -32,8 +31,7 @@ export function validateProgressDate(updateDate: number, now: number) {
     }
 }
 
-// The server doesn't know the user's time zone, so a deadline is "today" while that day is
-// still current somewhere; the date picker applies the user's own day.
+// The server doesn't know the user's zone: a deadline is "today" while that day lasts anywhere.
 export function validateDeadline(deadline: number, now: number) {
     validateCivilDate(deadline);
 
@@ -48,7 +46,6 @@ export function validateDueSoonDays(days: number) {
     }
 }
 
-// Without a deadline there is nothing to be due soon, so the setting is dropped with it.
 export function dueSoonDaysFor(deadline: number | undefined, dueSoonDays: number | undefined) {
     if (deadline === undefined) {
         return undefined;
@@ -60,17 +57,12 @@ export function dueSoonDaysFor(deadline: number | undefined, dueSoonDays: number
     return days;
 }
 
-/**
- * The [from, to) deadline range of a filter. `today` is the UTC midnight of the user's local day,
- * the same encoding as deadlines, so it has to come from the client.
- */
 export function deadlineRange(
     filter: Infer<typeof deadlineFilterValidator>,
     today: number
 ): { from: number; to: number } {
     switch (filter) {
         case 'overdue':
-            // Objectives without a deadline sort before every number, so they stay out.
             return { from: -Infinity, to: today };
         case 'today':
             return { from: today, to: today + DAY_MS };
@@ -117,7 +109,6 @@ export function validateObjectiveValues(
         throw new ConvexError(ERROR_CODES.TARGET_NOT_FINITE);
     }
 
-    // An objective that starts at its target would be born completed with nothing to log.
     if (isTargetReached(direction, startValue, targetValue)) {
         throw new ConvexError(ERROR_CODES.TARGET_DIRECTION_MISMATCH);
     }

@@ -19,11 +19,6 @@ import {
     evaluateProgressAchievements,
 } from '../achievements/triggers';
 
-/**
- * Per-organization counts and progress sums of objectives, keyed by [inTrash, memberCanView,
- * status, categoryId] so the dashboard can read totals, completed counts and per-category stats
- * without scanning the table, leaving the trash out and private objectives apart (P10).
- */
 export const objectiveStats = new TableAggregate<{
     Namespace: Id<'organization'>;
     Key: [boolean, boolean, Doc<'objectives'>['status'], Id<'categories'> | null];
@@ -40,7 +35,6 @@ export const objectiveStats = new TableAggregate<{
     sumValue: doc => progressPercent(doc),
 });
 
-// Objectives by progress within the same visibility groups, for the dashboard ranking.
 export const objectiveRanking = new TableAggregate<{
     Namespace: Id<'organization'>;
     Key: [boolean, boolean, number];
@@ -69,7 +63,6 @@ triggers.register('objectives', evaluateObjectiveAchievements);
 
 triggers.register('progressUpdates', evaluateProgressAchievements);
 
-// Every write to these tables must go through these builders so the aggregates never drift and
-// the audit log misses nothing.
+// Every write to these tables must go through these builders, or aggregates and audit log drift.
 export const mutation = customMutation(rawMutation, customCtx(triggers.wrapDB));
 export const internalMutation = customMutation(rawInternalMutation, customCtx(triggers.wrapDB));

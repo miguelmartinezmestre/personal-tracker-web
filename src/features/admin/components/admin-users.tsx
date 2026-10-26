@@ -34,7 +34,6 @@ export default function AdminUsers({ currentUserId }: { currentUserId: string })
     const locale = useLocale();
     const [searchInput, setSearchInput] = useState('');
     const [search, setSearch] = useState('');
-    // Waits for a pause in typing so each keystroke doesn't restart the paginated query.
     useEffect(() => {
         const timer = setTimeout(() => setSearch(searchInput.trim()), SEARCH_DELAY_MS);
 
@@ -117,7 +116,6 @@ export default function AdminUsers({ currentUserId }: { currentUserId: string })
             id: 'actions',
             header: '',
             cell: ({ row }) => {
-                // An admin never bans themself.
                 let banAction = null;
 
                 if (row.original.id !== currentUserId && row.original.banned) {

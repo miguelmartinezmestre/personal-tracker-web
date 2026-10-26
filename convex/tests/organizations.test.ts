@@ -86,7 +86,10 @@ describe('convex organizations', () => {
 
         const asOwner = await userIdentity.query(
             api.organizations.getOrganizationPendingInvitations,
-            { organizationId, paginationOpts: { numItems: 20, cursor: null } }
+            {
+                organizationId,
+                paginationOpts: { numItems: 20, cursor: null },
+            }
         );
 
         expect(asOwner.page.map(invitation => invitation.email)).toEqual(['pending@example.com']);
@@ -110,7 +113,6 @@ describe('convex organizations', () => {
         expect(secondPage.page.map(invitation => invitation.email)).toEqual([
             'pending@example.com',
         ]);
-        // Only an expired invitation follows, so there is no next page to offer.
         expect(secondPage.isDone).toBe(true);
 
         const suffix = Math.random().toString(36).substring(2, 15);

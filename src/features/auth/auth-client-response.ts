@@ -9,7 +9,6 @@ export function throwIfAuthClientError(response: { error: AuthClientError | null
         return;
     }
 
-    // Keep the Better Auth error as the cause so its `code` can be mapped to a translated message.
     throw new Error(response.error.message || response.error.statusText || 'Request failed', {
         cause: response.error,
     });

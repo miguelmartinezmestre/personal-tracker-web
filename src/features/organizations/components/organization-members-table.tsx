@@ -148,7 +148,6 @@ export default function OrganizationMembersTable({
     return (
         <div data-testid="organization-members-table">
             <DataTable
-                // Members cannot edit or remove anyone, so those columns would always be empty.
                 columns={
                     canManageMembers
                         ? columns

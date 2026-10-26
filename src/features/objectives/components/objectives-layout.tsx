@@ -37,7 +37,6 @@ export default function ObjectivesLayout() {
 
     const [searchInput, setSearchInput] = useState('');
     const [search, setSearch] = useState('');
-    // Waits for a pause in typing so each keystroke doesn't restart the paginated query.
     useEffect(() => {
         const timer = setTimeout(() => setSearch(searchInput.trim()), SEARCH_DELAY_MS);
 

@@ -9,7 +9,6 @@ import { buttonVariants } from '@/components/ui/button';
 import { api } from '@/convex/_generated/api';
 import { cn } from '@/lib/utils';
 
-// The count stops at 100, which the badge shows as "99+".
 const BADGE_LIMIT = 99;
 
 export function NotificationBell() {

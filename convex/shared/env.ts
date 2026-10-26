@@ -54,8 +54,6 @@ export function getEnvs() {
 
     const SETUP_SECRET = env.SETUP_SECRET?.trim() || undefined;
 
-    // Better Auth only warns on a weak secret; a short value makes session/JWT
-    // forgery feasible, so refuse to start instead.
     if (BETTER_AUTH_SECRET && BETTER_AUTH_SECRET.length < 32) {
         throw new Error('BETTER_AUTH_SECRET must contain at least 32 characters');
     }

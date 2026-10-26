@@ -1,6 +1,5 @@
 export type DeviceKind = 'mobile' | 'tablet' | 'desktop' | 'bot';
 
-// Only the device, browser and system are read from the agent; sessions are never geolocated.
 const BROWSERS: [RegExp, string][] = [
     [/edg\//i, 'Edge'],
     [/opr\/|opera/i, 'Opera'],
