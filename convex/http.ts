@@ -1,12 +1,13 @@
 import './httpPolyfills';
 import { authMiddleware } from 'kitcn/auth/http';
-import { HttpRouterWithHono } from 'kitcn/server';
+import { createHttpRouter, createHttpRouterFactory } from 'kitcn/server';
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { getAuth } from './generated/auth';
 import { getEnvs } from './shared/env';
 
 const app = new Hono();
+const router = createHttpRouterFactory();
 
 app.use(
     '/api/*',
@@ -20,4 +21,4 @@ app.use(
 
 app.use(authMiddleware(getAuth));
 
-export default new HttpRouterWithHono(app);
+export default createHttpRouter(app, router({}));

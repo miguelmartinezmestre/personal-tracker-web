@@ -18,13 +18,14 @@ overrides:
     undici: '>=8.10.2'
     source-map-js: '>=1.2.2'
     dompurify: '>=3.4.17'
-    'nodemailer@<10.0.6': 10.1.1
+    'zod@>=4.0.0 <5': 4.6.7
+    'nodemailer@<10.1.4': 10.1.4
+    'picomatch@>=4.0.0 <5': 4.0.7
+    '@maildev/mcp>zod': '>=4.6.6'
 
-# kitcn 0.15.14 pins an exact, vulnerable Hono peer. Hono follows semver and
-# 4.12.25+ contains the upstream CORS security fix (GHSA-88fw-hqm2-52qc).
 peerDependencyRules:
     allowedVersions:
-        'kitcn@0.15.14>hono': '>=4.12.25 <5'
+        'kitcn@0.33.11>hono': '>=4.13.11 <5'
 
 allowBuilds:
     '@parcel/watcher': true

@@ -14,6 +14,26 @@ import type { ActionCtx, MutationCtx, QueryCtx } from './server';
 import type { OrmTriggerContext } from 'kitcn/orm';
 
 const procedureRegistry = {
+    consumeOne: [
+        'mutation',
+        typedProcedureResolver(
+            createGeneratedFunctionReference<
+                'mutation',
+                'internal',
+                typeof import('./auth').consumeOne
+            >('generated/auth:consumeOne'),
+            () => (require('./auth') as Record<string, unknown>)['consumeOne']
+        ),
+    ],
+    count: [
+        'query',
+        typedProcedureResolver(
+            createGeneratedFunctionReference<'query', 'internal', typeof import('./auth').count>(
+                'generated/auth:count'
+            ),
+            () => (require('./auth') as Record<string, unknown>)['count']
+        ),
+    ],
     create: [
         'mutation',
         typedProcedureResolver(
@@ -74,6 +94,17 @@ const procedureRegistry = {
                 typeof import('./auth').getLatestJwks
             >('generated/auth:getLatestJwks'),
             () => (require('./auth') as Record<string, unknown>)['getLatestJwks']
+        ),
+    ],
+    incrementOne: [
+        'mutation',
+        typedProcedureResolver(
+            createGeneratedFunctionReference<
+                'mutation',
+                'internal',
+                typeof import('./auth').incrementOne
+            >('generated/auth:incrementOne'),
+            () => (require('./auth') as Record<string, unknown>)['incrementOne']
         ),
     ],
     rotateKeys: [
