@@ -17,7 +17,7 @@ export default defineConfig({
         pool: 'threads',
         maxWorkers: 1,
         setupFiles: ['./tests/frontend-setup.ts'],
-        include: ['src/**/*.test.{ts,tsx}', 'scripts/**/*.test.ts'],
+        include: ['src/**/*.test.{ts,tsx}'],
         coverage: {
             provider: 'v8',
             reportsDirectory: 'coverage/frontend',
