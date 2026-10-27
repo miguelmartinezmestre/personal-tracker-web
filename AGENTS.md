@@ -53,6 +53,11 @@ before commit.
 Tag each test with the `@REQ-…`/`@INH-…` identifiers it covers (`{ tag: [...] }` in Playwright, the
 test name in Vitest).
 
+A test exists only to verify one of those requirements through a realistic scenario on the public
+surface (UI, public Convex functions, HTTP endpoints), asserting what the user would notice. Don't
+test config parsing, internal batching or races, query shapes, or inputs no user would type. Test
+each behavior once, in the cheapest layer that proves it. Coverage is not a goal.
+
 ## Security & Configuration Tips
 
 Start from `.env.example` and keep local secrets in `.env.local`. Do not commit generated
