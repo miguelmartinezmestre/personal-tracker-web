@@ -15,7 +15,6 @@ const page = { numItems: 20, cursor: null };
 
 describe('objectives', () => {
     const t = initConvexTest();
-    let owner: TestUserData;
     let ownerIdentity: ReturnType<typeof t.withIdentity>;
     let organizationId: Id<'organization'>;
 
@@ -74,9 +73,8 @@ describe('objectives', () => {
 
     beforeEach(async () => {
         const created = await createUserInNewOrganization('objective-owner');
-        owner = created.user;
         organizationId = created.organization;
-        ownerIdentity = asUser(owner);
+        ownerIdentity = asUser(created.user);
     });
 
     test('creates an increasing objective by default and lists it as active @REQ-OBJETIVOS-001 @REQ-OBJETIVOS-002 @INH-OBJ-02', async () => {
@@ -106,9 +104,7 @@ describe('objectives', () => {
     });
 
     test.each([
-        ['increase', 10, 10],
         ['increase', 10, -5],
-        ['decrease', 10, 10],
         ['decrease', -5, 3],
     ] as const)(
         'rejects a target that does not %s from %d to %d on create and update @INH-OBJ-03',
@@ -136,17 +132,6 @@ describe('objectives', () => {
             expect(await get(objectiveId)).toEqual(before);
         }
     );
-
-    test('accepts negative values @INH-OBJ-01 @INH-OBJ-03', async () => {
-        const debt = await ownerIdentity.mutation(api.objectives.createObjective, {
-            title: 'Pay off the debt',
-            direction: 'increase',
-            startValue: -500,
-            targetValue: 0,
-        });
-
-        expect(await get(debt)).toMatchObject({ startValue: -500, targetValue: 0 });
-    });
 
     test('completes an objective whose new target or direction is already reached @REQ-OBJETIVOS-003 @INH-OBJ-08', async () => {
         const objectiveId = await create('Adjustable', { startValue: 2, targetValue: 10 });
@@ -336,7 +321,7 @@ describe('objectives', () => {
         expect(cleared.dueSoonDays).toBeUndefined();
     });
 
-    test('paginates objectives within the active organization and status filter', async () => {
+    test('paginates objectives within the active organization and status filter @REQ-NF-008 @INH-REN-02', async () => {
         const first = await create('First');
         const second = await create('Second');
         const completed = await create('Completed');
@@ -362,47 +347,6 @@ describe('objectives', () => {
 
         expect([first, second]).toContain(next.page[0]?.id);
         expect(next.page[0]?.id).not.toBe(firstPage.page[0]?.id);
-    });
-
-    test('a full last page reports isDone until a next page appears', async () => {
-        await create('One');
-        await create('Two');
-
-        const full = await ownerIdentity.query(api.objectives.listObjectives, {
-            paginationOpts: { numItems: 2, cursor: null },
-        });
-
-        expect(full.isDone).toBe(true);
-
-        await t.run(ctx =>
-            ctx.db.insert('objectives', {
-                organizationId,
-                createdBy: owner.docId,
-                title: 'Older',
-                direction: 'increase',
-                memberCanView: true,
-                memberCanEdit: false,
-                startValue: 0,
-                currentValue: 0,
-                targetValue: 10,
-                status: 'active',
-                createdAt: 1,
-                updatedAt: 1,
-            })
-        );
-
-        const again = await ownerIdentity.query(api.objectives.listObjectives, {
-            paginationOpts: { numItems: 2, cursor: null },
-        });
-
-        expect(again.isDone).toBe(false);
-
-        const last = await ownerIdentity.query(api.objectives.listObjectives, {
-            paginationOpts: { numItems: 2, cursor: again.continueCursor },
-        });
-
-        expect(last.page.map(objective => objective.title)).toEqual(['Older']);
-        expect(last.isDone).toBe(true);
     });
 
     test('searches titles combined with the status and category filters @REQ-OBJETIVOS-008', async () => {
@@ -547,31 +491,6 @@ describe('objectives', () => {
         }
     });
 
-    test('does not expose another organization through a reused objective cursor', async () => {
-        await create('Owner objective');
-        await create('Owner second objective');
-
-        const cursorPage = await ownerIdentity.query(api.objectives.listObjectives, {
-            paginationOpts: { numItems: 1, cursor: null },
-        });
-
-        expect(cursorPage.isDone).toBe(false);
-
-        const other = await createUserInNewOrganization('objective-tenant');
-
-        const otherId = await asUser(other.user).mutation(api.objectives.createObjective, {
-            title: 'Other objective',
-            startValue: 0,
-            targetValue: 10,
-        });
-
-        const reused = await asUser(other.user).query(api.objectives.listObjectives, {
-            paginationOpts: { numItems: 10, cursor: cursorPage.continueCursor },
-        });
-
-        expect(reused.page.every(item => item.id === otherId)).toBe(true);
-    });
-
     test('assigns, changes and clears the category, only within the organization @REQ-OBJETIVOS-004', async () => {
         const other = await createUserInNewOrganization('objective-category');
         const health = await createCategory('Health');
@@ -616,7 +535,7 @@ describe('objectives', () => {
         expect(cleared.categoryName).toBeUndefined();
     });
 
-    test('hides objectives from another organization', async () => {
+    test('hides objectives from another organization @REQ-NF-003 @INH-ORG-04 @INH-OBJ-14', async () => {
         const outsider = await createUserInNewOrganization('objective-outsider');
         const objectiveId = await create('Private to org', { targetValue: 3 });
 

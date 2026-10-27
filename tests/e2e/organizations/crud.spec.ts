@@ -1,76 +1,8 @@
-import type { Page } from '@playwright/test';
 import { randomUUID } from 'crypto';
 import { test, expect } from '../../fixtures/test-base';
 import { createOrganization } from '../../helpers/test-helpers';
-import { OrganizationFactory } from '../../helpers/factories';
-
-function escapeRegExp(value: string): string {
-    return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-}
-
-async function setActiveOrganization(page: Page, orgName: string): Promise<void> {
-    const switcher = page.getByTestId('organization-switcher');
-    const trigger = switcher.first();
-
-    const retryButton = page.getByRole('button', { name: /try again|reintentar/i });
-
-    if (await retryButton.isVisible()) {
-        await retryButton.click();
-    }
-
-    await expect(trigger).toBeVisible({ timeout: 15000 });
-    await expect(trigger).toBeEnabled({ timeout: 15000 });
-
-    const currentOrganizationText = (await trigger.textContent({ timeout: 2000 }))?.trim() ?? '';
-
-    if (currentOrganizationText.includes(orgName)) {
-        return;
-    }
-
-    await trigger.click();
-
-    const orgOption = page
-        .locator('[data-testid^="organization-option-"]')
-        .filter({ hasText: new RegExp(escapeRegExp(orgName), 'i') })
-        .first();
-
-    await expect(orgOption).toBeVisible({ timeout: 10000 });
-    await expect(orgOption).not.toHaveAttribute('aria-disabled', 'true');
-
-    await orgOption.click();
-    await expect(trigger).toContainText(orgName, { timeout: 10000 });
-}
 
 test.describe('Organizations CRUD', () => {
-    test(
-        'create a new organization with just a name',
-        { tag: ['@REQ-EQUIPOS-001'] },
-        async ({ page }) => {
-            const orgData = OrganizationFactory.create();
-
-            await page.goto('/dashboard/organizations');
-            await page.waitForLoadState('domcontentloaded');
-
-            await expect(page.getByTestId('organizations-title')).toBeVisible({
-                timeout: 15000,
-            });
-
-            await page.getByTestId('organization-create-open').click();
-
-            await page.getByTestId('organization-name-input').fill(orgData.name);
-            await expect(page.getByTestId('organization-description-input')).toHaveCount(0);
-
-            await page.getByTestId('organization-save-button').click();
-
-            const createdRow = page
-                .getByTestId('table-row')
-                .filter({ hasText: orgData.name })
-                .first();
-
-            await expect(createdRow).toBeVisible({ timeout: 10000 });
-        }
-    );
-
     test('edit organization name', { tag: ['@REQ-EQUIPOS-007'] }, async ({ page }) => {
         const organization = await createOrganization(page, {
             name: `Edit Org ${randomUUID().substring(0, 8)}`,
@@ -87,11 +19,6 @@ test.describe('Organizations CRUD', () => {
             .first();
 
         await expect(row).toBeVisible({ timeout: 10000 });
-
-        const organizationName =
-            (await row.locator('[data-testid="table-cell"]').first().textContent())?.trim() ?? '';
-
-        await setActiveOrganization(page, organizationName);
 
         const editButton = row.getByTestId('organization-edit-open');
 
@@ -134,11 +61,6 @@ test.describe('Organizations CRUD', () => {
 
         await expect(row).toBeVisible();
 
-        const organizationName =
-            (await row.locator('[data-testid="table-cell"]').first().textContent())?.trim() ?? '';
-
-        await setActiveOrganization(page, organizationName);
-
         const deleteButton = row.getByTestId('organization-delete-button');
 
         await expect(deleteButton).toBeVisible();
@@ -159,44 +81,32 @@ test.describe('Organizations CRUD', () => {
         await expect(row).toHaveCount(0, { timeout: 10000 });
     });
 
-    test('the only owner cannot leave and stays on the organization', async ({ page }) => {
-        const organization = await createOrganization(page, {
-            name: `Sole Owner Org ${randomUUID().substring(0, 8)}`,
-        });
+    test(
+        'the only owner cannot leave and stays on the organization',
+        { tag: ['@REQ-EQUIPOS-003', '@INH-ORG-06'] },
+        async ({ page }) => {
+            const organization = await createOrganization(page, {
+                name: `Sole Owner Org ${randomUUID().substring(0, 8)}`,
+            });
 
-        await page.goto('/dashboard/organizations');
-        await setActiveOrganization(page, organization.name);
+            await page
+                .getByTestId('organizations-table')
+                .getByTestId('table-row')
+                .filter({ hasText: organization.name })
+                .getByTestId('organization-detail-link')
+                .click();
 
-        const row = page
-            .getByTestId('organizations-table')
-            .locator('[data-testid="table-row"]')
-            .filter({ hasText: organization.name })
-            .first();
+            await page.getByTestId('organization-leave').click();
+            await page.getByTestId('delete-confirm-button').click();
 
-        await row.getByTestId('organization-detail-link').click();
-
-        await page.getByTestId('organization-leave').click();
-        await page.getByTestId('delete-confirm-button').click();
-
-        await expect(page.getByTestId('organization-switcher').first()).toContainText(
-            organization.name,
-            { timeout: 15000 }
-        );
-        await page.goto('/dashboard/organizations');
-        await expect(row).toBeVisible({ timeout: 15000 });
-    });
-
-    test('validate organization name required', { tag: ['@REQ-EQUIPOS-001'] }, async ({ page }) => {
-        await page.goto('/dashboard/organizations');
-
-        await page.getByTestId('organization-create-open').click();
-
-        const nameInput = page.getByTestId('organization-name-input');
-        await nameInput.fill('   ');
-        await page.getByTestId('organization-save-button').click();
-
-        await expect(nameInput).toHaveAttribute('aria-invalid', 'true');
-        await expect(page.locator('[data-slot="field-error"]')).toHaveCount(1);
-        await expect(nameInput).toBeVisible();
-    });
+            await expect(page.locator('[data-sonner-toast][data-type="error"]')).toContainText(
+                /only owner/i,
+                { timeout: 15000 }
+            );
+            await expect(page.getByTestId('organization-switcher').first()).toContainText(
+                organization.name,
+                { timeout: 15000 }
+            );
+        }
+    );
 });

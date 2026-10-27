@@ -18,7 +18,6 @@ interface CreateTestUserOptions {
     password?: string;
     usePresentableName?: boolean;
     customUsername?: string;
-    customEmail?: string;
 }
 
 export interface TestUserData {
@@ -35,7 +34,7 @@ export function generateTestUserData(options?: CreateTestUserOptions): TestUserD
 
     if (options?.customUsername) {
         username = options.customUsername;
-        email = options.customEmail ?? `${normalizeForEmail(options.customUsername)}@example.com`;
+        email = `${normalizeForEmail(options.customUsername)}@example.com`;
     } else if (options?.usePresentableName) {
         const presentableNames = ['Miguel García', 'Ana Martínez', 'Carlos López'];
 
@@ -99,24 +98,6 @@ async function loginWithCredentials(page: Page, email: string, password: string)
     await waitForActiveOrganization(page);
 }
 
-async function signInViaApi(page: Page, userData: TestUserData): Promise<void> {
-    const result = await page.evaluate(async user => {
-        const response = await fetch('/api/auth/sign-in/email', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            credentials: 'include',
-            body: JSON.stringify({
-                email: user.email,
-                password: user.password,
-            }),
-        });
-
-        return { ok: response.ok, status: response.status, body: await response.text() };
-    }, userData);
-
-    expect(result.ok, `sign-in/email failed with HTTP ${result.status}: ${result.body}`).toBe(true);
-}
-
 async function createTestUserViaApi(page: Page, userData: TestUserData): Promise<void> {
     await page.goto('/register', { waitUntil: 'domcontentloaded' });
 
@@ -138,12 +119,6 @@ async function createTestUserViaApi(page: Page, userData: TestUserData): Promise
     expect(result.ok, `sign-up/email failed with HTTP ${result.status}: ${result.body}`).toBe(true);
 
     await waitForAuthenticatedDashboard(page);
-
-    if (!DASHBOARD_HOME_RE.test(page.url())) {
-        await signInViaApi(page, userData);
-        await waitForAuthenticatedDashboard(page);
-    }
-
     await waitForActiveOrganization(page);
 }
 
@@ -164,11 +139,6 @@ export async function loginUser(
 ): Promise<void> {
     await page.goto('/login');
     await loginWithCredentials(page, email, password);
-
-    if (!DASHBOARD_HOME_RE.test(page.url())) {
-        await page.goto('/dashboard/home', { waitUntil: 'domcontentloaded' });
-    }
-
     await expect(page).toHaveURL(DASHBOARD_HOME_RE);
 }
 

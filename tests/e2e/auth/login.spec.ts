@@ -5,7 +5,7 @@ import { expectOnDashboard, expectOnLogin, expectErrorAlert } from '../../helper
 test.describe('Login', () => {
     test(
         'successful login lands on the dashboard',
-        { tag: ['@REQ-AUTENTICACION-001'] },
+        { tag: ['@REQ-AUTENTICACION-002'] },
         async ({ page }) => {
             const user = await createTestUser(page);
             await logoutUser(page);
@@ -16,7 +16,7 @@ test.describe('Login', () => {
 
     test(
         'invalid credentials stay on login with an error',
-        { tag: ['@REQ-AUTENTICACION-001'] },
+        { tag: ['@REQ-AUTENTICACION-002'] },
         async ({ page }) => {
             await page.goto('/login', { waitUntil: 'domcontentloaded' });
             await page.getByTestId('email-input').fill('nobody@example.com');

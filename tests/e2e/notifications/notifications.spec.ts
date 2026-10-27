@@ -8,7 +8,6 @@ test.describe('Notifications', () => {
             tag: [
                 '@REQ-NOTIFICACIONES-001',
                 '@REQ-NOTIFICACIONES-002',
-                '@REQ-NOTIFICACIONES-003',
                 '@INH-NOT-04',
                 '@INH-NOT-07',
             ],

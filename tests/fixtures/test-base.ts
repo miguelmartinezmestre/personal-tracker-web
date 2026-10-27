@@ -10,10 +10,7 @@ interface IsolatedSessionFixture {
 }
 
 interface TestFixtures {
-    authenticatedPage: Page;
-    isolatedAuthenticatedPage: Page;
     testUser: TestUserData;
-    isolatedTestUser: TestUserData;
     isolatedSession: IsolatedSessionFixture;
 }
 
@@ -60,19 +57,7 @@ export const test = base.extend<TestFixtures>({
         await use(isolatedSession.page);
     },
 
-    authenticatedPage: async ({ isolatedSession }, use) => {
-        await use(isolatedSession.page);
-    },
-
-    isolatedAuthenticatedPage: async ({ isolatedSession }, use) => {
-        await use(isolatedSession.page);
-    },
-
     testUser: async ({ isolatedSession }, use) => {
-        await use(isolatedSession.user);
-    },
-
-    isolatedTestUser: async ({ isolatedSession }, use) => {
         await use(isolatedSession.user);
     },
 });

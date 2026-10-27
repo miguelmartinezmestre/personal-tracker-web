@@ -9,7 +9,7 @@ import type { DataModel } from '../_generated/dataModel';
 describe('convex invitations (better-auth)', () => {
     const t = initConvexTest();
 
-    test('public invitation status exposes only validity and the organization name', async () => {
+    test('public invitation status exposes only validity and the organization name @REQ-EQUIPOS-006 @INH-ORG-07', async () => {
         const now = Date.now();
 
         const inviter = await createTestUser(t, {
@@ -59,7 +59,7 @@ describe('convex invitations (better-auth)', () => {
         ).resolves.toEqual({ isValid: false });
     });
 
-    test('getUserInvitations hides expired invitations', async () => {
+    test('getUserInvitations hides expired invitations @REQ-EQUIPOS-005 @INH-ORG-07', async () => {
         const randomSuffix = Math.random().toString(36).substring(2, 15);
         const targetEmail = `expired-target-${randomSuffix}@example.com`;
         const serverNow = Date.now();

@@ -6,7 +6,7 @@ import { NextIntlClientProvider } from 'next-intl';
 import es from '../../../translations/es.json';
 import { DataTable } from './table';
 
-test('failed queries show an error and retry instead of an empty table', async () => {
+test('failed queries show an error and retry instead of an empty table @INH-UI-05', async () => {
     const retry = vi.fn();
     render(
         <NextIntlClientProvider locale="es" messages={es}>

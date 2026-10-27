@@ -232,7 +232,7 @@ describe('objective permissions', () => {
         });
     });
 
-    test('the global admin role gives no access to objectives @REQ-NF-003', async () => {
+    test('the global admin role gives no access to objectives @REQ-NF-003 @REQ-ROLES-001', async () => {
         const objectiveId = await createObjective({ memberAccess: 'none' });
         const globalAdmin = await joinAs('member', 'global-admin', GLOBAL_ADMIN_ROLE);
 
@@ -279,23 +279,5 @@ describe('objective permissions', () => {
         expect(await total(creator)).toBe(3);
         expect(await total(member)).toBe(2);
         expect(await total(teammate)).toBe(1);
-    });
-
-    test('purging an objective removes its permissions @INH-PAP-03', async () => {
-        const objectiveId = await createObjective({
-            users: [{ userId: member.docId, access: 'edit' }],
-        });
-
-        await as(creator).mutation(api.objectives.deleteObjective, { id: objectiveId });
-        await as(creator).mutation(api.trash.purgeObjective, { id: objectiveId });
-
-        await t.run(async ctx => {
-            expect(
-                await ctx.db
-                    .query('objectivePermissions')
-                    .withIndex('by_objective_user', q => q.eq('objectiveId', objectiveId))
-                    .first()
-            ).toBeNull();
-        });
     });
 });

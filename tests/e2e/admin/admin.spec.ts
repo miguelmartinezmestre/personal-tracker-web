@@ -12,6 +12,7 @@ test.describe('Administration', () => {
                 '@REQ-ADMIN-002',
                 '@REQ-ADMIN-004',
                 '@REQ-ADMIN-005',
+                '@INH-ADM-01',
             ],
         },
         async ({ browser, page }) => {

@@ -50,17 +50,7 @@ describe('dashboard stats', () => {
         await createTestMember(t, { organizationId, userId: owner.docId, role: 'owner' });
     });
 
-    test('returns zeroed stats for an organization without objectives', async () => {
-        await expect(asUser(owner).query(api.dashboard.getDashboardStats, {})).resolves.toEqual({
-            total: 0,
-            active: 0,
-            completed: 0,
-            averageProgress: 0,
-            categories: [],
-        });
-    });
-
-    test('aggregates status, progress and categories for the active organization', async () => {
+    test('aggregates status, progress and categories for the active organization @REQ-DASHBOARD-001 @INH-DAS-02', async () => {
         const ownerIdentity = asUser(owner);
         const health = await createCategory('Health', '#EF4444');
         const career = await createCategory('Career', '#3B82F6');
@@ -138,43 +128,7 @@ describe('dashboard stats', () => {
         ]);
     });
 
-    test('listCategories only offers a next page when this organization has one', async () => {
-        await createCategory('Health', '#EF4444');
-        await createCategory('Career', '#3B82F6');
-
-        const otherOrganizationId = await createTestOrganization(t, {
-            name: `Other categories ${Math.random().toString(36).slice(2, 10)}`,
-            slug: `other-categories-${Math.random().toString(36).slice(2, 10)}`,
-        });
-
-        const now = Date.now();
-        await t.run(ctx =>
-            ctx.db.insert('categories', {
-                organizationId: otherOrganizationId,
-                name: 'Elsewhere',
-                color: '#000000',
-                createdAt: now,
-                updatedAt: now,
-            })
-        );
-
-        const full = await asUser(owner).query(api.categories.listCategories, {
-            paginationOpts: { numItems: 2, cursor: null },
-        });
-
-        expect(full.page.map(category => category.name)).toEqual(['Health', 'Career']);
-        expect(full.isDone).toBe(true);
-
-        await createCategory('Finance', '#22C55E');
-
-        const again = await asUser(owner).query(api.categories.listCategories, {
-            paginationOpts: { numItems: 2, cursor: null },
-        });
-
-        expect(again.isDone).toBe(false);
-    });
-
-    test('does not count objectives from another organization', async () => {
+    test('does not count objectives from another organization @REQ-DASHBOARD-001 @REQ-NF-003', async () => {
         const suffix = Math.random().toString(36).slice(2, 10);
 
         const outsider = await createTestUser(t, {

@@ -1,7 +1,7 @@
 import { randomUUID } from 'crypto';
 import { test, expect } from '../../fixtures/test-base';
 import { createCategory } from '../../helpers/categories';
-import { UserFactory } from '../../helpers/factories';
+import { generateTestUserData } from '../../helpers/test-helpers';
 
 test.describe('Categories', () => {
     test(
@@ -58,14 +58,14 @@ test.describe('Categories', () => {
 
     test(
         'signing up and creating an organization start from the platform catalog',
-        { tag: ['@REQ-CATEGORIAS-002'] },
+        { tag: ['@REQ-CATEGORIAS-002', '@REQ-EQUIPOS-001'] },
         async ({ browser, page }) => {
             const suffix = randomUUID().substring(0, 8);
             const signUpContext = await browser.newContext();
 
             try {
                 const newcomer = await signUpContext.newPage();
-                const user = UserFactory.create();
+                const user = generateTestUserData();
                 await newcomer.goto('/register', { waitUntil: 'domcontentloaded' });
                 await newcomer.getByTestId('register-username-input').fill(user.username);
                 await newcomer.getByTestId('register-email-input').fill(user.email);

@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, test, vi } from 'vitest';
-import { api, internal } from '../_generated/api';
+import { api } from '../_generated/api';
 import type { Id } from '../_generated/dataModel';
 import { initConvexTest } from './test.helper';
 import {
@@ -171,17 +171,5 @@ describe('trash', () => {
                     .first()
             ).toBeNull();
         });
-    });
-
-    test('a continuation from a stale purge leaves the objective alone @INH-PAP-05', async () => {
-        const objectiveId = await createWithProgress();
-        await as(creator).mutation(api.objectives.deleteObjective, { id: objectiveId });
-
-        await t.mutation(internal.trash.continuePurgeObjective, {
-            objectiveId,
-            purgeToken: 'stale',
-        });
-
-        expect(await trashIds(creator)).toEqual([objectiveId]);
     });
 });

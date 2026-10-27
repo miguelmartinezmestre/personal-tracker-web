@@ -1,48 +1,22 @@
-import type { Page } from '@playwright/test';
 import { test, expect } from '../../fixtures/test-base';
-
-async function openCommandPalette(page: Page) {
-    await page.goto('/dashboard/home');
-    await page.waitForLoadState('domcontentloaded');
-    await expect(page.getByTestId('command-menu-ready')).toBeAttached({ timeout: 10000 });
-    await page.keyboard.press('Meta+k');
-    await expect(page.locator('[role="dialog"]')).toBeVisible({ timeout: 5000 });
-}
 
 test.describe('Command Palette', () => {
     test(
-        'Cmd+K opens, filters and closes the command palette',
+        'Cmd+K opens the palette, the filter narrows it and choosing with the keyboard navigates',
         { tag: ['@REQ-NF-012', '@INH-ACC-03'] },
-        async ({ isolatedAuthenticatedPage }) => {
-            await openCommandPalette(isolatedAuthenticatedPage);
+        async ({ page }) => {
+            await page.goto('/dashboard/home', { waitUntil: 'domcontentloaded' });
+            await expect(page.getByTestId('command-menu-ready')).toBeAttached({ timeout: 10000 });
+            await page.keyboard.press('Meta+k');
+            await expect(page.getByRole('dialog')).toBeVisible({ timeout: 5000 });
 
-            const commandInput = isolatedAuthenticatedPage.getByTestId('command-input');
-            await expect(commandInput).toBeVisible();
-            await commandInput.fill('home');
-            await expect(isolatedAuthenticatedPage.getByTestId('command-item-home')).toBeVisible();
+            await page.getByTestId('command-input').fill('organiz');
+            await expect(page.getByTestId('command-item-organizations')).toBeVisible();
+            await expect(page.getByTestId('command-item-home')).toBeHidden();
+            await page.keyboard.press('Enter');
 
-            await isolatedAuthenticatedPage.keyboard.press('Escape');
-            await expect(isolatedAuthenticatedPage.locator('[role="dialog"]')).toBeHidden({
-                timeout: 5000,
-            });
-        }
-    );
-
-    test(
-        'choosing a command with the keyboard navigates to its page',
-        { tag: ['@REQ-NF-012', '@INH-ACC-03'] },
-        async ({ isolatedAuthenticatedPage }) => {
-            await openCommandPalette(isolatedAuthenticatedPage);
-
-            await isolatedAuthenticatedPage.getByTestId('command-input').fill('organiz');
-            await expect(
-                isolatedAuthenticatedPage.getByTestId('command-item-organizations')
-            ).toBeVisible();
-            await isolatedAuthenticatedPage.keyboard.press('Enter');
-
-            await isolatedAuthenticatedPage.waitForURL(/\/dashboard\/organizations/, {
-                timeout: 10000,
-            });
+            await page.waitForURL(/\/dashboard\/organizations/, { timeout: 10000 });
+            await expect(page.getByRole('dialog')).toBeHidden();
         }
     );
 });

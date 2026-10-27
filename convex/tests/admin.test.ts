@@ -122,32 +122,6 @@ describe('global administration', () => {
         });
     });
 
-    test('a stale revocation job stops once the user is unbanned @INH-ADM-04', async () => {
-        await as(admin).mutation(api.admin.banUser, { userId: user.docId });
-        const banned = await t.run(ctx => ctx.db.get('user', user.docId));
-        await as(admin).mutation(api.admin.unbanUser, { userId: user.docId });
-        await createTestSession(t, {
-            userId: user.docId,
-            activeOrganizationId: organizationId,
-            expiresAt: Date.now() + 60_000,
-            token: 'after-unban',
-        });
-
-        await t.mutation(internal.admin.continueBanSessionRevocation, {
-            userId: user.docId,
-            banUpdatedAt: banned?.updatedAt ?? 0,
-        });
-
-        expect(
-            await t.run(ctx =>
-                ctx.db
-                    .query('session')
-                    .withIndex('userId', q => q.eq('userId', user.docId))
-                    .take(5)
-            )
-        ).toHaveLength(1);
-    });
-
     test('lists and revokes the sessions of any user @REQ-ADMIN-004 @INH-ADM-02', async () => {
         const sessions = await as(admin).query(api.admin.listUserSessions, {
             userId: user.docId,

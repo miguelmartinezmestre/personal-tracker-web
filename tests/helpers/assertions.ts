@@ -17,8 +17,3 @@ export async function expectErrorAlert(page: Page, message?: string | RegExp): P
         await expect(errorAlert).toContainText(message);
     }
 }
-
-export async function expectWelcomeMessage(page: Page, username: string): Promise<void> {
-    const welcomeMessage = page.getByTestId('welcome-message');
-    await expect(welcomeMessage).toContainText(username);
-}

@@ -23,19 +23,6 @@ async function openOrganizationDetail(page: Page, organizationName?: string): Pr
 
 test.describe('Organization Members', () => {
     test(
-        'members table shows the owner with role and email',
-        { tag: ['@REQ-EQUIPOS-003'] },
-        async ({ page }) => {
-            await openOrganizationDetail(page);
-
-            const membersTable = page.getByTestId('organization-members-table');
-            await expect(membersTable.locator('table')).toBeVisible();
-            await expect(membersTable.locator('thead')).toContainText(/role|rol/i);
-            await expect(page.getByTestId('table-row').first()).toContainText(/@/);
-        }
-    );
-
-    test(
         'a member leaves the organization',
         { tag: ['@REQ-EQUIPOS-004'] },
         async ({ page, browser }) => {
@@ -112,8 +99,8 @@ test.describe('Organization Members', () => {
     );
 
     test(
-        'owner row cannot be removed from the organization',
-        { tag: ['@REQ-EQUIPOS-004'] },
+        'the owner row shows its role and email and cannot be removed',
+        { tag: ['@REQ-EQUIPOS-003', '@REQ-EQUIPOS-004'] },
         async ({ page }) => {
             await openOrganizationDetail(page);
 
@@ -123,6 +110,7 @@ test.describe('Organization Members', () => {
                 .first();
 
             await expect(ownerRow).toBeVisible({ timeout: 10000 });
+            await expect(ownerRow).toContainText(/@/);
             await expect(
                 ownerRow.getByRole('button', { name: /^(delete|eliminar)$/i })
             ).toHaveCount(0);

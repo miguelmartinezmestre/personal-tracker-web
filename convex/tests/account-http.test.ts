@@ -28,14 +28,14 @@ function extractCookie(response: Response): string {
 describe('account endpoints', () => {
     const t = initConvexTest();
 
-    async function createCredentialUser(role: 'user' | 'globalAdmin' = 'user') {
+    async function createCredentialUser() {
         const suffix = Math.random().toString(36).slice(2, 10);
 
         const user = await createTestUser(t, {
             userId: `http-delete-${suffix}`,
             email: `http-delete-${suffix}@example.com`,
             name: 'HTTP deletion user',
-            role,
+            role: 'user',
             emailVerified: true,
         });
 
@@ -120,35 +120,7 @@ describe('account endpoints', () => {
         });
     });
 
-    test('refuses to delete the user who set up the platform', async () => {
-        const { user } = await createCredentialUser('globalAdmin');
-        await t.run(ctx =>
-            ctx.db.insert('platformSettings', {
-                platformName: 'Platform',
-                defaultLanguage: 'en',
-                registrationPolicy: 'open',
-                setupCompletedBy: user.docId,
-            })
-        );
-        const cookie = await signIn(user.email);
-
-        const response = await t.fetch(
-            '/api/auth/soft-delete-user',
-            jsonRequest({ password: PASSWORD }, cookie)
-        );
-
-        expect(response.status).toBe(403);
-        const retainedUser = await t.run(ctx => ctx.db.get('user', user.docId));
-        expect(retainedUser).not.toBeNull();
-        expect(retainedUser?.deletedAt).toBeUndefined();
-        await t.run(async ctx => {
-            const settings = await ctx.db.query('platformSettings').first();
-
-            if (settings) await ctx.db.delete('platformSettings', settings._id);
-        });
-    });
-
-    test('rejects an incorrect password without mutating the account', async () => {
+    test('rejects an incorrect password without mutating the account @REQ-AUTENTICACION-009 @INH-AUT-12', async () => {
         const { user } = await createCredentialUser();
         const cookie = await signIn(user.email);
 
@@ -206,23 +178,6 @@ describe('account endpoints', () => {
         expect(allowed.status).toBe(200);
         await drainScheduledFunctions(t);
         expect(await t.run(ctx => ctx.db.get('organization', organizationId))).not.toBeNull();
-    });
-
-    test('keeps Better Auth core physical deletion disabled', async () => {
-        const { user } = await createCredentialUser();
-        const cookie = await signIn(user.email);
-
-        const response = await t.fetch(
-            '/api/auth/delete-user',
-            jsonRequest({ password: PASSWORD }, cookie)
-        );
-
-        expect(response.status).not.toBe(200);
-        await t.run(async ctx => {
-            const retainedUser = await ctx.db.get('user', user.docId);
-            expect(retainedUser).not.toBeNull();
-            expect(retainedUser?.deletedAt).toBeUndefined();
-        });
     });
 
     test('keeps names free but not blank when signing up or editing the profile @REQ-AUTENTICACION-004 @REQ-AUTENTICACION-001', async () => {

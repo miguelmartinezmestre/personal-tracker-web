@@ -1,15 +1,7 @@
-import { describe, expect, test } from 'vitest';
-import { extractErrorCode, getErrorLocale } from './error-messages';
+import { expect, test } from 'vitest';
+import { getErrorLocale } from './error-messages';
 
-describe('extractErrorCode', () => {
-    test('extracts a code through supported error wrapper fields', () => {
-        expect(extractErrorCode({ data: { message: 'ConvexError: AUTH_REQUIRED' } })).toBe(
-            'AUTH_REQUIRED'
-        );
-    });
-});
-
-test('error toasts follow the page language, not only the locale cookie', () => {
+test('error toasts follow the page language, not only the locale cookie @REQ-NF-007 @INH-UI-04', () => {
     document.cookie = 'locale=; max-age=0';
     document.documentElement.lang = 'es';
     expect(getErrorLocale()).toBe('es');

@@ -105,7 +105,7 @@ describe('categories', () => {
         expect(await categoriesOf(organizationId)).toEqual([]);
     });
 
-    test('the global admin gets no access to organization categories from its role @REQ-CATEGORIAS-003', async () => {
+    test('the global admin gets no access to organization categories from its role @REQ-CATEGORIAS-003 @REQ-ROLES-001', async () => {
         const id = await as(owner).mutation(api.categories.createCategory, { category: health });
         const memberAdmin = await joinAs('member', 'member-admin', 'globalAdmin');
 

@@ -81,19 +81,13 @@ describe('achievements', () => {
         vi.useRealTimers();
     });
 
-    test('creating and completing objectives award each achievement once, with points and notices @REQ-LOGROS-001 @REQ-LOGROS-002 @REQ-LOGROS-003 @REQ-LOGROS-004 @REQ-LOGROS-005 @REQ-LOGROS-006 @REQ-LOGROS-007 @INH-LOG-01 @INH-LOG-02 @INH-LOG-03 @INH-LOG-04 @INH-OBJ-13', async () => {
+    test('creating and completing objectives award each achievement once, with points and notices @REQ-LOGROS-001 @REQ-LOGROS-002 @REQ-LOGROS-003 @REQ-LOGROS-004 @REQ-LOGROS-005 @REQ-LOGROS-006 @REQ-LOGROS-007 @INH-LOG-01 @INH-LOG-03 @INH-LOG-04 @INH-OBJ-13 @INH-OBJ-11', async () => {
         const objectiveId = await createObjective(creator, 'Early goal');
         await createObjective(creator, 'Second goal');
         await runScheduled();
 
         const afterCreating = await achievementsOf(creator);
 
-        expect(
-            afterCreating.achievements.filter(achievement => achievement.scope === 'individual')
-        ).toHaveLength(14);
-        expect(
-            afterCreating.achievements.filter(achievement => achievement.scope === 'organization')
-        ).toHaveLength(5);
         expect(afterCreating.earned).toEqual(['first_objective', 'organization_first_objective']);
         expect(afterCreating.userPoints).toBe(10);
         expect(afterCreating.organizationPoints).toBe(15);

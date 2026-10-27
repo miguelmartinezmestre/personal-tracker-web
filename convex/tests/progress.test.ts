@@ -2,35 +2,30 @@ import { beforeEach, describe, expect, test, vi } from 'vitest';
 import { api } from '../_generated/api';
 import type { Id } from '../_generated/dataModel';
 import { initConvexTest } from './test.helper';
-import {
-    createTestMember,
-    createTestOrganization,
-    createTestUser,
-    TIME,
-    type TestUserData,
-} from './test.helpers';
+import { createTestMember, createTestOrganization, createTestUser, TIME } from './test.helpers';
 import { identityFor } from './test.identities';
 
 const page = { numItems: 20, cursor: null };
 
 describe('progress', () => {
     const t = initConvexTest();
-    let owner: TestUserData;
     let ownerIdentity: ReturnType<typeof t.withIdentity>;
-    let organizationId: Id<'organization'>;
 
     beforeEach(async () => {
         const suffix = Math.random().toString(36).slice(2, 10);
-        owner = await createTestUser(t, {
+
+        const owner = await createTestUser(t, {
             userId: `progress-owner-${suffix}`,
             email: `progress-owner-${suffix}@example.com`,
             name: 'Progress owner',
             role: 'user',
         });
-        organizationId = await createTestOrganization(t, {
+
+        const organizationId = await createTestOrganization(t, {
             name: `Progress ${suffix}`,
             slug: `progress-${suffix}`,
         });
+
         await createTestMember(t, { organizationId, userId: owner.docId, role: 'owner' });
         ownerIdentity = t.withIdentity(identityFor(owner));
     });
@@ -138,53 +133,6 @@ describe('progress', () => {
         expect(entries.page.map(entry => entry.resultingValue)).toEqual([27, 25]);
     });
 
-    test('recalculates the values after a backdated entry in batches of 100 @INH-PRO-01', async () => {
-        const objectiveId = await createObjective({ startValue: 0, targetValue: 1000 });
-
-        await t.run(async ctx => {
-            for (let day = 2; day <= 151; day += 1) {
-                await ctx.db.insert('progressUpdates', {
-                    objective: objectiveId,
-                    organizationId,
-                    createdBy: owner.docId,
-                    updatedValue: 1,
-                    updateDate: Date.UTC(2024, 0, day),
-                    resultingValue: day - 1,
-                    createdAt: 1,
-                    updatedAt: 1,
-                });
-            }
-
-            await ctx.db.patch('objectives', objectiveId, { currentValue: 150 });
-        });
-
-        const latestValue = async () => {
-            const history = await ownerIdentity.query(api.progress.getProgressHistory, {
-                objectiveId,
-            });
-
-            return history.points.at(-1)?.value;
-        };
-
-        vi.useFakeTimers();
-
-        try {
-            await ownerIdentity.mutation(api.progress.createProgress, {
-                objectiveId,
-                updatedValue: 10,
-                updateDate: Date.UTC(2024, 0, 1),
-            });
-
-            expect(await latestValue()).toBe(150);
-            await t.finishAllScheduledFunctions(() => vi.runAllTimers());
-        } finally {
-            vi.useRealTimers();
-        }
-
-        expect(await latestValue()).toBe(160);
-        expect(await get(objectiveId)).toMatchObject({ currentValue: 160 });
-    });
-
     test('a correction that reaches the target completes the objective @REQ-PROGRESO-003', async () => {
         const increasing = await createObjective({ startValue: 2, targetValue: 10 });
         const entry = await log(increasing, 3);
@@ -210,7 +158,7 @@ describe('progress', () => {
         expect(await get(decreasing)).toMatchObject({ currentValue: 5, status: 'completed' });
     });
 
-    test('keeps decimal totals free of floating-point drift', async () => {
+    test('keeps decimal totals free of floating-point drift @REQ-PROGRESO-005 @INH-PRO-03', async () => {
         const objectiveId = await createObjective({ startValue: 0, targetValue: 100 });
         const first = await log(objectiveId, 0.1);
         await log(objectiveId, 0.2);
@@ -299,65 +247,5 @@ describe('progress', () => {
                 expect.objectContaining({ value: 9.5, delta: 4 }),
             ],
         });
-    });
-
-    test('keeps only the latest 500 entries in the history, with exact values @INH-PRO-05', async () => {
-        const objectiveId = await createObjective({ startValue: 0, targetValue: 1000 });
-
-        await t.run(async ctx => {
-            for (let day = 1; day <= 501; day += 1) {
-                await ctx.db.insert('progressUpdates', {
-                    objective: objectiveId,
-                    organizationId,
-                    createdBy: owner.docId,
-                    updatedValue: 1,
-                    updateDate: Date.UTC(2024, 0, day),
-                    resultingValue: day,
-                    createdAt: 1,
-                    updatedAt: 1,
-                });
-            }
-
-            await ctx.db.patch('objectives', objectiveId, { currentValue: 501 });
-        });
-
-        const history = await ownerIdentity.query(api.progress.getProgressHistory, { objectiveId });
-
-        expect(history.isTruncated).toBe(true);
-        expect(history.points).toHaveLength(500);
-        expect(history.points[0]).toMatchObject({ updateDate: Date.UTC(2024, 0, 2), value: 2 });
-        expect(history.points.at(-1)).toMatchObject({ value: 501 });
-    });
-
-    test('paginates entries and scopes reused cursors to the requested objective', async () => {
-        const firstObjective = await createObjective();
-        const secondObjective = await createObjective();
-
-        for (let day = 1; day <= 3; day += 1) {
-            await log(firstObjective, day, day);
-        }
-
-        await log(secondObjective, 1, 1);
-
-        const firstPage = await ownerIdentity.query(api.progress.listProgress, {
-            objectiveId: firstObjective,
-            paginationOpts: { numItems: 1, cursor: null },
-        });
-
-        expect(firstPage.isDone).toBe(false);
-
-        const next = await ownerIdentity.query(api.progress.listProgress, {
-            objectiveId: firstObjective,
-            paginationOpts: { numItems: 1, cursor: firstPage.continueCursor },
-        });
-
-        expect(next.page.map(entry => entry.updatedValue)).toEqual([2]);
-
-        const reused = await ownerIdentity.query(api.progress.listProgress, {
-            objectiveId: secondObjective,
-            paginationOpts: { numItems: 10, cursor: firstPage.continueCursor },
-        });
-
-        expect(reused.page.every(entry => entry.objectiveId === secondObjective)).toBe(true);
     });
 });

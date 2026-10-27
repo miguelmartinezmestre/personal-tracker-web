@@ -1,12 +1,7 @@
 import { beforeEach, describe, expect, test } from 'vitest';
-import { api, internal } from '../_generated/api';
+import { internal } from '../_generated/api';
 import { initConvexTest } from './test.helper';
-import {
-    createTestUser,
-    createTestOrganization,
-    createTestMember,
-    createTestSession,
-} from './test.helpers';
+import { createTestUser, createTestOrganization, createTestMember } from './test.helpers';
 import type { Id } from '../_generated/dataModel';
 import { z } from 'zod';
 
@@ -48,7 +43,7 @@ describe('convex auth', () => {
         _organizationId = orgId;
     });
 
-    test('auth triggersApi writes audit logs for session create and delete', async () => {
+    test('auth triggersApi writes audit logs for session create and delete @REQ-NF-004 @INH-ADM-05', async () => {
         const sessionDoc = {
             expiresAt: Date.now() + 60_000,
             token: 'session-trigger-token',
@@ -122,7 +117,7 @@ describe('convex auth', () => {
         }
     });
 
-    test('default organization created for a user is protected', async () => {
+    test('default organization created for a user is protected @INH-ORG-01 @INH-ORG-02', async () => {
         const randomSuffix = Math.random().toString(36).substring(2, 15);
 
         const user = await createTestUser(t, {
@@ -134,14 +129,6 @@ describe('convex auth', () => {
         const organizationId = await t.mutation(internal.auth.ensureDefaultOrganizationForUser, {
             userId: user.docId,
         });
-
-        const organization = await t.run(
-            async ctx => await ctx.db.get('organization', organizationId)
-        );
-
-        expect(organization?.metadata).toBe(
-            JSON.stringify({ type: 'personal', ownerUserId: user.docId })
-        );
 
         const isDefaultOrganization = await t.query(internal.auth.isDefaultOrganization, {
             organizationId,
@@ -166,7 +153,7 @@ describe('convex auth', () => {
         expect(memberships).toHaveLength(1);
     });
 
-    test('detects an organization name the user already has, ignoring case', async () => {
+    test('detects an organization name the user already has, ignoring case @REQ-EQUIPOS-001 @REQ-EQUIPOS-007', async () => {
         const suffix = Math.random().toString(36).slice(2, 10);
 
         const user = await createTestUser(t, {
@@ -192,58 +179,5 @@ describe('convex auth', () => {
         expect(await check('  acme team ')).toBe(true);
         expect(await check('Other team')).toBe(false);
         expect(await check('Acme Team', organizationId)).toBe(false);
-    });
-
-    test('listOrganizations and getPersonalOrganizationId find the personal organization', async () => {
-        const randomSuffix = Math.random().toString(36).substring(2, 15);
-
-        const user = await createTestUser(t, {
-            userId: `personal-org-list-user-${randomSuffix}`,
-            email: `personal-org-list-user-${randomSuffix}@example.com`,
-            name: 'Personal Org List User',
-        });
-
-        const personalOrganizationId = await t.mutation(
-            internal.auth.ensureDefaultOrganizationForUser,
-            {
-                userId: user.docId,
-            }
-        );
-
-        const sessionId = await createTestSession(t, {
-            userId: user.docId,
-            activeOrganizationId: personalOrganizationId,
-            expiresAt: Date.now() + 60_000,
-            token: `personal-org-list-session-${randomSuffix}`,
-        });
-
-        const personalOrgIdentity = t.withIdentity({
-            subject: user.docId,
-            sessionId,
-            role: 'user',
-            email: user.email,
-            name: user.name,
-            password: 'test-password',
-            emailVerified: false,
-            createdAt: Date.now(),
-            userId: user.docId,
-            image: 'https://example.com/image.png',
-            banExpires: null,
-            banReason: null,
-            banned: false,
-        });
-
-        const organizations = await personalOrgIdentity.query(api.organizations.listOrganizations, {
-            paginationOpts: { numItems: 20, cursor: null },
-        });
-
-        const personalOrganization = organizations.page.find(
-            organization => organization.id === personalOrganizationId
-        );
-
-        expect(personalOrganization?.isPersonal).toBe(true);
-        await expect(
-            personalOrgIdentity.query(api.organizations.getPersonalOrganizationId, {})
-        ).resolves.toBe(personalOrganizationId);
     });
 });

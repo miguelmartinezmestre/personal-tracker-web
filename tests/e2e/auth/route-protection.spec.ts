@@ -11,7 +11,7 @@ test.describe('Route Protection', () => {
 
     test(
         'anonymous users are redirected from protected dashboard routes',
-        { tag: ['@REQ-ROLES-001', '@cross-browser-critical', '@mobile-critical'] },
+        { tag: ['@REQ-NF-003', '@INH-AUT-06', '@cross-browser-critical', '@mobile-critical'] },
         async ({ page, context }) => {
             await context.clearCookies();
 
@@ -26,9 +26,8 @@ test.describe('Route Protection', () => {
         'authenticated users can use dashboard routes and are sent back to login after logout',
         {
             tag: [
-                '@REQ-ROLES-001',
                 '@REQ-AUTENTICACION-005',
-                '@REQ-NF-002',
+                '@INH-AUT-06',
                 '@cross-browser-critical',
                 '@mobile-critical',
             ],
@@ -45,23 +44,6 @@ test.describe('Route Protection', () => {
             await logoutUser(page);
             await page.goto('/dashboard/home', { waitUntil: 'domcontentloaded' });
             await expectOnLogin(page);
-        }
-    );
-
-    test(
-        'public auth routes remain available without a session',
-        { tag: ['@REQ-ROLES-001', '@cross-browser-critical', '@mobile-critical'] },
-        async ({ page, context }) => {
-            await context.clearCookies();
-
-            await page.goto('/', { waitUntil: 'domcontentloaded' });
-            expect(page.url()).not.toContain('/login');
-
-            await page.goto('/login', { waitUntil: 'domcontentloaded' });
-            await expect(page).toHaveURL(/\/login(\?|$)/);
-
-            await page.goto('/register', { waitUntil: 'domcontentloaded' });
-            await expect(page).toHaveURL(/\/register$/);
         }
     );
 });

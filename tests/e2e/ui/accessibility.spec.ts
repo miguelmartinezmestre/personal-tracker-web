@@ -13,16 +13,21 @@ const routes = [
 ] as const;
 
 for (const theme of ['light', 'dark'] as const) {
-    for (const route of routes) {
-        test(
-            `${route} has no serious or critical accessibility violations in ${theme}`,
-            { tag: ['@accessibility', '@INH-ACC-01', '@mobile-critical'] },
-            async ({ page }, testInfo) => {
-                await page.addInitScript(
-                    selectedTheme => localStorage.setItem('theme', selectedTheme),
-                    theme
-                );
+    test(
+        `the main routes have no serious or critical accessibility violations in ${theme}`,
+        { tag: ['@accessibility', '@INH-ACC-01', '@REQ-NF-009', '@mobile-critical'] },
+        async ({ page }, testInfo) => {
+            await page.addInitScript(
+                selectedTheme => localStorage.setItem('theme', selectedTheme),
+                theme
+            );
+
+            for (const route of routes) {
                 await page.goto(`/dashboard/${route}`);
+                // Axe must read final colors, not a button still fading in from its disabled opacity.
+                await page.addStyleTag({
+                    content: '*, *::before, *::after { transition: none !important; }',
+                });
                 await expect(page.locator('html')).toHaveClass(new RegExp(theme));
                 await expect(page.getByRole('main')).toHaveCount(1);
                 await expect(page.getByRole('main')).toBeVisible();
@@ -41,10 +46,12 @@ for (const theme of ['light', 'dark'] as const) {
                     violation => violation.impact === 'serious' || violation.impact === 'critical'
                 );
 
-                expect(severe).toEqual([]);
+                expect
+                    .soft(severe, `serious or critical violations on /dashboard/${route}`)
+                    .toEqual([]);
             }
-        );
-    }
+        }
+    );
 }
 
 test(

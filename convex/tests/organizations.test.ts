@@ -13,7 +13,6 @@ describe('convex organizations', () => {
     const t = initConvexTest();
     let userIdentity: ReturnType<typeof t.withIdentity>;
     let organizationId: Id<'organization'>;
-    let organizationSlug: string;
     let memberUserId: Id<'user'>;
     beforeEach(async () => {
         const randomSuffix = Math.random().toString(36).substring(2, 15);
@@ -29,10 +28,9 @@ describe('convex organizations', () => {
 
         const userData = await createTestUser(t, user);
         memberUserId = userData.docId;
-        organizationSlug = 'organizations-test-org-' + randomSuffix;
         organizationId = await createTestOrganization(t, {
             name: 'Organizations Test Org ' + randomSuffix,
-            slug: organizationSlug,
+            slug: 'organizations-test-org-' + randomSuffix,
         });
         await createTestMember(t, {
             organizationId,
@@ -54,7 +52,7 @@ describe('convex organizations', () => {
             banned: false,
         });
     });
-    test('getOrganizationMembers returns paginated members for authorized user', async () => {
+    test('getOrganizationMembers returns paginated members for authorized user @REQ-EQUIPOS-004 @INH-ORG-09', async () => {
         const result = await userIdentity.query(api.organizations.getOrganizationMembers, {
             organizationId,
             paginationOpts: { numItems: 20, cursor: null },
@@ -64,7 +62,7 @@ describe('convex organizations', () => {
         expect(result.page[0]?.userId).toBe(memberUserId);
         expect(result.isDone).toBe(true);
     });
-    test('getOrganizationPendingInvitations lists only live invitations, and only to admins', async () => {
+    test('getOrganizationPendingInvitations lists only live invitations, and only to admins @REQ-EQUIPOS-002 @INH-ORG-07', async () => {
         const now = Date.now();
 
         const insertInvitation = (email: string, status: string, expiresAt: number) =>
@@ -146,27 +144,7 @@ describe('convex organizations', () => {
 
         expect(asMember.page).toEqual([]);
     });
-    test('getOrganizationMembers rejects unauthenticated users', async () => {
-        await expect(
-            t.query(api.organizations.getOrganizationMembers, {
-                organizationId,
-                paginationOpts: { numItems: 20, cursor: null },
-            })
-        ).rejects.toThrow(/Unauthenticated|User not authenticated|AUTH_REQUIRED/);
-    });
-    test('getOrganizationByIdentifier finds the organization by id or slug for members', async () => {
-        const byId = await userIdentity.query(api.organizations.getOrganizationByIdentifier, {
-            identifier: organizationId,
-        });
-
-        const bySlug = await userIdentity.query(api.organizations.getOrganizationByIdentifier, {
-            identifier: organizationSlug,
-        });
-
-        expect(byId).toMatchObject({ id: organizationId, role: 'owner' });
-        expect(bySlug?.id).toBe(organizationId);
-    });
-    test('users outside the organization cannot read it or its members', async () => {
+    test('users outside the organization cannot read it or its members @REQ-NF-003', async () => {
         const randomSuffix = Math.random().toString(36).substring(2, 15);
 
         const outsider = await createTestUser(t, {

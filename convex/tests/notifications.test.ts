@@ -137,7 +137,7 @@ describe('notifications', () => {
         expect(keys[1]).toMatch(/^deadlineUpcoming:Objective "Soon" is due in 3 days/);
     });
 
-    test('users read, mark and delete only their own notifications in the active organization @REQ-NOTIFICACIONES-002 @REQ-NOTIFICACIONES-003 @REQ-NOTIFICACIONES-004 @INH-NOT-06 @INH-NOT-07', async () => {
+    test('users read, mark and delete only their own notifications in the active organization @REQ-NOTIFICACIONES-002 @REQ-NOTIFICACIONES-003 @REQ-NOTIFICACIONES-004 @INH-NOT-06 @INH-NOT-07 @REQ-NF-008', async () => {
         const otherOrganizationId = await createTestOrganization(t, {
             name: 'Elsewhere',
             slug: `elsewhere-${Math.random().toString(36).slice(2, 10)}`,

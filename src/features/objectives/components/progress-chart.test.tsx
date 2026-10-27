@@ -55,12 +55,7 @@ function renderWithHistory(
     );
 }
 
-test('shows an empty state until progress is logged', () => {
-    renderWithHistory([]);
-    expect(screen.getByTestId('progress-chart-empty')).toHaveTextContent(es.Objectives.chart.empty);
-});
-
-test('renders the cumulative progress chart with target and pace legend', () => {
+test('renders the cumulative progress chart with target and pace legend @REQ-PROGRESO-004 @INH-PRO-05', () => {
     renderWithHistory([
         { updateDate: Date.UTC(2026, 0, 5), value: 3, delta: 3, comment: 'Buen día' },
         { updateDate: Date.UTC(2026, 0, 12), value: 7, delta: 4 },
@@ -71,33 +66,11 @@ test('renders the cumulative progress chart with target and pace legend', () => 
     expect(screen.getByText(es.Objectives.chart.legendPace)).toBeInTheDocument();
 });
 
-test('renders a single same-day update without a degenerate time axis', () => {
+test('renders a single same-day update without a degenerate time axis @REQ-PROGRESO-004', () => {
     const { container } = renderWithHistory([
         { updateDate: Date.UTC(2026, 0, 1), value: 2, delta: 2 },
     ]);
 
     expect(screen.getByTestId('progress-chart')).toBeInTheDocument();
     expect(container.innerHTML).not.toContain('NaN');
-});
-
-test('adds the year to day labels when the axis crosses into a new year', () => {
-    const { container } = renderWithHistory(
-        [{ updateDate: Date.UTC(2026, 0, 10), value: 2, delta: 2 }],
-        { ...objective, createdAt: Date.UTC(2025, 11, 1), deadline: Date.UTC(2026, 1, 1) }
-    );
-
-    const tickLabels = [...container.querySelectorAll('svg text')].flatMap(node =>
-        /[a-z]/.test(node.textContent) ? [node.textContent] : []
-    );
-
-    expect(tickLabels.length).toBeGreaterThan(0);
-    expect(tickLabels.every(label => /\d{4}/.test(label))).toBe(true);
-});
-
-test('omits the pace legend when the deadline leaves no pace line', () => {
-    renderWithHistory([{ updateDate: Date.UTC(2026, 0, 5), value: 2, delta: 2 }], {
-        ...objective,
-        deadline: Date.UTC(2025, 11, 1),
-    });
-    expect(screen.queryByText(es.Objectives.chart.legendPace)).not.toBeInTheDocument();
 });

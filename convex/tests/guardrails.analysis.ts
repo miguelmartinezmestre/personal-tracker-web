@@ -13,8 +13,6 @@ const RAW_BUILDERS = new Set([
     'actionGeneric',
 ]);
 
-const QUERY_STEPS = new Set(['withIndex', 'withSearchIndex', 'order', 'filter']);
-
 const REGISTERED_BUILDERS = new Set([
     'query',
     'mutation',
@@ -166,111 +164,6 @@ export function findRawPublicFunctions(source: ts.SourceFile) {
     }
 
     return found;
-}
-
-export function findForbiddenQueries(source: ts.SourceFile, checker?: ts.TypeChecker) {
-    const definitions = new Map<string, ts.Expression>();
-    const failures: { method: string; line: number }[] = [];
-
-    function collect(node: ts.Node) {
-        if (ts.isVariableDeclaration(node) && ts.isIdentifier(node.name) && node.initializer)
-            definitions.set(node.name.text, node.initializer);
-        ts.forEachChild(node, collect);
-    }
-
-    collect(source);
-
-    function isQuery(expression: ts.Expression, seen = new Set<string>()): boolean {
-        const type = checker?.getTypeAtLocation(expression);
-
-        if (type?.getProperty('paginate') && type.getProperty('order')) return true;
-
-        if (ts.isIdentifier(expression) && !seen.has(expression.text)) {
-            const original = definitions.get(expression.text);
-
-            return original ? isQuery(original, new Set([...seen, expression.text])) : false;
-        }
-
-        if (!ts.isCallExpression(expression)) return false;
-        const callee = expression.expression;
-
-        if (!ts.isPropertyAccessExpression(callee) && !ts.isElementAccessExpression(callee))
-            return false;
-        const name = memberName(callee);
-
-        if (name === 'query' && memberName(callee.expression) === 'db') return true;
-
-        return name && QUERY_STEPS.has(name) ? isQuery(callee.expression, seen) : false;
-    }
-
-    function visit(node: ts.Node) {
-        if (
-            ts.isCallExpression(node) &&
-            (ts.isPropertyAccessExpression(node.expression) ||
-                ts.isElementAccessExpression(node.expression))
-        ) {
-            const method = memberName(node.expression);
-
-            if (
-                (method === 'filter' || method === 'collect') &&
-                isQuery(node.expression.expression)
-            ) {
-                failures.push({
-                    method,
-                    line: source.getLineAndCharacterOfPosition(node.getStart()).line + 1,
-                });
-            }
-        }
-
-        ts.forEachChild(node, visit);
-    }
-
-    visit(source);
-
-    return failures;
-}
-
-function isRegisteredFunction(statement: ts.Statement) {
-    return (
-        ts.isVariableStatement(statement) &&
-        statement.modifiers?.some(modifier => modifier.kind === ts.SyntaxKind.ExportKeyword) ===
-            true &&
-        statement.declarationList.declarations.every(
-            declaration =>
-                declaration.initializer !== undefined &&
-                ts.isCallExpression(declaration.initializer) &&
-                ts.isIdentifier(declaration.initializer.expression) &&
-                REGISTERED_BUILDERS.has(declaration.initializer.expression.text)
-        )
-    );
-}
-
-function statementName(statement: ts.Statement) {
-    if (ts.isExportAssignment(statement)) return 'default';
-
-    if (ts.isVariableStatement(statement)) {
-        return statement.declarationList.declarations
-            .map(declaration => declaration.name.getText())
-            .join(', ');
-    }
-
-    return (
-        ts.getNameOfDeclaration(statement as ts.DeclarationStatement)?.getText() ??
-        ts.SyntaxKind[statement.kind]
-    );
-}
-
-export function findNonFunctionStatements(source: ts.SourceFile) {
-    return source.statements
-        .filter(
-            statement =>
-                !ts.isImportDeclaration(statement) &&
-                !(
-                    ts.isExpressionStatement(statement) && ts.isStringLiteral(statement.expression)
-                ) &&
-                !isRegisteredFunction(statement)
-        )
-        .map(statementName);
 }
 
 export function findMissingContracts(source: ts.SourceFile) {

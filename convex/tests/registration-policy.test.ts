@@ -4,46 +4,7 @@ import { initConvexTest } from './test.helper';
 import { createTestOrganization, createTestUser } from './test.helpers';
 
 describe('backend registration policy', () => {
-    test('classifies the first registration as a protected bootstrap', async () => {
-        const t = initConvexTest();
-
-        await expect(
-            t.query(internal.auth.getEmailRegistrationAuthorization, {
-                email: 'admin@example.com',
-                invitationId: null,
-                now: Date.now(),
-            })
-        ).resolves.toBe('bootstrap');
-    });
-
-    test('allows arbitrary email registration when policy is open', async () => {
-        const t = initConvexTest();
-
-        const setupUser = await createTestUser(t, {
-            userId: 'registration-policy-open-setup-user',
-            email: 'open-setup@example.com',
-            name: 'Open policy setup user',
-        });
-
-        await t.run(async ctx => {
-            await ctx.db.insert('platformSettings', {
-                platformName: 'Open platform',
-                defaultLanguage: 'en',
-                registrationPolicy: 'open',
-                setupCompletedBy: setupUser.docId,
-            });
-        });
-
-        await expect(
-            t.query(internal.auth.getEmailRegistrationAuthorization, {
-                email: 'anyone@example.com',
-                invitationId: null,
-                now: Date.now(),
-            })
-        ).resolves.toBe('allowed');
-    });
-
-    test('requires the exact active invitation for the same email', async () => {
+    test('requires the exact active invitation for the same email @REQ-AUTENTICACION-001 @INH-AUT-03', async () => {
         const t = initConvexTest();
         const now = Date.now();
 

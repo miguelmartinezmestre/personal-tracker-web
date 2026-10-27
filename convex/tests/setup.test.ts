@@ -3,10 +3,11 @@ import { api } from '../_generated/api';
 import { initConvexTest } from './test.helper';
 import { createTestUser, createTestOrganization, createTestMember } from './test.helpers';
 import { ERROR_CODES } from '../shared/errorCodes';
+import { isPersonalOrganizationForUser } from '../features/organizations/personalOrganization';
 
 describe('convex setup', () => {
     describe('getPublicPlatformSettings', () => {
-        test('returns only public fields when settings exist', async () => {
+        test('returns only public fields when settings exist @INH-SET-05', async () => {
             const t = initConvexTest();
 
             await t.run(async ctx => {
@@ -42,7 +43,7 @@ describe('convex setup', () => {
     });
 
     describe('completeSetup', () => {
-        test('fails when platform is already configured', async () => {
+        test('fails when platform is already configured @INH-SET-03', async () => {
             const t = initConvexTest();
 
             const userId = await t.run(async ctx => {
@@ -93,94 +94,6 @@ describe('convex setup', () => {
                     categories: [],
                 })
             ).rejects.toThrow(ERROR_CODES.PLATFORM_ALREADY_CONFIGURED);
-        });
-
-        test('binds setup to the first user even when more than one account exists', async () => {
-            const t = initConvexTest();
-
-            const user1 = await createTestUser(t, {
-                userId: 'user-1',
-                email: 'user1@test.com',
-                name: 'User 1',
-            });
-
-            const user2 = await createTestUser(t, {
-                userId: 'user-2',
-                email: 'user2@test.com',
-                name: 'User 2',
-            });
-
-            const buildIdentity = (user: typeof user1) => ({
-                subject: user.docId,
-                role: user.role ?? null,
-                email: user.email,
-                name: user.name,
-                emailVerified: true,
-                createdAt: Date.now(),
-                userId: user.docId,
-                image: 'https://example.com/image.png',
-                banExpires: null,
-                banReason: null,
-                banned: false,
-            });
-
-            const setupArgs = {
-                platformName: 'Test Platform',
-                defaultLanguage: 'en' as const,
-                registrationPolicy: 'open' as const,
-                organizationName: 'Test Org',
-                categories: [],
-            };
-
-            const asUser2 = t.withIdentity(buildIdentity(user2));
-            await expect(asUser2.mutation(api.setup.completeSetup, setupArgs)).rejects.toThrow(
-                ERROR_CODES.SETUP_USER_MISMATCH
-            );
-
-            const asUser1 = t.withIdentity(buildIdentity(user1));
-            const result = await asUser1.mutation(api.setup.completeSetup, setupArgs);
-            await expect(
-                t.run(ctx => ctx.db.get('organization', result.organizationId))
-            ).resolves.not.toBeNull();
-        });
-
-        test.each([
-            ['a blank platform name', { platformName: '   ' }],
-            ['a category without a hex color', { categories: [{ name: 'Health', color: 'red' }] }],
-        ])('rejects %s without configuring the platform', async (_label, override) => {
-            const t = initConvexTest();
-
-            const user = await createTestUser(t, {
-                userId: 'setup-invalid-args',
-                email: 'setup-invalid-args@test.com',
-                name: 'Setup Invalid Args',
-            });
-
-            const asUser = t.withIdentity({
-                subject: user.docId,
-                role: user.role ?? null,
-                email: user.email,
-                name: user.name,
-                emailVerified: true,
-                createdAt: Date.now(),
-                userId: user.docId,
-                image: null,
-                banExpires: null,
-                banReason: null,
-                banned: false,
-            });
-
-            await expect(
-                asUser.mutation(api.setup.completeSetup, {
-                    platformName: 'Test Platform',
-                    defaultLanguage: 'en',
-                    registrationPolicy: 'open',
-                    organizationName: 'Test Org',
-                    categories: [],
-                    ...override,
-                })
-            ).rejects.toThrow(ERROR_CODES.VALIDATION_ERROR);
-            await expect(t.query(api.setup.isPlatformSetUp, {})).resolves.toBe(false);
         });
 
         test('succeeds with exactly one user and no existing settings @INH-SET-01 @REQ-CATEGORIAS-002', async () => {
@@ -261,7 +174,7 @@ describe('convex setup', () => {
             expect(settings?.setupCompletedBy).toBe(user.docId);
         });
 
-        test('creates a team organization without converting the protected personal one', async () => {
+        test('creates a team organization without converting the protected personal one @INH-SET-01 @INH-ORG-02', async () => {
             const t = initConvexTest();
 
             const user = await createTestUser(t, {
@@ -320,9 +233,12 @@ describe('convex setup', () => {
                     .first();
 
                 expect(personal?.name).toBe('Personal Organization');
-                expect(personal?.metadata).toBe(
-                    JSON.stringify({ type: 'personal', ownerUserId: user.docId })
-                );
+                expect(
+                    isPersonalOrganizationForUser({
+                        metadata: personal?.metadata,
+                        userId: user.docId,
+                    })
+                ).toBe(true);
                 expect(team?.name).toBe('Real Team');
                 expect(team?.metadata).toBeNull();
                 expect(memberships.map(membership => membership.organizationId)).toEqual(

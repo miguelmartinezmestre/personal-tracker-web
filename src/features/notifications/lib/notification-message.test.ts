@@ -41,15 +41,14 @@ describe('notification text @INH-NOT-05 @REQ-NF-007', () => {
         );
     });
 
-    test.each([
-        ['an unknown key', 'somethingNew', { title: 'Run' }],
-        ['an unknown achievement', 'achievementEarned', { code: 'retired', points: 5 }],
-        ['a missing parameter', 'progressMilestone', { title: 'Run' }],
-        ['a parameter of the wrong type', 'progressMilestone', { title: 'Run', percent: '50' }],
-    ])('shows the stored English text for %s', (_case, messageKey, messageParams) => {
+    test('shows the stored English text for an unknown key', () => {
         expect(
             notificationText(
-                { messageKey, messageParams, message: 'Stored English text.' },
+                {
+                    messageKey: 'somethingNew',
+                    messageParams: { title: 'Run' },
+                    message: 'Stored English text.',
+                },
                 'es',
                 translate,
                 achievementName

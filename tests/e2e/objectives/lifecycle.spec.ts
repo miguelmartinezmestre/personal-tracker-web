@@ -130,8 +130,9 @@ test.describe('Objectives', () => {
         'a decreasing objective with negative values reaches its target as a new value and closes',
         {
             tag: [
+                '@REQ-OBJETIVOS-006',
                 '@REQ-PROGRESO-001',
-                '@REQ-OBJETIVOS-003',
+                '@REQ-PROGRESO-005',
                 '@INH-OBJ-01',
                 '@INH-OBJ-07',
                 '@INH-PRO-05',
