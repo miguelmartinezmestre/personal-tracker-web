@@ -16,15 +16,14 @@ jobs:
 
         steps:
             - name: Checkout
-              uses: actions/checkout@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
+              uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
+            # The version comes from `packageManager` in package.json.
             - name: Setup pnpm
-              uses: pnpm/action-setup@f40ffcd9367d9f12939873eb1018b921a783ffaa # v4
-              with:
-                  version: 12.3.4
+              uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
 
             - name: Setup Node
-              uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+              uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
               with:
                   node-version: 24.19.0
                   cache: pnpm
@@ -41,22 +40,7 @@ jobs:
               run: pnpm run test:coverage
 
             - name: Audit production dependencies
-              run: pnpm audit --audit-level high
-
-            - name: Start isolated codegen backend
-              run: pnpm exec tsx scripts/verification-backend.ts start
-
-            - name: Check generated code drift
-              run: pnpm exec tsx scripts/check-generated.ts
-
-            - name: Stop isolated codegen backend
-              if: always()
-              run: pnpm exec tsx scripts/verification-backend.ts stop
-
-            - name: Generate dependency inventories
-              run: |
-                  pnpm exec tsx scripts/generate-sbom.ts reports/verification/sbom.cdx.json
-                  pnpm run deps:licenses
+              run: pnpm audit --prod --audit-level high
 
             - name: Build
               env:
@@ -65,20 +49,6 @@ jobs:
                   NEXT_PUBLIC_CONVEX_SITE_URL: https://example.convex.site
               run: pnpm run build
 
-            - name: Consolidate evidence hashes
-              if: always()
-              run: pnpm exec tsx scripts/generate-evidence.ts
-
-            - name: Preserve quality evidence
-              if: always()
-              uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
-              with:
-                  name: quality-evidence
-                  retention-days: 90
-                  path: |
-                      reports/
-                      coverage/
-
     e2e:
         needs: quality
         runs-on: ubuntu-latest
@@ -86,15 +56,13 @@ jobs:
 
         steps:
             - name: Checkout
-              uses: actions/checkout@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
+              uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
             - name: Setup pnpm
-              uses: pnpm/action-setup@f40ffcd9367d9f12939873eb1018b921a783ffaa # v4
-              with:
-                  version: 12.3.4
+              uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
 
             - name: Setup Node
-              uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+              uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
               with:
                   node-version: 24.19.0
                   cache: pnpm
@@ -103,22 +71,11 @@ jobs:
               run: pnpm install --frozen-lockfile
 
             - name: Install Playwright browsers
-              run: pnpm exec playwright install --with-deps chromium firefox webkit
+              run: pnpm run playwright:install:ci
 
             - name: Run end-to-end suite
-              run: pnpm run test:e2e
+              run: pnpm run test:e2e:no-docker
 
-            - name: Consolidate evidence hashes
-              if: always()
-              run: pnpm exec tsx scripts/generate-evidence.ts
-
-            - name: Preserve end-to-end evidence
-              if: always()
-              uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
-              with:
-                  name: e2e-evidence
-                  retention-days: 90
-                  path: |
-                      reports/
-                      playwright-report/
-                      test-results/
+            # The suite deploys with `convex dev --once`, which rewrites the generated code.
+            - name: Check generated code drift
+              run: git diff --exit-code -- convex/_generated

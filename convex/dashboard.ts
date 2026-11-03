@@ -1,258 +1,319 @@
-import { queryWithRLS } from './platform/rls/wrappers';
-import { internalMutation } from './platform/db/internalMutation';
-import { v } from 'convex/values';
-import { internal } from './_generated/api';
-import { TIME, DASHBOARD, PAGINATION } from './utils/constants';
-import { assertBoundedInteger, assertValidReferenceTimestamp } from './utils/queryTime';
-import { computeProgressPercent } from './domain/objectives/metrics';
-import { objectiveStatusValidator } from './utils/validators';
-import { currentUtcCivilDay, toUtcCivilDay } from '../shared/civil-date';
+import type { Doc } from './_generated/dataModel';
 import {
-    countObjectives,
-    countProgress,
-    dashboardScope,
-    rankedObjectives,
-} from './domain/dashboard/read';
+    ACTIVITY_DAYS,
+    ACTIVITY_ROWS_LIMIT,
+    MONTHLY_ENTRIES_LIMIT,
+    MONTHS_SHOWN,
+    UPCOMING_DEADLINES,
+} from './features/dashboard/constants';
 import {
-    runDashboardBackfillBatch,
-    resyncProgressBatch,
-    startDashboardRebuild,
-    cleanupDashboardGenerationsBatch,
-} from './domain/dashboard/migration';
+    average,
+    emptyTotals,
+    trashedObjectives,
+    visibilityGroups,
+    visiblePrivateObjectives,
+    type StatsQuery,
+} from './features/dashboard/stats';
+import {
+    categoryStatsValidator,
+    objectiveRankingEntryValidator,
+    upcomingDeadlineValidator,
+} from './features/dashboard/validators';
+import { objectiveRanking, objectiveStats } from './features/objectives/stats';
+import { DEFAULT_DUE_SOON_DAYS } from './features/objectives/constants';
+import { MAX_PAGE_ITEMS } from './shared/pagination';
+import { DAY_MS } from './features/objectives/rules';
+import { ERROR_CODES } from './shared/errorCodes';
+import { progressPercent } from './features/objectives/records';
+import { queryWithRLS } from './features/authorization/wrappers';
+import { isOrganizationAdminRole } from './features/organizations/roles';
+import { ConvexError, v } from 'convex/values';
 
 export const getDashboardStats = queryWithRLS({
     args: {},
     returns: v.object({
-        completedObjectives: v.number(),
-        pendingObjectives: v.number(),
+        total: v.number(),
+        active: v.number(),
+        completed: v.number(),
+        averageProgress: v.number(),
+        categories: v.array(categoryStatsValidator),
     }),
     handler: async ctx => {
-        const scope = await dashboardScope(ctx);
-        if (!scope) {
-            return {
-                completedObjectives: 0,
-                pendingObjectives: 0,
-            };
+        if (!ctx.organizationId) {
+            return { total: 0, active: 0, completed: 0, averageProgress: 0, categories: [] };
         }
-        const [pendingObjectives, completedObjectives] = await Promise.all([
-            countObjectives(ctx, scope.namespaces, {
-                kind: 'status',
-                lower: 0,
-                upper: 1,
-                status: 'active',
-            }),
-            countObjectives(ctx, scope.namespaces, {
-                kind: 'status',
-                lower: 0,
-                upper: 1,
-                status: 'completed',
-            }),
+
+        const namespace = ctx.organizationId;
+        const categories: Doc<'categories'>[] = [];
+
+        for await (const category of ctx.db
+            .query('categories')
+            .withIndex('by_organization', q => q.eq('organizationId', namespace))) {
+            categories.push(category);
+        }
+
+        const isManager = isOrganizationAdminRole(ctx.memberRole);
+        const visibilities = isManager ? [true, false] : [true];
+
+        const queries: StatsQuery[] = visibilities.flatMap(visible => [
+            { namespace, bounds: { prefix: [false, visible] } },
+            { namespace, bounds: { prefix: [false, visible, 'completed'] } },
+            ...categories.flatMap((category): StatsQuery[] => [
+                { namespace, bounds: { prefix: [false, visible, 'active', category._id] } },
+                { namespace, bounds: { prefix: [false, visible, 'completed', category._id] } },
+            ]),
         ]);
+
+        const [counts, sums] = await Promise.all([
+            objectiveStats.countBatch(ctx, queries),
+            objectiveStats.sumBatch(ctx, queries),
+        ]);
+
+        const overall = emptyTotals();
+        const byCategory = new Map(categories.map(category => [category._id, emptyTotals()]));
+        const stride = 2 + categories.length * 2;
+
+        visibilities.forEach((_visible, set) => {
+            const at = (index: number) => ({
+                count: counts[set * stride + index] ?? 0,
+                sum: sums[set * stride + index] ?? 0,
+            });
+
+            overall.total += at(0).count;
+            overall.completed += at(1).count;
+            overall.progressSum += at(0).sum;
+
+            categories.forEach((category, index) => {
+                const active = at(2 + index * 2);
+                const completed = at(3 + index * 2);
+                const totals = byCategory.get(category._id) ?? emptyTotals();
+
+                totals.total += active.count + completed.count;
+                totals.completed += completed.count;
+                totals.progressSum += active.sum + completed.sum;
+            });
+        });
+
+        if (!isManager) {
+            for (const objective of await visiblePrivateObjectives(ctx.db, namespace, ctx.userId)) {
+                const totals = [overall];
+                const categoryTotals = objective.categoryId && byCategory.get(objective.categoryId);
+
+                if (categoryTotals) {
+                    totals.push(categoryTotals);
+                }
+
+                for (const entry of totals) {
+                    entry.total += 1;
+                    entry.completed += objective.status === 'completed' ? 1 : 0;
+                    entry.progressSum += progressPercent(objective);
+                }
+            }
+        }
+
+        const stats = categories.map(category => ({
+            categoryId: category._id,
+            name: category.name,
+            color: category.color,
+            ...(byCategory.get(category._id) ?? emptyTotals()),
+        }));
+
+        const uncategorized = {
+            categoryId: null,
+            name: null,
+            color: null,
+            total: overall.total - stats.reduce((sum, entry) => sum + entry.total, 0),
+            completed: overall.completed - stats.reduce((sum, entry) => sum + entry.completed, 0),
+            progressSum:
+                overall.progressSum - stats.reduce((sum, entry) => sum + entry.progressSum, 0),
+        };
+
         return {
-            completedObjectives,
-            pendingObjectives,
+            total: overall.total,
+            active: overall.total - overall.completed,
+            completed: overall.completed,
+            averageProgress: average(overall.progressSum, overall.total),
+            categories: [...stats, uncategorized]
+                .flatMap(({ progressSum: sum, ...entry }) =>
+                    entry.total > 0
+                        ? [{ ...entry, averageProgress: average(sum, entry.total) }]
+                        : []
+                )
+                .sort(
+                    (a, b) =>
+                        b.total - a.total ||
+                        Number(a.name === null) - Number(b.name === null) ||
+                        (a.name ?? '').localeCompare(b.name ?? '')
+                ),
         };
     },
 });
 
-export const getMonthlyProgress = queryWithRLS({
-    args: { months: v.optional(v.number()), now: v.number() },
-    returns: v.object({
-        items: v.array(v.object({ monthKey: v.string(), count: v.number() })),
-    }),
+export const getTopObjectives = queryWithRLS({
+    args: { limit: v.number() },
+    returns: v.array(objectiveRankingEntryValidator),
     handler: async (ctx, args) => {
-        assertValidReferenceTimestamp(args.now);
-        const months = assertBoundedInteger(args.months ?? DASHBOARD.MONTHS_TO_SHOW, {
-            min: DASHBOARD.MIN_MONTHS,
-            max: DASHBOARD.MAX_MONTHS,
-        });
-        const scope = await dashboardScope(ctx);
-        if (!scope) {
-            return { items: [] };
+        if (!ctx.organizationId) {
+            return [];
         }
-        const now = new Date(Date.now());
-        const items = await Promise.all(
-            Array.from({ length: months }, async (_, index) => {
-                const month = now.getUTCMonth() - months + 1 + index;
-                const start = Date.UTC(now.getUTCFullYear(), month, 1);
-                const end = Date.UTC(now.getUTCFullYear(), month + 1, 1);
-                const date = new Date(start);
-                const monthKey = `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, '0')}`;
-                return {
-                    monthKey,
-                    count: await countProgress(ctx, scope.progressNamespace, start, end),
-                };
-            })
+
+        if (!Number.isInteger(args.limit) || args.limit < 1 || args.limit > MAX_PAGE_ITEMS) {
+            throw new ConvexError(ERROR_CODES.VALIDATION_ERROR);
+        }
+
+        const namespace = ctx.organizationId;
+        const groups = await visibilityGroups(ctx, namespace);
+        const candidates = [...groups.privateObjectives];
+
+        for (const visible of groups.memberCanView) {
+            const { page } = await objectiveRanking.paginate(ctx, {
+                namespace,
+                bounds: { prefix: [false, visible] },
+                order: 'desc',
+                pageSize: args.limit,
+            });
+
+            for (const item of page) {
+                const objective = await ctx.db.get('objectives', item.id);
+
+                if (objective) {
+                    candidates.push(objective);
+                }
+            }
+        }
+
+        const unique = new Map(candidates.map(objective => [objective._id, objective]));
+
+        return [...unique.values()]
+            .map(objective => ({
+                id: objective._id,
+                title: objective.title,
+                status: objective.status,
+                progressPercent: progressPercent(objective),
+            }))
+            .sort((a, b) => b.progressPercent - a.progressPercent)
+            .slice(0, args.limit);
+    },
+});
+
+export const getMonthlyUpdates = queryWithRLS({
+    args: {},
+    returns: v.array(v.object({ month: v.string(), count: v.number() })),
+    handler: async ctx => {
+        const now = new Date();
+
+        const months = Array.from({ length: MONTHS_SHOWN }, (_, index) =>
+            new Date(
+                Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - MONTHS_SHOWN + 1 + index, 1)
+            )
+                .toISOString()
+                .slice(0, 7)
         );
-        return { items };
-    },
-});
 
-export const getObjectivesWithMostProgress = queryWithRLS({
-    args: { limit: v.optional(v.number()) },
-    returns: v.object({
-        items: v.array(
-            v.object({
-                id: v.id('objectives'),
-                objective: v.string(),
-                progress: v.number(),
-                status: objectiveStatusValidator,
-            })
-        ),
-    }),
-    handler: async (ctx, args) => {
-        const limit = assertBoundedInteger(args.limit ?? PAGINATION.DASHBOARD_LIMIT, {
-            min: 1,
-            max: 100,
-        });
-        const scope = await dashboardScope(ctx);
-        if (!scope) {
-            return { items: [] };
+        const counts = new Map(months.map(month => [month, 0]));
+
+        if (ctx.organizationId) {
+            const organizationId = ctx.organizationId;
+            const since = Date.parse(`${months[0]}-01T00:00:00Z`);
+
+            const entries = await ctx.db
+                .query('progressUpdates')
+                .withIndex('by_organization_date', q =>
+                    q.eq('organizationId', organizationId).gte('updateDate', since)
+                )
+                .take(MONTHLY_ENTRIES_LIMIT);
+
+            const inTrash = await trashedObjectives(ctx.db, entries);
+
+            for (const entry of entries) {
+                const month = new Date(entry.updateDate).toISOString().slice(0, 7);
+
+                if (!inTrash.has(entry.objective) && counts.has(month)) {
+                    counts.set(month, (counts.get(month) ?? 0) + 1);
+                }
+            }
         }
-        const result = await rankedObjectives(ctx, scope.namespaces, {
-            kind: 'progress',
-            limit,
-            lower: 0,
-            upper: 101,
-        });
-        return {
-            items: result.documents.map(doc => ({
-                id: doc._id,
-                objective: doc.title,
-                progress: computeProgressPercent(doc),
-                status: doc.status,
-            })),
-        };
+
+        return months.map(month => ({ month, count: counts.get(month) ?? 0 }));
     },
 });
 
 export const getUpcomingDeadlines = queryWithRLS({
-    args: { days: v.optional(v.number()), now: v.number(), limit: v.optional(v.number()) },
-    returns: v.object({
-        items: v.array(
-            v.object({
-                id: v.id('objectives'),
-                title: v.string(),
-                daysRemaining: v.number(),
-            })
-        ),
-        isTruncated: v.boolean(),
-    }),
-    handler: async (ctx, args) => {
-        assertValidReferenceTimestamp(args.now);
-        const days = assertBoundedInteger(args.days ?? DASHBOARD.DEADLINE_DAYS_AHEAD, {
-            min: DASHBOARD.MIN_DAYS,
-            max: DASHBOARD.MAX_DEADLINE_DAYS,
-        });
-        const limit = assertBoundedInteger(args.limit ?? PAGINATION.DASHBOARD_LIMIT, {
-            min: 1,
-            max: 100,
-        });
-        const scope = await dashboardScope(ctx);
-        if (!scope) {
-            return { items: [], isTruncated: false };
+    args: {},
+    returns: v.array(upcomingDeadlineValidator),
+    handler: async ctx => {
+        const organizationId = ctx.organizationId;
+
+        if (!organizationId) {
+            return [];
         }
-        const today = currentUtcCivilDay();
-        const result = await rankedObjectives(ctx, scope.namespaces, {
-            kind: 'deadline',
-            limit,
-            lower: today,
-            upper: today + days * TIME.DAY_MS,
-        });
-        const items = result.documents.flatMap(doc =>
-            doc.deadline === undefined
-                ? []
-                : [
-                      {
-                          id: doc._id,
-                          title: doc.title,
-                          daysRemaining: Math.round(
-                              (toUtcCivilDay(doc.deadline) - today) / TIME.DAY_MS
-                          ),
-                      },
-                  ]
-        );
-        return { items, isTruncated: result.hasMore };
+
+        const objectives = await ctx.db
+            .query('objectives')
+            .withIndex('by_organization_deletedAt_status_deadline', q =>
+                q
+                    .eq('organizationId', organizationId)
+                    .eq('deletedAt', undefined)
+                    .eq('status', 'active')
+                    .gte('deadline', 0)
+            )
+            .take(UPCOMING_DEADLINES);
+
+        return objectives.map(objective => ({
+            id: objective._id,
+            title: objective.title,
+            deadline: objective.deadline ?? 0,
+            dueSoonDays: objective.dueSoonDays ?? DEFAULT_DUE_SOON_DAYS,
+            progressPercent: progressPercent(objective),
+        }));
     },
 });
 
 export const getRecentActivity = queryWithRLS({
-    args: { days: v.optional(v.number()), now: v.number() },
-    returns: v.object({
-        progressUpdatesCount: v.number(),
-        objectivesCreatedCount: v.number(),
-        objectivesCompletedCount: v.number(),
-        periodDays: v.number(),
-    }),
-    handler: async (ctx, args) => {
-        assertValidReferenceTimestamp(args.now);
-        const periodDays = assertBoundedInteger(args.days ?? DASHBOARD.ACTIVITY_DAYS_BACK, {
-            min: DASHBOARD.MIN_DAYS,
-            max: DASHBOARD.MAX_ACTIVITY_DAYS,
-        });
-        const scope = await dashboardScope(ctx);
-        const start = Date.now() - periodDays * TIME.DAY_MS;
-        const [progressUpdatesCount, objectivesCreatedCount, objectivesCompletedCount] = scope
-            ? await Promise.all([
-                  countProgress(ctx, scope.progressNamespace, start, Number.MAX_SAFE_INTEGER),
-                  countObjectives(ctx, scope.namespaces, {
-                      kind: 'created',
-                      lower: start,
-                      upper: Number.MAX_SAFE_INTEGER,
-                  }),
-                  countObjectives(ctx, scope.namespaces, {
-                      kind: 'completed',
-                      lower: start,
-                      upper: Number.MAX_SAFE_INTEGER,
-                  }),
-              ])
-            : [0, 0, 0];
-        return {
-            progressUpdatesCount,
-            objectivesCreatedCount,
-            objectivesCompletedCount,
-            periodDays,
-        };
-    },
-});
+    args: {},
+    returns: v.object({ created: v.number(), updates: v.number(), completed: v.number() }),
+    handler: async ctx => {
+        const organizationId = ctx.organizationId;
 
-export const runDashboardBackfill = internalMutation({
-    args: { migrationId: v.id('dashboardMigrations'), generation: v.number() },
-    returns: v.null(),
-    handler: runDashboardBackfillBatch,
-});
-export const cleanupDashboardGenerations = internalMutation({
-    args: {
-        organizationId: v.id('organization'),
-        cursor: v.optional(v.union(v.string(), v.null())),
-    },
-    returns: v.null(),
-    handler: cleanupDashboardGenerationsBatch,
-});
-export const resyncObjectiveProgress = internalMutation({
-    args: {
-        resyncId: v.id('dashboardResyncs'),
-        revision: v.number(),
-        cursor: v.optional(v.union(v.string(), v.null())),
-    },
-    returns: v.null(),
-    handler: resyncProgressBatch,
-});
-export const rebuildAllDashboards = internalMutation({
-    args: { cursor: v.optional(v.union(v.string(), v.null())) },
-    returns: v.null(),
-    handler: async (ctx, args): Promise<null> => {
-        const page = await ctx.db
-            .query('organization')
-            .paginate({ numItems: 25, cursor: args.cursor ?? null });
-        for (const organization of page.page) {
-            await startDashboardRebuild(ctx, organization._id);
+        if (!organizationId) {
+            return { created: 0, updates: 0, completed: 0 };
         }
-        if (!page.isDone) {
-            await ctx.scheduler.runAfter(0, internal.dashboard.rebuildAllDashboards, {
-                cursor: page.continueCursor,
-            });
-        }
-        return null;
+
+        const since = Date.now() - ACTIVITY_DAYS * DAY_MS;
+
+        const created = await ctx.db
+            .query('objectives')
+            .withIndex('by_organization_deletedAt_createdAt', q =>
+                q
+                    .eq('organizationId', organizationId)
+                    .eq('deletedAt', undefined)
+                    .gte('createdAt', since)
+            )
+            .take(ACTIVITY_ROWS_LIMIT);
+
+        const completed = await ctx.db
+            .query('objectives')
+            .withIndex('by_organization_deletedAt_completedAt', q =>
+                q
+                    .eq('organizationId', organizationId)
+                    .eq('deletedAt', undefined)
+                    .gte('completedAt', since)
+            )
+            .take(ACTIVITY_ROWS_LIMIT);
+
+        const entries = await ctx.db
+            .query('progressUpdates')
+            .withIndex('by_organization_createdAt', q =>
+                q.eq('organizationId', organizationId).gte('createdAt', since)
+            )
+            .take(ACTIVITY_ROWS_LIMIT);
+
+        const inTrash = await trashedObjectives(ctx.db, entries);
+
+        return {
+            created: created.length,
+            updates: entries.filter(entry => !inTrash.has(entry.objective)).length,
+            completed: completed.length,
+        };
     },
 });

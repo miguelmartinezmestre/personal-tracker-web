@@ -1,5 +1,8 @@
-import SettingsLayout from '@/features/settings/components/settings-layout';
+import { SettingsPage } from '@/features/settings';
+import { translatedPageTitle } from '@/lib/page-metadata';
 
-export default function SettingsPage() {
-    return <SettingsLayout />;
+export const generateMetadata = translatedPageTitle('Sidebar', 'settings');
+
+export default function DashboardSettingsPage() {
+    return <SettingsPage />;
 }

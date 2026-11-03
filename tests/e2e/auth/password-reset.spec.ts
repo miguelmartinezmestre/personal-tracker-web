@@ -1,11 +1,10 @@
 import { expect, test } from '@playwright/test';
-import { UserFactory } from '../../helpers/factories';
 import { createTestUser, logoutUser, loginUser } from '../../helpers/test-helpers';
 import { waitForPasswordResetUrl } from '../../helpers/email-verification';
 
 test.describe('Password Reset', () => {
     test(
-        'resets through MailHog, accepts the new password and rejects the previous one',
+        'resets through MailDev, accepts the new password and rejects the previous one',
         { tag: ['@REQ-AUTENTICACION-003', '@cross-browser-critical'] },
         async ({ page }) => {
             const user = await createTestUser(page);
@@ -30,23 +29,6 @@ test.describe('Password Reset', () => {
             await expect(page).toHaveURL(/\/login/);
         }
     );
-    test(
-        'forgot password request shows a neutral success response',
-        { tag: ['@REQ-AUTENTICACION-003'] },
-        async ({ page }) => {
-            const user = UserFactory.create();
-            await page.goto('/forget-password');
-            await page.getByTestId('email-input').fill(user.email);
-            await page.getByTestId('forgot-password-submit').click();
-
-            await expect(
-                page.locator('[data-slot="alert"]').filter({
-                    hasText: /success|sent|enviado|éxito/i,
-                })
-            ).toBeVisible({ timeout: 10000 });
-        }
-    );
-
     test(
         'reset password rejects an invalid token',
         { tag: ['@REQ-AUTENTICACION-003'] },

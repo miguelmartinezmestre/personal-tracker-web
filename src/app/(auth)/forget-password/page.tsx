@@ -1,5 +1,8 @@
 import { ForgetPasswordForm } from '@/features/auth';
 import { getTranslations } from 'next-intl/server';
+import { translatedPageTitle } from '@/lib/page-metadata';
+
+export const generateMetadata = translatedPageTitle('HomePage', 'forgotPassword');
 
 export default async function ManageInvitationPage() {
     const t = await getTranslations('HomePage');

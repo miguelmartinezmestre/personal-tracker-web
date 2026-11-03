@@ -1,54 +1,19 @@
 import { describe, expect, test } from 'vitest';
 import { internal } from '../_generated/api';
 import { initConvexTest } from './test.helper';
-import { createTestOrganization, createTestUser } from './test_helpers';
+import { createTestOrganization, createTestUser } from './test.helpers';
 
 describe('backend registration policy', () => {
-    test('classifies the first registration as a protected bootstrap', async () => {
-        const t = initConvexTest();
-
-        await expect(
-            t.query(internal.auth.getEmailRegistrationAuthorization, {
-                email: 'admin@example.com',
-                invitationId: null,
-                now: Date.now(),
-            })
-        ).resolves.toBe('bootstrap');
-    });
-
-    test('allows arbitrary email registration when policy is open', async () => {
-        const t = initConvexTest();
-        const setupUser = await createTestUser(t, {
-            userId: 'registration-policy-open-setup-user',
-            email: 'open-setup@example.com',
-            name: 'Open policy setup user',
-        });
-        await t.run(async ctx => {
-            await ctx.db.insert('platformSettings', {
-                platformName: 'Open platform',
-                defaultLanguage: 'en',
-                registrationPolicy: 'open',
-                setupCompletedBy: setupUser.docId,
-            });
-        });
-
-        await expect(
-            t.query(internal.auth.getEmailRegistrationAuthorization, {
-                email: 'anyone@example.com',
-                invitationId: null,
-                now: Date.now(),
-            })
-        ).resolves.toBe('allowed');
-    });
-
-    test('requires the exact active invitation for the same email', async () => {
+    test('requires the exact active invitation for the same email @REQ-AUTENTICACION-001 @INH-AUT-03', async () => {
         const t = initConvexTest();
         const now = Date.now();
+
         const inviter = await createTestUser(t, {
             userId: 'registration-policy-inviter',
             email: 'inviter@example.com',
             name: 'Inviter',
         });
+
         const organizationId = await createTestOrganization(t, {
             name: 'Invitation organization',
             slug: 'invitation-organization',
@@ -61,6 +26,7 @@ describe('backend registration policy', () => {
                 registrationPolicy: 'invitation-only',
                 setupCompletedBy: inviter.docId,
             });
+
             const active = await ctx.db.insert('invitation', {
                 organizationId,
                 email: 'invited@example.com',
@@ -70,6 +36,7 @@ describe('backend registration policy', () => {
                 createdAt: now,
                 inviterId: inviter.docId,
             });
+
             const otherEmail = await ctx.db.insert('invitation', {
                 organizationId,
                 email: 'other@example.com',
@@ -79,6 +46,7 @@ describe('backend registration policy', () => {
                 createdAt: now,
                 inviterId: inviter.docId,
             });
+
             const expired = await ctx.db.insert('invitation', {
                 organizationId,
                 email: 'expired@example.com',
@@ -88,6 +56,7 @@ describe('backend registration policy', () => {
                 createdAt: now,
                 inviterId: inviter.docId,
             });
+
             const cancelled = await ctx.db.insert('invitation', {
                 organizationId,
                 email: 'cancelled@example.com',

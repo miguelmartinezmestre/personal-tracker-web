@@ -1,173 +1,108 @@
 'use client';
 
-import { Card, CardContent, CardHeader, CardTitle, CardAction } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Skeleton } from '@/components/ui/skeleton';
-import { QueryErrorFallback } from '@/components/ui/query-error-fallback';
-import { Trophy, ChevronRight, Star, Award } from 'lucide-react';
-import { useTranslations } from 'next-intl';
 import Link from 'next/link';
-import { api } from '@/convex/_generated/api';
-import { AchievementBadge } from './achievement-badge';
 import { useQuery } from '@tanstack/react-query';
 import { convexQuery } from '@convex-dev/react-query';
+import { useTranslations } from 'next-intl';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Progress } from '@/components/ui/progress';
+import { QueryErrorFallback } from '@/components/ui/query-error-fallback';
+import { Skeleton } from '@/components/ui/skeleton';
+import { api } from '@/convex/_generated/api';
+import type { Achievement } from '@/features/achievements/components/achievement-card';
+import { achievementIcon } from '@/features/achievements/lib/achievement-icons';
 
-const SKELETON_COUNTS = [1, 2, 3, 4];
+const SHOWN = 3;
 
-export function AchievementsWidget() {
-    const statsQuery = useQuery(convexQuery(api.achievements.getUserAchievementStats, {}));
-    const recentQuery = useQuery(convexQuery(api.achievements.getRecentAchievements, { limit: 5 }));
-    const { data: stats } = statsQuery;
-    const { data: recentAchievements } = recentQuery;
-
+function AchievementRow({ achievement }: { achievement: Achievement }) {
     const t = useTranslations('Achievements');
-
-    if (statsQuery.isError || recentQuery.isError) {
-        return (
-            <Card className="border-border/50">
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                        <Trophy className="h-5 w-5" />
-                        {t('widget.title')}
-                    </CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <QueryErrorFallback
-                        onRetry={() => {
-                            void statsQuery.refetch();
-                            void recentQuery.refetch();
-                        }}
-                    />
-                </CardContent>
-            </Card>
-        );
-    }
-
-    const isLoading = !stats || !recentAchievements;
-
-    if (isLoading) {
-        return (
-            <Card className="border-border/50">
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                        <Trophy className="h-5 w-5 animate-pulse" />
-                        <Skeleton className="h-5 w-32" />
-                    </CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <div className="space-y-4">
-                        <div className="grid grid-cols-2 gap-4">
-                            <Skeleton className="h-16" />
-                            <Skeleton className="h-16" />
-                        </div>
-                        <div className="flex gap-2">
-                            {SKELETON_COUNTS.map(i => (
-                                <Skeleton key={i} className="w-12 h-12 rounded-full" />
-                            ))}
-                        </div>
-                    </div>
-                </CardContent>
-            </Card>
-        );
-    }
+    const Icon = achievementIcon(achievement);
+    const name = t(`items.${achievement.code}.name`);
 
     return (
-        <Card
-            data-testid="achievements-widget"
-            className="group hover:shadow-lg transition-all duration-300 border-border/50 hover:border-primary/20"
-        >
-            <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                    <div className="relative">
-                        <Trophy className="h-5 w-5 text-yellow-500" />
-                        <div className="absolute inset-0 blur-xl bg-yellow-500/20 group-hover:bg-yellow-500/30 transition-all" />
-                    </div>
-                    {t('widget.title')}
-                </CardTitle>
-                <CardAction>
-                    <Button
-                        variant="ghost"
-                        size="sm"
-                        asChild
-                        className="hover:bg-primary/10 hover:text-primary transition-all"
-                    >
-                        <Link href="/dashboard/achievements">
-                            {t('widget.viewAll')}
-                            <ChevronRight className="h-4 w-4 ml-1 group-hover:translate-x-0.5 transition-transform" />
-                        </Link>
-                    </Button>
-                </CardAction>
-            </CardHeader>
-            <CardContent>
-                <div className="space-y-4">
-                    <div className="grid grid-cols-2 gap-4">
-                        <div className="group/stat flex items-center gap-3 p-3 rounded-lg bg-gradient-to-br from-yellow-500/10 to-yellow-500/5 hover:from-yellow-500/20 hover:to-yellow-500/10 transition-all duration-300">
-                            <div className="relative">
-                                <Star className="h-8 w-8 text-yellow-500 group-hover/stat:scale-110 transition-transform" />
-                                <div className="absolute inset-0 blur-lg bg-yellow-500/20" />
-                            </div>
-                            <div>
-                                <p className="text-2xl font-bold group-hover/stat:scale-105 transition-transform origin-left">
-                                    {stats.totalPoints}
-                                </p>
-                                <p className="text-xs text-muted-foreground">
-                                    {t('stats.totalPoints')}
-                                </p>
-                            </div>
-                        </div>
-                        <div className="group/stat flex items-center gap-3 p-3 rounded-lg bg-gradient-to-br from-primary/10 to-primary/5 hover:from-primary/20 hover:to-primary/10 transition-all duration-300">
-                            <div className="relative">
-                                <Award className="h-8 w-8 text-primary group-hover/stat:scale-110 transition-transform" />
-                                <div className="absolute inset-0 blur-lg bg-primary/20" />
-                            </div>
-                            <div>
-                                <p className="text-2xl font-bold group-hover/stat:scale-105 transition-transform origin-left">
-                                    {stats.earnedCount}
-                                    <span className="text-sm font-normal text-muted-foreground">
-                                        /{stats.totalAvailable}
-                                    </span>
-                                </p>
-                                <p className="text-xs text-muted-foreground">{t('stats.earned')}</p>
-                            </div>
-                        </div>
-                    </div>
+        <li className="flex items-center gap-3" data-testid="achievement-widget-row">
+            <Icon className="text-muted-foreground size-5 shrink-0" aria-hidden />
+            <div className="min-w-0 flex-1 space-y-1">
+                <p className="truncate text-sm font-medium">{name}</p>
+                {achievement.earnedAt === null && (
+                    <Progress
+                        value={achievement.progress}
+                        max={achievement.threshold}
+                        aria-label={t('progressLabel', { name })}
+                    />
+                )}
+            </div>
+            <span className="text-muted-foreground text-xs tabular-nums">
+                {achievement.earnedAt === null
+                    ? t('progress', {
+                          progress: achievement.progress,
+                          threshold: achievement.threshold,
+                      })
+                    : t('points', { points: achievement.points })}
+            </span>
+        </li>
+    );
+}
 
-                    {recentAchievements.length > 0 ? (
-                        <div className="space-y-2">
-                            <p className="text-xs text-muted-foreground font-medium">
-                                {t('widget.recentlyEarned')}
-                            </p>
-                            <div className="flex flex-wrap gap-2">
-                                {recentAchievements.map((achievement, index) => (
-                                    <div
-                                        key={achievement.code}
-                                        className="animate-in fade-in slide-in-from-bottom-2 duration-300"
-                                        style={{ animationDelay: `${index * 50}ms` }}
-                                    >
-                                        <AchievementBadge
-                                            icon={achievement.icon}
-                                            tier={achievement.tier}
-                                            name={t(`definitions.${achievement.code}.name`, {
-                                                defaultValue: achievement.code,
-                                            })}
-                                            earned={true}
-                                            size="md"
-                                        />
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
+export function AchievementsWidget() {
+    const t = useTranslations('Achievements.widget');
+    const achievements = useQuery(convexQuery(api.achievements.getAchievements, {}));
+
+    if (achievements.isError) {
+        return <QueryErrorFallback onRetry={() => void achievements.refetch()} />;
+    }
+
+    if (!achievements.data) {
+        return <Skeleton className="h-48" />;
+    }
+
+    const all = achievements.data.achievements;
+
+    const recent = all
+        .filter(achievement => achievement.earnedAt !== null)
+        .sort((a, b) => (b.earnedAt ?? 0) - (a.earnedAt ?? 0))
+        .slice(0, SHOWN);
+
+    const next = all
+        .filter(achievement => achievement.earnedAt === null)
+        .sort((a, b) => b.progress / b.threshold - a.progress / a.threshold)
+        .slice(0, SHOWN);
+
+    return (
+        <Card data-testid="achievements-widget">
+            <CardHeader>
+                <CardTitle>{t('title')}</CardTitle>
+                <CardDescription>
+                    {t('points', { points: achievements.data.userPoints })}
+                </CardDescription>
+            </CardHeader>
+            <CardContent className="grid gap-6 md:grid-cols-2">
+                <section className="space-y-3">
+                    <h3 className="text-sm font-medium">{t('recent')}</h3>
+                    {recent.length === 0 ? (
+                        <p className="text-muted-foreground text-sm">{t('none')}</p>
                     ) : (
-                        <div className="text-center py-6">
-                            <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-muted mb-3">
-                                <Trophy className="h-6 w-6 text-muted-foreground" />
-                            </div>
-                            <p className="text-sm text-muted-foreground">
-                                {t('widget.noAchievements')}
-                            </p>
-                        </div>
+                        <ul className="space-y-3">
+                            {recent.map(achievement => (
+                                <AchievementRow key={achievement.code} achievement={achievement} />
+                            ))}
+                        </ul>
                     )}
-                </div>
+                </section>
+                <section className="space-y-3">
+                    <h3 className="text-sm font-medium">{t('next')}</h3>
+                    <ul className="space-y-3">
+                        {next.map(achievement => (
+                            <AchievementRow key={achievement.code} achievement={achievement} />
+                        ))}
+                    </ul>
+                </section>
+                <Link
+                    href="/dashboard/achievements"
+                    className="text-primary text-sm font-medium hover:underline md:col-span-2"
+                >
+                    {t('viewAll')}
+                </Link>
             </CardContent>
         </Card>
     );

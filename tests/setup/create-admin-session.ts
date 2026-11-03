@@ -21,9 +21,18 @@ async function fillSetupInput(
     await expect(async () => {
         await input.click();
         await input.fill('');
-        await input.pressSequentially(value, { delay: 15 });
+        await input.fill(value);
+        const committed = await input.inputValue();
+
+        if (committed !== value) {
+            await input.click();
+            await input.fill('');
+            await input.pressSequentially(value, { delay: 15 });
+        }
+
         await input.blur();
         await expect(input).toHaveValue(value);
+
         if (options?.untilNextEnabled) {
             await expect(nextButton).toBeEnabled({ timeout: 1_000 });
         }
@@ -49,6 +58,7 @@ async function completeSetupWizard(page: Page, userData: TestUserData): Promise<
     await page.goto('/setup', { waitUntil: 'domcontentloaded' });
 
     const setupSecret = process.env.SETUP_SECRET;
+
     if (setupSecret) {
         const unauthorizedSignUp = await page.request.post('/api/auth/sign-up/email', {
             data: {
@@ -57,6 +67,7 @@ async function completeSetupWizard(page: Page, userData: TestUserData): Promise<
                 password: userData.password,
             },
         });
+
         expect(unauthorizedSignUp.status()).toBe(403);
     }
 
@@ -67,16 +78,22 @@ async function completeSetupWizard(page: Page, userData: TestUserData): Promise<
     await fillSetupInput(page, 'setup-email', userData.email);
     await fillSetupInput(page, 'setup-password', userData.password);
     await fillSetupInput(page, 'setup-confirm-password', userData.password);
+
     if (setupSecret) {
         await fillSetupInput(page, 'setup-secret', setupSecret);
     }
+
     await clickSetupNext(page);
 
     await fillSetupInput(page, 'setup-org-name', 'Product Team', { untilNextEnabled: true });
     await clickSetupNext(page);
 
     await clickSetupNext(page);
-    await page.locator('#policy-open').click();
+    await page
+        .getByTestId('setup-registration-policy')
+        .getByRole('radio', { name: /open|abierta/i })
+        .click();
+    await expect(page.locator('#policy-open')).toBeChecked();
     await clickSetupNext(page);
 
     const completeButton = page.getByTestId('setup-complete-button');
@@ -85,17 +102,15 @@ async function completeSetupWizard(page: Page, userData: TestUserData): Promise<
     await page.waitForURL(/\/dashboard\/home(\?|$)/, { timeout: 30_000 });
 }
 
-export async function createAdminSession(page: Page): Promise<TestUserData> {
+export async function createAdminSession(page: Page): Promise<void> {
     const userData = generateTestUserData({ customUsername: 'Ana Martínez' });
 
     await completeSetupWizard(page, userData);
     await waitForAdminDashboardReady(page);
-    await expect(page.locator('a[href*="/dashboard/admin"]').first()).toBeVisible({
+    await expect(page.getByTestId('dashboard-home-stub')).toBeVisible({
         timeout: 10_000,
     });
 
     await mkdir(dirname(ADMIN_USER_FILE), { recursive: true });
     await page.context().storageState({ path: ADMIN_USER_FILE });
-
-    return userData;
 }

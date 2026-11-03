@@ -1,591 +1,555 @@
-import { beforeEach, describe, expect, test } from 'vitest';
+import { beforeEach, describe, expect, test, vi } from 'vitest';
 import { api } from '../_generated/api';
+import type { Id } from '../_generated/dataModel';
 import { initConvexTest } from './test.helper';
 import {
     createTestMember,
-    createTestObjective,
     createTestOrganization,
     createTestUser,
-    readScheduledFunctionArg,
-} from './test_helpers';
-import { identityFor } from './test_identities';
-import type { DataModel, Id } from '../_generated/dataModel';
-import type { TestConvexForDataModel } from 'convex-test';
+    TIME,
+    type TestUserData,
+} from './test.helpers';
+import { identityFor } from './test.identities';
 
-describe('convex objectives', () => {
+const page = { numItems: 20, cursor: null };
+
+describe('objectives', () => {
     const t = initConvexTest();
-
-    let userIdentity: TestConvexForDataModel<DataModel>;
-    let userId: Id<'user'>;
+    let ownerIdentity: ReturnType<typeof t.withIdentity>;
     let organizationId: Id<'organization'>;
-    let otherOrgId: Id<'organization'>;
-    let otherUserId: Id<'user'>;
 
-    beforeEach(async () => {
-        const suffix = Math.random().toString(36).slice(2, 12);
+    function asUser(user: TestUserData) {
+        return t.withIdentity(identityFor(user));
+    }
 
-        organizationId = await createTestOrganization(t, {
-            name: `Objectives Org ${suffix}`,
-            slug: `objectives-org-${suffix}`,
-        });
-        otherOrgId = await createTestOrganization(t, {
-            name: `Objectives Other Org ${suffix}`,
-            slug: `objectives-other-org-${suffix}`,
-        });
+    async function createUserInNewOrganization(prefix: string) {
+        const suffix = Math.random().toString(36).slice(2, 10);
 
         const user = await createTestUser(t, {
-            userId: `objectives-user-${suffix}`,
-            email: `objectives-user-${suffix}@example.com`,
-            name: `Objectives User ${suffix}`,
-            password: 'test-password',
+            userId: `${prefix}-${suffix}`,
+            email: `${prefix}-${suffix}@example.com`,
+            name: prefix,
             role: 'user',
         });
-        userId = user.docId;
 
-        const otherUser = await createTestUser(t, {
-            userId: `objectives-other-${suffix}`,
-            email: `objectives-other-${suffix}@example.com`,
-            name: `Objectives Other ${suffix}`,
-            password: 'test-password',
-            role: 'user',
+        const organization = await createTestOrganization(t, {
+            name: `${prefix} ${suffix}`,
+            slug: `${prefix}-${suffix}`,
         });
-        otherUserId = otherUser.docId;
 
-        await createTestMember(t, { organizationId, userId, role: 'owner' });
         await createTestMember(t, {
-            organizationId: otherOrgId,
-            userId: otherUserId,
+            organizationId: organization,
+            userId: user.docId,
             role: 'owner',
         });
 
-        userIdentity = t.withIdentity(identityFor(user));
+        return { user, organization };
+    }
+
+    async function createCategory(name: string, organization = organizationId) {
+        return await t.run(ctx =>
+            ctx.db.insert('categories', {
+                organizationId: organization,
+                name,
+                color: '#22c55e',
+                createdAt: Date.now(),
+                updatedAt: Date.now(),
+            })
+        );
+    }
+
+    const create = (
+        title: string,
+        extra: Partial<{ startValue: number; targetValue: number }> = {}
+    ) =>
+        ownerIdentity.mutation(api.objectives.createObjective, {
+            title,
+            startValue: 0,
+            targetValue: 10,
+            ...extra,
+        });
+
+    const get = (id: Id<'objectives'>) => ownerIdentity.query(api.objectives.getObjective, { id });
+
+    beforeEach(async () => {
+        const created = await createUserInNewOrganization('objective-owner');
+        organizationId = created.organization;
+        ownerIdentity = asUser(created.user);
     });
 
-    describe('updateObjective completion (F2)', () => {
-        test('completes synchronously when the target is lowered below the current value', async () => {
-            const objectiveId = await userIdentity.mutation(api.objectives.createObjective, {
-                title: 'Sync completion',
-                targetValue: 100,
-            });
+    test('creates an increasing objective by default and lists it as active @REQ-OBJETIVOS-001 @REQ-OBJETIVOS-002 @INH-OBJ-02', async () => {
+        const objectiveId = await ownerIdentity.mutation(api.objectives.createObjective, {
+            title: 'Run',
+            startValue: 0,
+            targetValue: 10,
+            unit: 'km',
+        });
 
-            await userIdentity.mutation(api.update_progress.createUpdateProgress, {
-                objective: objectiveId,
-                updatedValue: 50,
-                updateDate: Date.now(),
-            });
+        const listed = await ownerIdentity.query(api.objectives.listObjectives, {
+            status: 'active',
+            paginationOpts: page,
+        });
 
-            const before = await t.run(async ctx => ctx.db.get('objectives', objectiveId));
-            expect(before?.status).toBe('active');
-
-            // Lowering the target below the current value must complete the
-            // objective immediately. Completion cannot depend on the queued
-            // reconciliation — it must be recomputed synchronously in the
-            // mutation.
-            await userIdentity.mutation(api.objectives.updateObjective, {
+        expect(listed.page).toEqual([
+            expect.objectContaining({
                 id: objectiveId,
-                targetValue: 40,
-            });
-
-            const after = await t.run(async ctx => ctx.db.get('objectives', objectiveId));
-            expect(after?.status).toBe('completed');
-            expect(after?.completedAt).toBeDefined();
-        });
-
-        test('rejects a partial update that would put the start above the target', async () => {
-            const objectiveId = await userIdentity.mutation(api.objectives.createObjective, {
-                title: 'Invalid partial bounds',
-                targetValue: 10,
-                startValue: 0,
-            });
-
-            await expect(
-                userIdentity.mutation(api.objectives.updateObjective, {
-                    id: objectiveId,
-                    startValue: 20,
-                })
-            ).rejects.toThrow();
-        });
-    });
-
-    describe('createObjective', () => {
-        test('creates an active objective with defaults', async () => {
-            const objectiveId = await userIdentity.mutation(api.objectives.createObjective, {
-                title: 'Read 12 books',
-                targetValue: 12,
-            });
-
-            const objective = await t.run(async ctx => ctx.db.get('objectives', objectiveId));
-            expect(objective).toMatchObject({
-                title: 'Read 12 books',
-                targetValue: 12,
-                currentValue: 0,
-                startValue: 0,
+                direction: 'increase',
                 status: 'active',
-                createdBy: userId,
-                ownerId: userId,
-                visibility: 'private',
-                organizationId,
-            });
-            expect(objective?.completedAt).toBeUndefined();
-        });
-
-        test('marks the objective completed when the start value reaches the target', async () => {
-            const objectiveId = await userIdentity.mutation(api.objectives.createObjective, {
-                title: 'Already done',
-                targetValue: 10,
-                currentValue: 10,
-            });
-
-            const objective = await t.run(async ctx => ctx.db.get('objectives', objectiveId));
-            expect(objective?.status).toBe('completed');
-            expect(objective?.completedAt).toBeDefined();
-        });
-
-        test('rejects an empty title', async () => {
-            await expect(
-                userIdentity.mutation(api.objectives.createObjective, {
-                    title: '   ',
-                    targetValue: 5,
-                })
-            ).rejects.toThrow();
-        });
-
-        test('rejects invalid metrics', async () => {
-            await expect(
-                userIdentity.mutation(api.objectives.createObjective, {
-                    title: 'Bad target',
-                    targetValue: Number.NaN,
-                })
-            ).rejects.toThrow();
-        });
-
-        test('rejects conflicting current and start baselines', async () => {
-            await expect(
-                userIdentity.mutation(api.objectives.createObjective, {
-                    title: 'Ambiguous baseline',
-                    targetValue: 100,
-                    currentValue: 10,
-                    startValue: 20,
-                })
-            ).rejects.toThrow(/VALIDATION_ERROR/);
-        });
-
-        test('rejects unauthenticated callers', async () => {
-            await expect(
-                t.mutation(api.objectives.createObjective, {
-                    title: 'No auth',
-                    targetValue: 5,
-                })
-            ).rejects.toThrow();
-        });
-    });
-
-    describe('getObjectives', () => {
-        test('paginates objectives of the active organization', async () => {
-            for (let i = 0; i < 3; i++) {
-                await createTestObjective(t, {
-                    userId,
-                    organizationId,
-                    title: `Objective ${i}`,
-                    targetValue: 100,
-                });
-            }
-
-            const firstPage = await userIdentity.query(api.objectives.getObjectives, {
-                paginationOpts: { numItems: 2, cursor: null },
-            });
-            expect(firstPage.page).toHaveLength(2);
-            expect(firstPage.isDone).toBe(false);
-
-            const secondPage = await userIdentity.query(api.objectives.getObjectives, {
-                paginationOpts: { numItems: 2, cursor: firstPage.continueCursor },
-            });
-            expect(secondPage.page).toHaveLength(1);
-            expect(secondPage.isDone).toBe(true);
-        });
-
-        test('filters by status', async () => {
-            await createTestObjective(t, {
-                userId,
-                organizationId,
-                title: 'Active one',
-                targetValue: 100,
-            });
-            await createTestObjective(t, {
-                userId,
-                organizationId,
-                title: 'Completed one',
-                targetValue: 10,
-                currentValue: 10,
-                status: 'completed',
-            });
-
-            const completed = await userIdentity.query(api.objectives.getObjectives, {
-                paginationOpts: { numItems: 10, cursor: null },
-                status: 'completed',
-            });
-            expect(completed.page).toHaveLength(1);
-            expect(completed.page[0]?.title).toBe('Completed one');
-        });
-
-        test('does not leak objectives from another organization', async () => {
-            await createTestObjective(t, {
-                userId: otherUserId,
-                organizationId: otherOrgId,
-                title: 'Foreign objective',
-                targetValue: 100,
-            });
-
-            const result = await userIdentity.query(api.objectives.getObjectives, {
-                paginationOpts: { numItems: 10, cursor: null },
-            });
-            expect(result.page).toHaveLength(0);
-        });
-    });
-
-    describe('getObjectiveById', () => {
-        test('returns an objective of the active organization', async () => {
-            const objectiveId = await createTestObjective(t, {
-                userId,
-                organizationId,
-                title: 'Mine',
-                targetValue: 100,
-            });
-
-            const objective = await userIdentity.query(api.objectives.getObjectiveById, {
-                id: objectiveId,
-            });
-            expect(objective?.title).toBe('Mine');
-        });
-
-        test('does not expose objectives from another organization', async () => {
-            const foreignId = await createTestObjective(t, {
-                userId: otherUserId,
-                organizationId: otherOrgId,
-                title: 'Foreign',
-                targetValue: 100,
-            });
-
-            try {
-                const objective = await userIdentity.query(api.objectives.getObjectiveById, {
-                    id: foreignId,
-                });
-                expect(objective).toBeNull();
-            } catch (error) {
-                expect(error).toBeDefined();
-            }
-        });
-    });
-
-    describe('updateObjective', () => {
-        test('patches the provided fields', async () => {
-            const objectiveId = await createTestObjective(t, {
-                userId,
-                organizationId,
-                title: 'Old title',
-                targetValue: 100,
-            });
-
-            const updated = await userIdentity.mutation(api.objectives.updateObjective, {
-                id: objectiveId,
-                title: 'New title',
+                currentValue: 0,
+                progressPercent: 0,
                 unit: 'km',
-            });
+                canManage: true,
+            }),
+        ]);
+    });
 
-            expect(updated.title).toBe('New title');
-            expect(updated.unit).toBe('km');
-            expect(updated.targetValue).toBe(100);
-        });
-
-        test('can clear a deadline and recomputes early-bird progress on deadline changes', async () => {
-            const now = Date.now();
-            const today = new Date(now);
-            const todayCivilDay = Date.UTC(
-                today.getUTCFullYear(),
-                today.getUTCMonth(),
-                today.getUTCDate()
-            );
-            const objectiveId = await createTestObjective(t, {
-                userId,
-                organizationId,
-                title: 'Completed after original deadline',
-                targetValue: 100,
-                currentValue: 100,
-                status: 'completed',
-                deadline: todayCivilDay - 24 * 60 * 60 * 1000,
-                completedAt: now,
-                earlyBirdCompleted: false,
-            });
-
-            const beforeScheduledIds = await t.run(async ctx =>
-                (await ctx.db.system.query('_scheduled_functions').collect()).map(row => row._id)
-            );
-            const beforeScheduledIdSet = new Set(beforeScheduledIds);
-
-            const extended = await userIdentity.mutation(api.objectives.updateObjective, {
-                id: objectiveId,
-                deadline: todayCivilDay,
-            });
-            expect(extended.earlyBirdCompleted).toBe(true);
-
-            const completionEvaluations = await t.run(async ctx => {
-                return (await ctx.db.system.query('_scheduled_functions').collect())
-                    .filter(row => !beforeScheduledIdSet.has(row._id))
-                    .map(readScheduledFunctionArg)
-                    .filter(args => args?.trigger === 'objective_completed');
-            });
-            expect(completionEvaluations).toEqual([
-                expect.objectContaining({ userId, trigger: 'objective_completed' }),
-            ]);
-
-            const cleared = await userIdentity.mutation(api.objectives.updateObjective, {
-                id: objectiveId,
-                deadline: null,
-            });
-            expect(cleared.deadline).toBeUndefined();
-            expect(cleared.earlyBirdCompleted).toBe(false);
-        });
-
-        test('rejects an empty title', async () => {
-            const objectiveId = await createTestObjective(t, {
-                userId,
-                organizationId,
-                title: 'Valid',
-                targetValue: 100,
-            });
+    test.each([
+        ['increase', 10, -5],
+        ['decrease', -5, 3],
+    ] as const)(
+        'rejects a target that does not %s from %d to %d on create and update @INH-OBJ-03',
+        async (direction, startValue, targetValue) => {
+            const objectiveId = await create('Valid range', { startValue: 2, targetValue: 8 });
+            const before = await get(objectiveId);
 
             await expect(
-                userIdentity.mutation(api.objectives.updateObjective, {
+                ownerIdentity.mutation(api.objectives.createObjective, {
+                    title: 'Invalid range',
+                    direction,
+                    startValue,
+                    targetValue,
+                })
+            ).rejects.toThrow('TARGET_DIRECTION_MISMATCH');
+            await expect(
+                ownerIdentity.mutation(api.objectives.updateObjective, {
                     id: objectiveId,
-                    title: ' ',
+                    direction,
+                    startValue,
+                    targetValue,
                 })
-            ).rejects.toThrow();
+            ).rejects.toThrow('TARGET_DIRECTION_MISMATCH');
+
+            expect(await get(objectiveId)).toEqual(before);
+        }
+    );
+
+    test('completes an objective whose new target or direction is already reached @REQ-OBJETIVOS-003 @INH-OBJ-08', async () => {
+        const objectiveId = await create('Adjustable', { startValue: 2, targetValue: 10 });
+
+        await ownerIdentity.mutation(api.progress.createProgress, {
+            objectiveId,
+            updatedValue: 6,
+            updateDate: Date.UTC(2026, 0, 2),
         });
 
-        test('denies updates to objectives of another organization', async () => {
-            const foreignId = await createTestObjective(t, {
-                userId: otherUserId,
-                organizationId: otherOrgId,
-                title: 'Foreign',
-                targetValue: 100,
-            });
-
-            await expect(
-                userIdentity.mutation(api.objectives.updateObjective, {
-                    id: foreignId,
-                    title: 'Hijacked',
-                })
-            ).rejects.toThrow();
-
-            const untouched = await t.run(async ctx => ctx.db.get('objectives', foreignId));
-            expect(untouched?.title).toBe('Foreign');
-        });
-    });
-
-    describe('deleteObjective', () => {
-        test('soft-deletes the objective', async () => {
-            const objectiveId = await createTestObjective(t, {
-                userId,
-                organizationId,
-                title: 'To delete',
-                targetValue: 100,
-            });
-            await t.run(async ctx => {
-                const now = Date.now();
-                await ctx.db.insert('progressUpdates', {
-                    objective: objectiveId,
-                    createdBy: userId,
-                    organizationId,
-                    updatedValue: 10,
-                    updateDate: now,
-                    createdAt: now,
-                    updatedAt: now,
-                });
-            });
-
-            const result = await userIdentity.mutation(api.objectives.deleteObjective, {
+        expect(
+            await ownerIdentity.mutation(api.objectives.updateObjective, {
                 id: objectiveId,
-            });
-            expect(result.objectiveId).toBe(objectiveId);
-            expect(result.status).toBe('soft_deleted');
+                targetValue: 12,
+            })
+        ).toMatchObject({ currentValue: 8, status: 'active', progressPercent: 60 });
 
-            const objective = await t.run(async ctx => ctx.db.get('objectives', objectiveId));
-            expect(objective?.deletedAt).toBeDefined();
-            expect(objective?.deletedBy).toBe(userId);
+        const completed = await ownerIdentity.mutation(api.objectives.updateObjective, {
+            id: objectiveId,
+            targetValue: 8,
         });
 
-        test('denies deleting objectives of another organization', async () => {
-            const foreignId = await createTestObjective(t, {
-                userId: otherUserId,
-                organizationId: otherOrgId,
-                title: 'Foreign',
-                targetValue: 100,
-            });
-
-            await expect(
-                userIdentity.mutation(api.objectives.deleteObjective, { id: foreignId })
-            ).rejects.toThrow();
-
-            const untouched = await t.run(async ctx => ctx.db.get('objectives', foreignId));
-            expect(untouched).not.toBeNull();
+        expect(completed).toMatchObject({
+            currentValue: 8,
+            status: 'completed',
+            progressPercent: 100,
         });
+        expect(completed.completedAt).toBeTypeOf('number');
+
+        const flipped = await create('Flipped', { startValue: 5, targetValue: 10 });
+
+        expect(
+            await ownerIdentity.mutation(api.objectives.updateObjective, {
+                id: flipped,
+                direction: 'decrease',
+                targetValue: 5,
+                startValue: 6,
+            })
+        ).toMatchObject({ direction: 'decrease', currentValue: 6, status: 'active' });
     });
 
-    describe('searchObjectivesPaginated', () => {
-        test('finds objectives by title within the active organization only', async () => {
-            await createTestObjective(t, {
-                userId,
-                organizationId,
-                title: 'Marathon training plan',
-                targetValue: 42,
-            });
-            await createTestObjective(t, {
-                userId: otherUserId,
-                organizationId: otherOrgId,
-                title: 'Marathon training plan',
-                targetValue: 42,
-            });
+    test('a completed objective is closed to edits @REQ-OBJETIVOS-003 @INH-OBJ-07', async () => {
+        const objectiveId = await create('Finished', { targetValue: 1 });
 
-            const results = await userIdentity.query(api.objectives.searchObjectivesPaginated, {
-                search: 'Marathon',
-                paginationOpts: { numItems: 10, cursor: null },
-            });
-
-            expect(results.page).toHaveLength(1);
-            expect(results.page[0]?.organizationId).toBe(organizationId);
+        await ownerIdentity.mutation(api.progress.createProgress, {
+            objectiveId,
+            updatedValue: 1,
+            updateDate: Date.UTC(2026, 0, 2),
         });
 
-        test('applies the status filter to search results', async () => {
-            await createTestObjective(t, {
-                userId,
-                organizationId,
-                title: 'Marathon active',
-                targetValue: 42,
-            });
-            await createTestObjective(t, {
-                userId,
-                organizationId,
-                title: 'Marathon finished',
-                targetValue: 10,
-                currentValue: 10,
-                status: 'completed',
-            });
+        const completed = await get(objectiveId);
 
-            const results = await userIdentity.query(api.objectives.searchObjectivesPaginated, {
-                search: 'Marathon',
-                status: 'completed',
-                paginationOpts: { numItems: 10, cursor: null },
-            });
+        await expect(
+            ownerIdentity.mutation(api.objectives.updateObjective, {
+                id: objectiveId,
+                title: 'New',
+            })
+        ).rejects.toThrow('OBJECTIVE_ALREADY_COMPLETED');
+        await expect(
+            ownerIdentity.mutation(api.objectives.updateObjective, {
+                id: objectiveId,
+                targetValue: 5,
+            })
+        ).rejects.toThrow('OBJECTIVE_ALREADY_COMPLETED');
 
-            expect(results.page).toHaveLength(1);
-            expect(results.page[0]?.title).toBe('Marathon finished');
-        });
+        expect(await get(objectiveId)).toEqual(completed);
     });
 
-    describe('permissions by organization role', () => {
-        let sharedOrgId: Id<'organization'>;
-        let ownerUser: Awaited<ReturnType<typeof createTestUser>>;
-        let memberUser: Awaited<ReturnType<typeof createTestUser>>;
-        let adminUser: Awaited<ReturnType<typeof createTestUser>>;
-        let memberIdentity: TestConvexForDataModel<DataModel>;
-        let adminIdentity: TestConvexForDataModel<DataModel>;
-        let ownerObjectiveId: Id<'objectives'>;
-        let memberObjectiveId: Id<'objectives'>;
+    test('moves the recorded progress with a new starting value @INH-OBJ-09', async () => {
+        const objectiveId = await create('Changing baseline', { startValue: 2, targetValue: 10 });
 
-        beforeEach(async () => {
-            const suffix = Math.random().toString(36).slice(2, 12);
-
-            sharedOrgId = await createTestOrganization(t, {
-                name: `Shared Org ${suffix}`,
-                slug: `shared-org-${suffix}`,
-            });
-
-            ownerUser = await createTestUser(t, {
-                userId: `perm-owner-${suffix}`,
-                email: `perm-owner-${suffix}@example.com`,
-                name: `Perm Owner ${suffix}`,
-            });
-            memberUser = await createTestUser(t, {
-                userId: `perm-member-${suffix}`,
-                email: `perm-member-${suffix}@example.com`,
-                name: `Perm Member ${suffix}`,
-            });
-            adminUser = await createTestUser(t, {
-                userId: `perm-admin-${suffix}`,
-                email: `perm-admin-${suffix}@example.com`,
-                name: `Perm Admin ${suffix}`,
-            });
-
-            await createTestMember(t, {
-                organizationId: sharedOrgId,
-                userId: ownerUser.docId,
-                role: 'member',
-            });
-            await createTestMember(t, {
-                organizationId: sharedOrgId,
-                userId: memberUser.docId,
-                role: 'member',
-            });
-            await createTestMember(t, {
-                organizationId: sharedOrgId,
-                userId: adminUser.docId,
-                role: 'admin',
-            });
-
-            memberIdentity = t.withIdentity(identityFor(memberUser));
-            adminIdentity = t.withIdentity(identityFor(adminUser));
-
-            ownerObjectiveId = await createTestObjective(t, {
-                userId: ownerUser.docId,
-                ownerId: ownerUser.docId,
-                organizationId: sharedOrgId,
-                title: 'Owner objective',
-                targetValue: 100,
-                visibility: 'private',
-            });
-            memberObjectiveId = await createTestObjective(t, {
-                userId: memberUser.docId,
-                ownerId: memberUser.docId,
-                organizationId: sharedOrgId,
-                title: 'Member objective',
-                targetValue: 50,
-                visibility: 'private',
-            });
+        await ownerIdentity.mutation(api.progress.createProgress, {
+            objectiveId,
+            updatedValue: 3,
+            updateDate: Date.UTC(2026, 0, 2),
         });
 
-        test('member cannot update another owners private objective', async () => {
+        expect(
+            await ownerIdentity.mutation(api.objectives.updateObjective, {
+                id: objectiveId,
+                startValue: -1,
+            })
+        ).toMatchObject({ startValue: -1, currentValue: 2, status: 'active' });
+
+        expect(
+            await ownerIdentity.mutation(api.objectives.updateObjective, {
+                id: objectiveId,
+                startValue: 7,
+            })
+        ).toMatchObject({ currentValue: 10, status: 'completed' });
+    });
+
+    test('accepts a deadline from the earliest current day on Earth and keeps one already passed @REQ-OBJETIVOS-005 @INH-OBJ-10', async () => {
+        const today = Date.UTC(2026, 0, 10);
+        const yesterday = today - TIME.DAY_MS;
+        vi.useFakeTimers({ toFake: ['Date'] });
+
+        try {
+            vi.setSystemTime(today + 5 * 60 * 60 * 1000);
             await expect(
-                memberIdentity.mutation(api.objectives.updateObjective, {
-                    id: ownerObjectiveId,
-                    title: 'Hijacked',
+                ownerIdentity.mutation(api.objectives.createObjective, {
+                    title: 'Due yesterday in UTC',
+                    startValue: 0,
+                    targetValue: 10,
+                    deadline: yesterday,
                 })
-            ).rejects.toThrow();
+            ).resolves.toBeTypeOf('string');
+
+            vi.setSystemTime(today + 13 * 60 * 60 * 1000);
+            await expect(
+                ownerIdentity.mutation(api.objectives.createObjective, {
+                    title: 'Too late',
+                    startValue: 0,
+                    targetValue: 10,
+                    deadline: yesterday,
+                })
+            ).rejects.toThrow('DEADLINE_TOO_OLD');
+            await expect(
+                ownerIdentity.mutation(api.objectives.createObjective, {
+                    title: 'Not a calendar day',
+                    startValue: 0,
+                    targetValue: 10,
+                    deadline: today + 1,
+                })
+            ).rejects.toThrow('VALIDATION_ERROR');
+
+            const objectiveId = await ownerIdentity.mutation(api.objectives.createObjective, {
+                title: 'Due today',
+                startValue: 0,
+                targetValue: 10,
+                deadline: today,
+            });
+
+            vi.setSystemTime(today + 3 * TIME.DAY_MS);
+            await expect(
+                ownerIdentity.mutation(api.objectives.updateObjective, {
+                    id: objectiveId,
+                    deadline: today + TIME.DAY_MS,
+                })
+            ).rejects.toThrow('DEADLINE_TOO_OLD');
+
+            expect(
+                await ownerIdentity.mutation(api.objectives.updateObjective, {
+                    id: objectiveId,
+                    title: 'Overdue, renamed',
+                })
+            ).toMatchObject({ title: 'Overdue, renamed', deadline: today });
+        } finally {
+            vi.useRealTimers();
+        }
+    });
+
+    test('keeps a due-soon warning of at least one day only while there is a deadline @INH-OBJ-19', async () => {
+        const deadline = Date.UTC(2099, 0, 1);
+
+        const objectiveId = await ownerIdentity.mutation(api.objectives.createObjective, {
+            title: 'With deadline',
+            startValue: 0,
+            targetValue: 10,
+            deadline,
         });
 
-        test('member can update and delete their own objectives', async () => {
-            const updated = await memberIdentity.mutation(api.objectives.updateObjective, {
-                id: memberObjectiveId,
-                title: 'Updated by member',
-            });
-            expect(updated.title).toBe('Updated by member');
+        expect(await get(objectiveId)).toMatchObject({ deadline, dueSoonDays: 7 });
 
-            const result = await memberIdentity.mutation(api.objectives.deleteObjective, {
-                id: memberObjectiveId,
-            });
-            expect(result.status).toBe('soft_deleted');
+        expect(
+            await ownerIdentity.mutation(api.objectives.updateObjective, {
+                id: objectiveId,
+                dueSoonDays: 30,
+            })
+        ).toMatchObject({ dueSoonDays: 30 });
+
+        for (const dueSoonDays of [0, 1.5]) {
+            await expect(
+                ownerIdentity.mutation(api.objectives.updateObjective, {
+                    id: objectiveId,
+                    dueSoonDays,
+                })
+            ).rejects.toThrow('VALIDATION_ERROR');
+        }
+
+        const cleared = await ownerIdentity.mutation(api.objectives.updateObjective, {
+            id: objectiveId,
+            deadline: null,
         });
 
-        test('admin can update and soft-delete objectives owned by others', async () => {
-            const updated = await adminIdentity.mutation(api.objectives.updateObjective, {
-                id: ownerObjectiveId,
-                title: 'Updated by admin',
-            });
-            expect(updated.title).toBe('Updated by admin');
+        expect(cleared.deadline).toBeUndefined();
+        expect(cleared.dueSoonDays).toBeUndefined();
+    });
 
-            const result = await adminIdentity.mutation(api.objectives.deleteObjective, {
-                id: ownerObjectiveId,
-            });
-            expect(result.status).toBe('soft_deleted');
+    test('paginates objectives within the active organization and status filter @REQ-NF-008 @INH-REN-02', async () => {
+        const first = await create('First');
+        const second = await create('Second');
+        const completed = await create('Completed');
+
+        await ownerIdentity.mutation(api.progress.createProgress, {
+            objectiveId: completed,
+            updatedValue: 10,
+            updateDate: Date.UTC(2026, 0, 2),
         });
+
+        const firstPage = await ownerIdentity.query(api.objectives.listObjectives, {
+            status: 'active',
+            paginationOpts: { numItems: 1, cursor: null },
+        });
+
+        expect(firstPage.page).toHaveLength(1);
+        expect(firstPage.isDone).toBe(false);
+
+        const next = await ownerIdentity.query(api.objectives.listObjectives, {
+            status: 'active',
+            paginationOpts: { numItems: 1, cursor: firstPage.continueCursor },
+        });
+
+        expect([first, second]).toContain(next.page[0]?.id);
+        expect(next.page[0]?.id).not.toBe(firstPage.page[0]?.id);
+    });
+
+    test('searches titles combined with the status and category filters @REQ-OBJETIVOS-008', async () => {
+        const health = await createCategory('Health');
+        const morningRun = await create('Morning run');
+
+        const eveningRun = await ownerIdentity.mutation(api.objectives.createObjective, {
+            title: 'Evening run',
+            startValue: 0,
+            targetValue: 1,
+            categoryId: health,
+        });
+
+        await ownerIdentity.mutation(api.progress.createProgress, {
+            objectiveId: eveningRun,
+            updatedValue: 1,
+            updateDate: Date.UTC(2026, 0, 2),
+        });
+        await create('Read books');
+        const other = await createUserInNewOrganization('objective-search');
+        await asUser(other.user).mutation(api.objectives.createObjective, {
+            title: 'Morning run',
+            startValue: 0,
+            targetValue: 10,
+        });
+
+        const search = async (filters: { status?: 'active'; categoryId?: string }) =>
+            (
+                await ownerIdentity.query(api.objectives.listObjectives, {
+                    ...filters,
+                    search: ' run ',
+                    paginationOpts: page,
+                })
+            ).page.map(objective => objective.id);
+
+        expect((await search({})).sort()).toEqual([morningRun, eveningRun].sort());
+        expect(await search({ status: 'active' })).toEqual([morningRun]);
+        expect(await search({ categoryId: health })).toEqual([eveningRun]);
+    });
+
+    test('filters by category and status, and a malformed category matches nothing @REQ-OBJETIVOS-004', async () => {
+        const health = await createCategory('Health');
+        const study = await createCategory('Study');
+
+        const run = await ownerIdentity.mutation(api.objectives.createObjective, {
+            title: 'Run',
+            startValue: 0,
+            targetValue: 1,
+            categoryId: health,
+        });
+
+        const swim = await ownerIdentity.mutation(api.objectives.createObjective, {
+            title: 'Swim',
+            startValue: 0,
+            targetValue: 10,
+            categoryId: health,
+        });
+
+        await ownerIdentity.mutation(api.objectives.createObjective, {
+            title: 'Read',
+            startValue: 0,
+            targetValue: 10,
+            categoryId: study,
+        });
+
+        await ownerIdentity.mutation(api.progress.createProgress, {
+            objectiveId: run,
+            updatedValue: 1,
+            updateDate: Date.UTC(2026, 0, 2),
+        });
+
+        const list = async (filters: { status?: 'completed'; categoryId: string }) =>
+            (
+                await ownerIdentity.query(api.objectives.listObjectives, {
+                    ...filters,
+                    paginationOpts: page,
+                })
+            ).page.map(objective => objective.id);
+
+        expect(await list({ categoryId: health })).toEqual([swim, run]);
+        expect(await list({ categoryId: health, status: 'completed' })).toEqual([run]);
+        expect(await list({ categoryId: 'not-an-id' })).toEqual([]);
+    });
+
+    test("filters by deadline relative to the user's day, soonest first @REQ-OBJETIVOS-009 @INH-OBJ-15", async () => {
+        const today = Date.UTC(2026, 0, 10);
+        vi.useFakeTimers({ toFake: ['Date'] });
+        vi.setSystemTime(today - 12 * 60 * 60 * 1000);
+
+        try {
+            const health = await createCategory('Health');
+
+            const createDue = (title: string, deadline?: number, categoryId?: Id<'categories'>) =>
+                ownerIdentity.mutation(api.objectives.createObjective, {
+                    title,
+                    startValue: 0,
+                    targetValue: 1,
+                    deadline,
+                    categoryId,
+                });
+
+            const overdue = await createDue('Overdue', today - TIME.DAY_MS);
+            const dueToday = await createDue('Due today', today);
+            const dueInWeek = await createDue('Due in five days', today + 5 * TIME.DAY_MS, health);
+            const dueThisMonth = await createDue('Due this month', today + 15 * TIME.DAY_MS);
+            await createDue('Due next month', Date.UTC(2026, 1, 2));
+            await createDue('No deadline');
+            const completedLate = await createDue('Completed late', today - TIME.DAY_MS);
+
+            await ownerIdentity.mutation(api.progress.createProgress, {
+                objectiveId: completedLate,
+                updatedValue: 1,
+                updateDate: today - TIME.DAY_MS,
+            });
+
+            const list = (
+                filter: 'overdue' | 'today' | 'week' | 'month',
+                extra: { status?: 'completed'; categoryId?: string; search?: string } = {},
+                numItems = 20
+            ) =>
+                ownerIdentity.query(api.objectives.listObjectives, {
+                    ...extra,
+                    deadline: { filter, today },
+                    paginationOpts: { numItems, cursor: null },
+                });
+
+            const ids = async (...args: Parameters<typeof list>) =>
+                (await list(...args)).page.map(objective => objective.id);
+
+            expect(await ids('overdue')).toEqual([overdue]);
+            expect(await ids('today')).toEqual([dueToday]);
+            expect(await ids('week')).toEqual([dueToday, dueInWeek]);
+            expect(await ids('month')).toEqual([dueToday, dueInWeek, dueThisMonth]);
+            expect(await ids('overdue', { status: 'completed' })).toEqual([]);
+            expect(await ids('month', { categoryId: health })).toEqual([dueInWeek]);
+            expect((await ids('week', { search: 'due' })).sort()).toEqual(
+                [dueToday, dueInWeek].sort()
+            );
+            expect((await list('month', {}, 3)).isDone).toBe(true);
+        } finally {
+            vi.useRealTimers();
+        }
+    });
+
+    test('assigns, changes and clears the category, only within the organization @REQ-OBJETIVOS-004', async () => {
+        const other = await createUserInNewOrganization('objective-category');
+        const health = await createCategory('Health');
+        const study = await createCategory('Study');
+        const foreign = await createCategory('Foreign', other.organization);
+
+        const objectiveId = await ownerIdentity.mutation(api.objectives.createObjective, {
+            title: 'Categorised',
+            startValue: 0,
+            targetValue: 5,
+            categoryId: health,
+        });
+
+        expect(
+            await ownerIdentity.mutation(api.objectives.updateObjective, {
+                id: objectiveId,
+                categoryId: study,
+            })
+        ).toMatchObject({ categoryId: study, categoryName: 'Study' });
+
+        await expect(
+            ownerIdentity.mutation(api.objectives.updateObjective, {
+                id: objectiveId,
+                categoryId: foreign,
+            })
+        ).rejects.toThrow('CATEGORY_NOT_FOUND');
+        await expect(
+            ownerIdentity.mutation(api.objectives.createObjective, {
+                title: 'Foreign category',
+                startValue: 0,
+                targetValue: 5,
+                categoryId: foreign,
+            })
+        ).rejects.toThrow('CATEGORY_NOT_FOUND');
+
+        const cleared = await ownerIdentity.mutation(api.objectives.updateObjective, {
+            id: objectiveId,
+            categoryId: null,
+        });
+
+        expect(cleared.categoryId).toBeUndefined();
+        expect(cleared.categoryName).toBeUndefined();
+    });
+
+    test('hides objectives from another organization @REQ-NF-003 @INH-ORG-04 @INH-OBJ-14', async () => {
+        const outsider = await createUserInNewOrganization('objective-outsider');
+        const objectiveId = await create('Private to org', { targetValue: 3 });
+
+        expect(
+            await asUser(outsider.user).query(api.objectives.getObjective, { id: objectiveId })
+        ).toBeNull();
+        await expect(
+            asUser(outsider.user).mutation(api.objectives.updateObjective, {
+                id: objectiveId,
+                title: 'Stolen',
+            })
+        ).rejects.toThrow('OBJECTIVE_NOT_FOUND');
+        await expect(
+            asUser(outsider.user).query(api.progress.getProgressHistory, { objectiveId })
+        ).rejects.toThrow('OBJECTIVE_NOT_FOUND');
     });
 });

@@ -12,13 +12,13 @@
             "matchPackageNames": ["convex", "convex-helpers", "@convex-dev/**", "kitcn"],
             "groupName": "Convex"
         },
-        { "matchPackageNames": ["better-auth", "auth"], "groupName": "Authentication" },
+        { "matchPackageNames": ["better-auth"], "groupName": "Authentication" },
         {
             "matchPackageNames": ["vitest", "@vitest/**", "@playwright/**", "@testing-library/**"],
             "groupName": "Testing"
         },
         {
-            "matchPackageNames": ["@radix-ui/**", "tailwindcss", "@tailwindcss/**"],
+            "matchPackageNames": ["@base-ui/**", "tailwindcss", "@tailwindcss/**"],
             "groupName": "UI"
         },
         { "matchUpdateTypes": ["major"], "dependencyDashboardApproval": true }

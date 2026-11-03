@@ -36,6 +36,7 @@ const getValidLocale = cache(async () => {
     }
 
     const platformDefault = await fetchPlatformDefaultLocale();
+
     if (platformDefault) {
         return platformDefault;
     }
@@ -43,8 +44,8 @@ const getValidLocale = cache(async () => {
     return routing.defaultLocale;
 });
 
-export default getRequestConfig(async () => {
-    const validLocale = await getValidLocale();
+export default getRequestConfig(async ({ locale }) => {
+    const validLocale = locale && isAppLocale(locale) ? locale : await getValidLocale();
 
     return {
         locale: validLocale,

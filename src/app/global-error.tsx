@@ -28,14 +28,15 @@ function getBrowserLocale(): SupportedLocale {
     if (localeCookie === 'es' || localeCookie === 'en') {
         return localeCookie;
     }
+
     return navigator.language.toLowerCase().startsWith('es') ? 'es' : 'en';
 }
 
 export default function GlobalError({
-    unstable_retry,
+    retry,
 }: {
     error: Error & { digest?: string };
-    unstable_retry: () => void;
+    retry: () => void;
 }) {
     const locale = useSyncExternalStore<SupportedLocale>(
         subscribeToLocale,
@@ -53,7 +54,7 @@ export default function GlobalError({
                     <p className="max-w-md text-sm text-neutral-600">{copy.description}</p>
                     <button
                         type="button"
-                        onClick={unstable_retry}
+                        onClick={retry}
                         className="mt-2 rounded-md bg-neutral-900 px-4 py-2 text-sm font-medium text-white hover:bg-neutral-800"
                     >
                         {copy.retry}

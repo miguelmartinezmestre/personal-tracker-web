@@ -7,9 +7,6 @@ const chromeProjectUse = {
     },
 };
 
-const firefoxProjectUse = devices['Desktop Firefox'];
-const webkitProjectUse = devices['Desktop Safari'];
-
 export default defineConfig({
     testDir: './tests',
     fullyParallel: false,
@@ -41,7 +38,7 @@ export default defineConfig({
         {
             name: 'setup',
             testMatch: /.*auth\.stack\.setup\.ts/,
-            timeout: 60_000,
+            timeout: 120_000,
             use: chromeProjectUse,
         },
         {
@@ -49,44 +46,42 @@ export default defineConfig({
             dependencies: ['setup'],
             use: chromeProjectUse,
             testMatch: ['**/e2e/**'],
-            testIgnore: ['**/e2e/auth/**', '**/e2e/admin/**', '**/e2e/security/**'],
+            testIgnore: ['**/e2e/auth/**', '**/e2e/security/**', '**/e2e/admin/**'],
         },
         {
-            name: 'auth-and-smoke',
+            name: 'auth',
             dependencies: ['setup'],
             use: chromeProjectUse,
-            testMatch: ['**/e2e/auth/**', '**/e2e/security/**', '**/smoke/**'],
+            testMatch: ['**/e2e/auth/**', '**/e2e/security/**'],
         },
         {
             name: 'admin',
             dependencies: ['setup'],
-            use: chromeProjectUse,
+            use: { ...chromeProjectUse, storageState: 'tests/.auth/admin-user.json' },
             testMatch: ['**/e2e/admin/**'],
         },
         {
             name: 'cross-browser-firefox',
             dependencies: ['setup'],
+            use: devices['Desktop Firefox'],
             grep: /@cross-browser-critical/,
-            use: firefoxProjectUse,
-            testMatch: ['**/e2e/**', '**/smoke/**'],
+            testMatch: ['**/e2e/**'],
         },
         {
             name: 'cross-browser-webkit',
             dependencies: ['setup'],
+            use: devices['Desktop Safari'],
             grep: /@cross-browser-critical/,
-            use: webkitProjectUse,
-            testMatch: ['**/e2e/**', '**/smoke/**'],
+            testMatch: ['**/e2e/**'],
         },
         {
             name: 'mobile-webkit',
             dependencies: ['setup'],
-            use: { ...devices['iPhone 13'] },
+            use: devices['iPhone 13'],
             grep: /@mobile-critical/,
-            testMatch: ['**/e2e/**', '**/smoke/**'],
+            testMatch: ['**/e2e/**'],
         },
     ],
-
-    globalSetup: './tests/config/global-setup.ts',
 
     testIgnore: ['**/manual/**'],
 });

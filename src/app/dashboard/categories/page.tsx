@@ -1,5 +1,8 @@
-import CategoriesLayout from '@/features/categories/components/categories-layout';
+import { CategoriesPage } from '@/features/categories';
+import { translatedPageTitle } from '@/lib/page-metadata';
 
-export default function CategoriesPage() {
-    return <CategoriesLayout />;
+export const generateMetadata = translatedPageTitle('Sidebar', 'categories');
+
+export default function DashboardCategoriesPage() {
+    return <CategoriesPage />;
 }

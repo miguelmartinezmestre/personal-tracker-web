@@ -4,11 +4,6 @@
         "incremental": false,
         "types": ["node", "@testing-library/jest-dom"]
     },
-    "include": [
-        "src/**/*.test.ts",
-        "src/**/*.test.tsx",
-        "shared/**/*.test.ts",
-        "tests/frontend-setup.ts"
-    ],
+    "include": ["src/**/*.test.ts", "src/**/*.test.tsx", "tests/frontend-setup.ts"],
     "exclude": ["node_modules"]
 }

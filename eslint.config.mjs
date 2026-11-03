@@ -1,11 +1,7 @@
 import convexPlugin from '@convex-dev/eslint-plugin';
 import tseslint from 'typescript-eslint';
 
-/**
- * Slim ESLint config for Convex-only rules.
- * Oxlint JS plugins cannot supply typescript-eslint parserServices,
- * which @convex-dev/eslint-plugin needs for type-aware DB checks.
- */
+// Oxlint JS plugins lack the parserServices that @convex-dev/eslint-plugin needs.
 export default [
     {
         ignores: ['convex/_generated/**', 'convex/generated/**'],

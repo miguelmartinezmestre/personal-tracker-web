@@ -1,27 +1,31 @@
 import { z } from 'zod';
-import type { Id } from '@/convex/_generated/dataModel';
-import {
-    CATEGORY_COLOR_PATTERN,
-    CATEGORY_ICONS,
-    CATEGORY_NAME_MAX_LENGTH,
-} from '@shared/input-constraints';
+import { CATEGORY_COLOR_PATTERN, CATEGORY_ICONS } from '@/convex/features/categories/constants';
 
-export const categoryColorSchema = z
-    .string()
-    .regex(CATEGORY_COLOR_PATTERN, 'Color must be a valid hex code (e.g. #FF5733)');
+type CategoryValidationKey = 'nameRequired';
 
 export const categoryIconSchema = z.enum(CATEGORY_ICONS);
 
-export const categorySchema = z.object({
-    name: z.string().trim().min(1).max(CATEGORY_NAME_MAX_LENGTH),
-    color: categoryColorSchema,
+export const categoryDraftSchema = z.object({
+    name: z.string().trim().min(1),
+    color: z.string().regex(CATEGORY_COLOR_PATTERN),
     icon: categoryIconSchema.optional(),
 });
 
-export const savedCategorySchema = categorySchema.extend({
-    id: z.custom<Id<'categories'>>(),
-    capabilities: z.object({ canEdit: z.boolean(), canDelete: z.boolean() }).optional(),
-});
+export function categorySchema(message: (key: CategoryValidationKey) => string) {
+    return categoryDraftSchema.extend({
+        name: z
+            .string()
+            .trim()
+            .min(1, { error: message('nameRequired') }),
+    });
+}
 
-export type Category = z.infer<typeof savedCategorySchema>;
-export type CreateCategory = z.infer<typeof categorySchema>;
+export type CategoryDraft = z.infer<typeof categoryDraftSchema>;
+
+export function toCategoryDraft(category: { name: string; color: string; icon?: string }) {
+    return {
+        name: category.name,
+        color: category.color,
+        icon: categoryIconSchema.safeParse(category.icon).data,
+    };
+}

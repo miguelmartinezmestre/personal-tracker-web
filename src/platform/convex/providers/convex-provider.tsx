@@ -23,9 +23,11 @@ function isPublicRoute(pathname: string | null): boolean {
     if (!pathname) {
         return false;
     }
+
     if (pathname === '/') {
         return true;
     }
+
     return publicRoutePrefixes.some(prefix => prefix !== '/' && pathname.startsWith(prefix));
 }
 
@@ -48,6 +50,12 @@ function AuthShield({ children }: { children: React.ReactNode }) {
             window.clearTimeout(redirectTimer);
         };
     }, [authLoading, isAuthenticated, isPublic, router]);
+
+    useEffect(() => {
+        if (!authLoading && !isAuthenticated) {
+            queryClient.clear();
+        }
+    }, [authLoading, isAuthenticated]);
 
     if (!isPublic && authLoading) {
         return (

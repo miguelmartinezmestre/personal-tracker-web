@@ -1,10 +1,25 @@
-import aggregate from '@convex-dev/aggregate/convex.config.js';
 import { defineApp } from 'convex/server';
-import resend from '@convex-dev/resend/convex.config.js';
+import { v } from 'convex/values';
+import aggregate from '@convex-dev/aggregate/convex.config.js';
 
-const app = defineApp();
-app.use(resend);
-app.use(aggregate, { name: 'dashboardObjectives' });
-app.use(aggregate, { name: 'dashboardProgress' });
+const app = defineApp({
+    env: {
+        SITE_URL: v.optional(v.string()),
+        BETTER_AUTH_URL: v.optional(v.string()),
+        BETTER_AUTH_SECRET: v.string(),
+        JWKS: v.optional(v.string()),
+        SETUP_SECRET: v.optional(v.string()),
+        EMAIL_FROM: v.optional(v.string()),
+        SMTP_HOST: v.optional(v.string()),
+        SMTP_PORT: v.optional(v.string()),
+        SMTP_USER: v.optional(v.string()),
+        SMTP_PASSWORD: v.optional(v.string()),
+        SMTP_SECURE: v.optional(v.string()),
+    },
+});
+
+app.use(aggregate, { name: 'objectiveStats' });
+
+app.use(aggregate, { name: 'objectiveRanking' });
 
 export default app;

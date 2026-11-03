@@ -1,76 +1,112 @@
 import { z } from 'zod';
-import { OBJECTIVE_VISIBILITY } from '@/convex/utils/constants';
-import { isCategorySelectPlaceholder } from '@/features/objectives/lib/objective-category-selection';
-import {
-    OBJECTIVE_DESCRIPTION_MAX_LENGTH,
-    OBJECTIVE_TITLE_MAX_LENGTH,
-    OBJECTIVE_UNIT_MAX_LENGTH,
-} from '@shared/input-constraints';
+import { isTargetReached } from '@/convex/features/objectives/rules';
+import type { Id } from '@/convex/_generated/dataModel';
+import { dateInputToUtcTimestamp, todayDateInput } from '@/features/objectives/lib/dates';
 
-const MAX_METRIC = 1_000_000_000;
-const MIN_TARGET = 0.001;
-const DAY_MS = 24 * 60 * 60 * 1000;
-const FIVE_YEARS_MS = 5 * 365 * DAY_MS;
+export const NONE_CATEGORY = 'none';
 
-const metricSchema = z.number().min(0).max(MAX_METRIC);
-const targetMetricSchema = z.number().min(MIN_TARGET).max(MAX_METRIC);
-const deadlineSchema = z.number();
+type ObjectiveValidationKey =
+    | 'titleRequired'
+    | 'numberRequired'
+    | 'targetDirection'
+    | 'dateInvalid'
+    | 'deadlinePast'
+    | 'dueSoonDaysInvalid';
 
-const categorySelectionSchema = z
-    .string()
-    .optional()
-    .nullable()
-    .refine(value => !isCategorySelectPlaceholder(value), {
-        message: 'Select a valid category',
+type ProgressValidationKey =
+    'amountRequired' | 'amountZero' | 'valueUnchanged' | 'dateInvalid' | 'dateFuture';
+
+function dateTextSchema(message: string) {
+    return z.string().refine(value => dateInputToUtcTimestamp(value) !== undefined, {
+        error: message,
     });
+}
 
-export const objectiveSchema = z
-    .object({
-        title: z.string().trim().min(1).max(OBJECTIVE_TITLE_MAX_LENGTH),
-        description: z.string().max(OBJECTIVE_DESCRIPTION_MAX_LENGTH).optional().nullable(),
-
-        categoryId: categorySelectionSchema,
-        targetValue: targetMetricSchema,
-        startValue: metricSchema.optional().nullable(),
-        deadline: deadlineSchema.optional().nullable(),
-        unit: z.string().max(OBJECTIVE_UNIT_MAX_LENGTH).optional().nullable(),
-        visibility: z
-            .enum([OBJECTIVE_VISIBILITY.PRIVATE, OBJECTIVE_VISIBILITY.ORGANIZATION])
-            .optional(),
-    })
-    .superRefine((values, context) => {
-        if (values.startValue != null && values.startValue > values.targetValue) {
-            context.addIssue({
-                code: 'custom',
-                path: ['startValue'],
-                message: 'Starting value cannot exceed the target value',
-            });
-        }
-
-        if (values.deadline == null) {
-            return;
-        }
-
-        const now = Date.now();
-        if (values.deadline < now - FIVE_YEARS_MS) {
-            context.addIssue({
-                code: 'custom',
-                path: ['deadline'],
-                message: 'Deadline is too far in the past',
-            });
-        }
-        if (values.deadline > now + FIVE_YEARS_MS * 2) {
-            context.addIssue({
-                code: 'custom',
-                path: ['deadline'],
-                message: 'Deadline is too far in the future',
-            });
-        }
-    });
-
-export const savedObjectiveSchema = objectiveSchema.extend({
-    _id: z.string(),
+export const accessSchema = z.object({
+    memberAccess: z.enum(['none', 'view', 'edit']),
+    users: z.array(
+        z.object({
+            userId: z.custom<Id<'user'>>(value => typeof value === 'string'),
+            name: z.string(),
+            access: z.enum(['view', 'edit']),
+        })
+    ),
 });
 
-export type CreateObjective = z.infer<typeof objectiveSchema>;
-export type SavedObjectiveForm = z.infer<typeof savedObjectiveSchema>;
+export type AccessFormValues = z.infer<typeof accessSchema>;
+
+export function objectiveFormSchema(
+    message: (key: ObjectiveValidationKey) => string,
+    keptDeadline = ''
+) {
+    return z
+        .object({
+            title: z
+                .string()
+                .trim()
+                .min(1, { error: message('titleRequired') }),
+            description: z.string(),
+            categoryId: z.string(),
+            unit: z.string(),
+            direction: z.enum(['increase', 'decrease']),
+            startValue: z.number({ error: message('numberRequired') }),
+            targetValue: z.number({ error: message('numberRequired') }),
+            deadline: z.union([
+                z.literal(''),
+                dateTextSchema(message('dateInvalid')).refine(
+                    value => value === keptDeadline || value >= todayDateInput(),
+                    { error: message('deadlinePast') }
+                ),
+            ]),
+            dueSoonDays: z
+                .number({ error: message('dueSoonDaysInvalid') })
+                .int({ error: message('dueSoonDaysInvalid') })
+                .min(1, { error: message('dueSoonDaysInvalid') }),
+            memberAccess: accessSchema.shape.memberAccess,
+            users: accessSchema.shape.users,
+        })
+        .refine(
+            value =>
+                !Number.isFinite(value.startValue) ||
+                !Number.isFinite(value.targetValue) ||
+                !isTargetReached(value.direction, value.startValue, value.targetValue),
+            { path: ['targetValue'], error: message('targetDirection') }
+        );
+}
+
+export type ObjectiveFormValues = z.infer<ReturnType<typeof objectiveFormSchema>>;
+
+export function progressFormSchema(
+    message: (key: ProgressValidationKey) => string,
+    baseValue: number
+) {
+    return z
+        .object({
+            mode: z.enum(['difference', 'value']),
+            amount: z.number({ error: message('amountRequired') }),
+            updateDate: dateTextSchema(message('dateInvalid')).refine(
+                value => value <= todayDateInput(),
+                { error: message('dateFuture') }
+            ),
+            comment: z.string(),
+        })
+        .superRefine((value, context) => {
+            if (value.mode === 'difference' && value.amount === 0) {
+                context.addIssue({
+                    code: 'custom',
+                    path: ['amount'],
+                    message: message('amountZero'),
+                });
+            }
+
+            if (value.mode === 'value' && value.amount === baseValue) {
+                context.addIssue({
+                    code: 'custom',
+                    path: ['amount'],
+                    message: message('valueUnchanged'),
+                });
+            }
+        });
+}
+
+export type ProgressFormValues = z.infer<ReturnType<typeof progressFormSchema>>;

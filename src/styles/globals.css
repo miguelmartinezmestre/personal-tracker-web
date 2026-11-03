@@ -3,8 +3,6 @@
 @source "../components/**/*.{ts,tsx}";
 @source "../features/**/*.{ts,tsx}";
 
-@import 'tw-animate-css';
-
 @custom-variant dark (&:is(.dark *));
 
 :root {
@@ -102,4 +100,11 @@
     body {
         @apply bg-background text-foreground;
     }
+}
+
+:root {
+    --ts-chart-tooltip-background: var(--popover);
+    --ts-chart-tooltip-color: var(--popover-foreground);
+    --ts-chart-tooltip-border: 1px solid var(--border);
+    --ts-chart-tooltip-border-radius: var(--radius);
 }

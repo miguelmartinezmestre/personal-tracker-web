@@ -11,6 +11,13 @@ interface StepSummaryProps {
 
 export default function StepSummary({ data }: StepSummaryProps) {
     const t = useTranslations('Setup');
+    let registrationPolicyLabel: string;
+
+    if (data.registration.policy === 'open') {
+        registrationPolicyLabel = t('registrationPolicy.openLabel');
+    } else {
+        registrationPolicyLabel = t('registrationPolicy.invitationLabel');
+    }
 
     return (
         <div className="space-y-6">
@@ -67,9 +74,7 @@ export default function StepSummary({ data }: StepSummaryProps) {
                         <Badge
                             variant={data.registration.policy === 'open' ? 'default' : 'secondary'}
                         >
-                            {data.registration.policy === 'open'
-                                ? t('registrationPolicy.openLabel')
-                                : t('registrationPolicy.invitationLabel')}
+                            {registrationPolicyLabel}
                         </Badge>
                     </CardContent>
                 </Card>

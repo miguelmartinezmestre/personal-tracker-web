@@ -1,15 +1,13 @@
 import { z } from 'zod';
-import { categoryColorSchema, categoryIconSchema } from '@/features/categories/schemas/category';
 import {
     isSetupSecretLengthValid,
     MAX_SETUP_SECRET_LENGTH,
     MIN_SETUP_SECRET_LENGTH,
-} from '@shared/auth-security';
-
-const STRONG_PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).+$/;
+} from '@/convex/shared/env';
+import { STRONG_PASSWORD_REGEX } from '@/convex/features/auth/passwordPolicy';
 
 export const platformConfigSchema = z.object({
-    platformName: z.string().min(1).max(100),
+    platformName: z.string().min(1),
     defaultLanguage: z.enum(['en', 'es']),
 });
 
@@ -20,7 +18,7 @@ type AdminAccountSchemaMessages = {
 export function createAdminAccountSchema(messages?: Partial<AdminAccountSchemaMessages>) {
     return z
         .object({
-            username: z.string().min(3),
+            username: z.string().trim().min(1),
             email: z.email(),
             password: z.string().min(8),
             confirmPassword: z.string().min(8),
@@ -56,14 +54,8 @@ export function createAdminAccountSchema(messages?: Partial<AdminAccountSchemaMe
 export const adminAccountSchema = createAdminAccountSchema();
 
 export const organizationSchema = z.object({
-    name: z.string().min(1).max(100),
+    name: z.string().min(1),
     logo: z.url().optional().or(z.literal('')),
-});
-
-export const setupCategorySchema = z.object({
-    name: z.string().min(1).max(50),
-    color: categoryColorSchema,
-    icon: categoryIconSchema.optional(),
 });
 
 export const registrationPolicySchema = z.object({
@@ -71,7 +63,9 @@ export const registrationPolicySchema = z.object({
 });
 
 export type PlatformConfig = z.infer<typeof platformConfigSchema>;
+
 export type AdminAccount = z.infer<typeof adminAccountSchema>;
+
 export type OrganizationConfig = z.infer<typeof organizationSchema>;
-export type SetupCategory = z.infer<typeof setupCategorySchema>;
+
 export type RegistrationPolicy = z.infer<typeof registrationPolicySchema>;

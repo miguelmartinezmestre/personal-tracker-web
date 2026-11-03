@@ -3,42 +3,47 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { useSession } from '@/features/auth';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { AlertCircle, CheckCircle2, Loader2 } from 'lucide-react';
 import Link from 'next/link';
-import { getInvitationCallbackPath } from '@shared/auth-security';
+import { getInvitationCallbackPath } from '@/convex/features/auth/redirects';
 import { InvitationActivationPending } from '@/features/organizations/components/invitation-activation-pending';
 import {
     acceptInvitationAndActivateOrganization,
     activateAcceptedOrganization,
 } from '@/features/organizations/lib/accept-invitation';
+import { useQuery } from '@tanstack/react-query';
+import { convexQuery } from '@convex-dev/react-query';
+import { api } from '@/convex/_generated/api';
 
 type InvitationStatus = 'ready' | 'accepting' | 'accepted' | 'error';
 
 interface InvitationContentProps {
     token: string;
+    invitationValid: boolean;
+    organizationName?: string | undefined;
 }
 
-export default function InvitationContent({ token }: InvitationContentProps) {
+export default function InvitationContent({
+    token,
+    invitationValid,
+    organizationName,
+}: InvitationContentProps) {
     const router = useRouter();
     const t = useTranslations('Invitations');
-    const sessionQuery = useSession();
+    const sessionQuery = useQuery(convexQuery(api.organizations.getCurrentSession, {}));
 
     const [status, setStatus] = useState<InvitationStatus>('ready');
     const [errorMessage, setErrorMessage] = useState('');
     const [pendingOrganization, setPendingOrganization] = useState<string | null>(null);
-    const loginSearchParams = new URLSearchParams({
-        callbackUrl: getInvitationCallbackPath(token),
-    });
-    const registerSearchParams = new URLSearchParams({ invitation: token });
 
     useEffect(() => {
         if (status === 'accepted') {
             const timer = setTimeout(() => {
                 router.push('/dashboard/organizations');
             }, 2000);
+
             return () => clearTimeout(timer);
         }
     }, [status, router]);
@@ -51,6 +56,7 @@ export default function InvitationContent({ token }: InvitationContentProps) {
             const result = await acceptInvitationAndActivateOrganization({
                 invitationId: token,
             });
+
             if (result.status === 'acceptedActivationPending') {
                 setPendingOrganization(result.organizationId);
                 setStatus('ready');
@@ -68,7 +74,9 @@ export default function InvitationContent({ token }: InvitationContentProps) {
         if (!pendingOrganization) {
             return;
         }
+
         setStatus('accepting');
+
         try {
             await activateAcceptedOrganization(pendingOrganization);
             setPendingOrganization(null);
@@ -78,6 +86,7 @@ export default function InvitationContent({ token }: InvitationContentProps) {
             setErrorMessage(t('errorAccepting'));
         }
     }
+
     if (pendingOrganization) {
         return (
             <InvitationActivationPending
@@ -87,6 +96,7 @@ export default function InvitationContent({ token }: InvitationContentProps) {
             />
         );
     }
+
     if (sessionQuery.isPending) {
         return (
             <div className="flex min-h-screen items-center justify-center">
@@ -99,22 +109,7 @@ export default function InvitationContent({ token }: InvitationContentProps) {
     }
 
     if (status === 'error') {
-        return (
-            <div className="flex min-h-screen items-center justify-center p-4">
-                <Card className="w-full max-w-md">
-                    <CardHeader>
-                        <AlertCircle className="h-12 w-12 text-destructive" />
-                        <CardTitle>{t('errorTitle')}</CardTitle>
-                        <CardDescription>{errorMessage || t('errorDescription')}</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <Button asChild className="w-full">
-                            <Link href="/dashboard/home">{t('goToDashboard')}</Link>
-                        </Button>
-                    </CardContent>
-                </Card>
-            </div>
-        );
+        return <InvitationError message={errorMessage} />;
     }
 
     if (status === 'accepted') {
@@ -134,37 +129,29 @@ export default function InvitationContent({ token }: InvitationContentProps) {
         );
     }
 
+    if (!invitationValid && status === 'ready') {
+        return <InvitationUnavailable />;
+    }
+
     if (!sessionQuery.data?.user && status === 'ready') {
-        return (
-            <div className="flex min-h-screen items-center justify-center p-4">
-                <Card className="w-full max-w-md">
-                    <CardHeader>
-                        <CardTitle>{t('loginRequiredTitle')}</CardTitle>
-                        <CardDescription>{t('loginRequiredDescription')}</CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                        <Button
-                            onClick={() => router.push(`/login?${loginSearchParams.toString()}`)}
-                            className="w-full"
-                        >
-                            {t('login')}
-                        </Button>
-                        <div className="text-center text-sm">
-                            <span className="text-muted-foreground">{t('noAccount')} </span>
-                            <Button
-                                variant="link"
-                                className="h-auto p-0"
-                                onClick={() =>
-                                    router.push(`/register?${registerSearchParams.toString()}`)
-                                }
-                            >
-                                {t('register')}
-                            </Button>
-                        </div>
-                    </CardContent>
-                </Card>
-            </div>
+        return <InvitationLoginRequired token={token} organizationName={organizationName} />;
+    }
+
+    if (sessionQuery.data?.user && !sessionQuery.data.user.emailVerified) {
+        return <InvitationVerificationRequired />;
+    }
+
+    let acceptButtonContent;
+
+    if (status === 'accepting') {
+        acceptButtonContent = (
+            <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                {t('accepting')}
+            </>
         );
+    } else {
+        acceptButtonContent = t('accept');
     }
 
     return (
@@ -172,7 +159,11 @@ export default function InvitationContent({ token }: InvitationContentProps) {
             <Card className="w-full max-w-md">
                 <CardHeader>
                     <CardTitle>{t('acceptTitle')}</CardTitle>
-                    <CardDescription>{t('acceptDescription')}</CardDescription>
+                    <CardDescription>
+                        {organizationName
+                            ? t('acceptDescriptionNamed', { organization: organizationName })
+                            : t('acceptDescription')}
+                    </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                     <Button
@@ -182,17 +173,143 @@ export default function InvitationContent({ token }: InvitationContentProps) {
                         disabled={status === 'accepting'}
                         className="w-full"
                     >
-                        {status === 'accepting' ? (
-                            <>
-                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                {t('accepting')}
-                            </>
-                        ) : (
-                            t('accept')
-                        )}
+                        {acceptButtonContent}
                     </Button>
-                    <Button asChild variant="ghost" className="w-full">
-                        <Link href="/dashboard/home">{t('cancel')}</Link>
+                    <Button
+                        nativeButton={false}
+                        render={<Link href="/dashboard/home" />}
+                        variant="ghost"
+                        className="w-full"
+                    >
+                        {t('cancel')}
+                    </Button>
+                </CardContent>
+            </Card>
+        </div>
+    );
+}
+
+function InvitationLoginRequired({
+    token,
+    organizationName,
+}: {
+    token: string;
+    organizationName?: string | undefined;
+}) {
+    const router = useRouter();
+    const t = useTranslations('Invitations');
+
+    const loginSearchParams = new URLSearchParams({
+        callbackUrl: getInvitationCallbackPath(token),
+    });
+
+    const registerSearchParams = new URLSearchParams({ invitation: token });
+
+    return (
+        <div className="flex min-h-screen items-center justify-center p-4">
+            <Card className="w-full max-w-md">
+                <CardHeader>
+                    <CardTitle>{t('loginRequiredTitle')}</CardTitle>
+                    <CardDescription>
+                        {organizationName
+                            ? t('loginRequiredDescriptionNamed', {
+                                  organization: organizationName,
+                              })
+                            : t('loginRequiredDescription')}
+                    </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    <Button
+                        onClick={() => router.push(`/login?${loginSearchParams.toString()}`)}
+                        className="w-full"
+                    >
+                        {t('login')}
+                    </Button>
+                    <div className="text-center text-sm">
+                        <span className="text-muted-foreground">{t('noAccount')} </span>
+                        <Button
+                            variant="link"
+                            className="h-auto p-0"
+                            onClick={() =>
+                                router.push(`/register?${registerSearchParams.toString()}`)
+                            }
+                        >
+                            {t('register')}
+                        </Button>
+                    </div>
+                </CardContent>
+            </Card>
+        </div>
+    );
+}
+
+function InvitationVerificationRequired() {
+    const t = useTranslations('Invitations');
+
+    return (
+        <div className="flex min-h-screen items-center justify-center p-4">
+            <Card className="w-full max-w-md" data-testid="invitation-link-verification-required">
+                <CardHeader>
+                    <CardTitle>{t('verificationRequiredTitle')}</CardTitle>
+                    <CardDescription>{t('verificationRequiredDescription')}</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <Button
+                        nativeButton={false}
+                        render={<Link href="/dashboard/invitations" />}
+                        className="w-full"
+                    >
+                        {t('verifyFromInvitations')}
+                    </Button>
+                </CardContent>
+            </Card>
+        </div>
+    );
+}
+
+function InvitationUnavailable() {
+    const t = useTranslations('Invitations');
+
+    return (
+        <div className="flex min-h-screen items-center justify-center p-4">
+            <Card className="w-full max-w-md" data-testid="invitation-invalid">
+                <CardHeader>
+                    <AlertCircle className="h-12 w-12 text-destructive" />
+                    <CardTitle>{t('invalidTitle')}</CardTitle>
+                    <CardDescription>{t('invalidDescription')}</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <Button
+                        nativeButton={false}
+                        render={<Link href="/dashboard/home" />}
+                        className="w-full"
+                    >
+                        {t('goToDashboard')}
+                    </Button>
+                </CardContent>
+            </Card>
+        </div>
+    );
+}
+
+function InvitationError({ message }: { message: string }) {
+    const t = useTranslations('Invitations');
+
+    return (
+        <div className="flex min-h-screen items-center justify-center p-4">
+            <Card className="w-full max-w-md">
+                <CardHeader>
+                    <AlertCircle className="h-12 w-12 text-destructive" />
+                    <CardTitle>{t('errorTitle')}</CardTitle>
+                    <CardDescription>{message || t('errorDescription')}</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <Button
+                        nativeButton={false}
+                        render={<Link href="/dashboard/home" />}
+                        className="w-full"
+                    >
+                        {t('goToDashboard')}
                     </Button>
                 </CardContent>
             </Card>

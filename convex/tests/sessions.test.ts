@@ -1,267 +1,118 @@
-import { beforeEach, describe, expect, test } from 'vitest';
+import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import { api } from '../_generated/api';
-import { drainScheduledFunctions, initConvexTest } from './test.helper';
-import { createTestSession, createTestUser, ensureTestUserAuth } from './test_helpers';
-import type { TestConvexForDataModel } from 'convex-test';
-import type { DataModel, Id } from '../_generated/dataModel';
-import type { GenericQueryCtx } from 'convex/server';
+import type { Id } from '../_generated/dataModel';
+import { initConvexTest } from './test.helper';
+import {
+    createTestMember,
+    createTestOrganization,
+    createTestSession,
+    createTestUser,
+    type TestUserData,
+} from './test.helpers';
+import { identityFor } from './test.identities';
 
-describe('convex sessions', () => {
+describe('own sessions', () => {
     const t = initConvexTest();
-    let _userIdentity: TestConvexForDataModel<DataModel>;
-    let userId: Id<'user'>;
-    let sessionId: Id<'session'>;
+    let user: TestUserData;
+    let other: TestUserData;
+    let organizationId: Id<'organization'>;
 
     beforeEach(async () => {
-        const randomSuffix = Math.random().toString(36).substring(2, 15);
-
-        const user = {
-            userId: 'test-user-sessions-' + randomSuffix,
-            email: 'sessions-test@example.com-' + randomSuffix,
-            name: 'Sessions Test User ' + randomSuffix,
-            password: 'test-password',
-            role: 'globalAdmin',
-            emailVerified: false,
-        };
-
-        const userData = await createTestUser(t, user);
-        userId = userData.docId;
-
-        const { sessionId: defaultSessionId } = await ensureTestUserAuth(t, userId, {
-            organizationName: 'Sessions Test Org ' + randomSuffix,
-            role: 'owner',
-        });
-        sessionId = defaultSessionId;
-
-        _userIdentity = t.withIdentity({
-            subject: userData.docId,
-            role: user.role,
-            email: user.email,
-            name: user.name,
-            password: user.password,
-            emailVerified: user.emailVerified,
-            createdAt: Date.now(),
-            userId: userData.docId,
-            image: 'https://example.com/image.png',
-            banExpires: null,
-            banReason: null,
-            banned: false,
-        });
-    });
-
-    test('createTestSession creates sessions for user', async () => {
-        const randomSuffix = Math.random().toString(36).substring(2, 15);
-
-        await createTestSession(t, {
-            userId,
-            expiresAt: Date.now() + 1000000,
-            token: 'test-token-2-' + randomSuffix,
-            ipAddress: '127.0.0.1',
-            userAgent: 'test-agent',
+        vi.useFakeTimers();
+        const suffix = Math.random().toString(36).slice(2, 10);
+        organizationId = await createTestOrganization(t, {
+            name: `Sessions ${suffix}`,
+            slug: `sessions-${suffix}`,
         });
 
-        const sessions = await t.run(async (ctx: GenericQueryCtx<DataModel>) => {
-            return await ctx.db
-                .query('session')
-                .filter(q => q.eq(q.field('userId'), userId))
-                .collect();
-        });
-
-        expect(sessions.length).toBeGreaterThanOrEqual(2);
-        expect(sessions.every((session: { userId: string }) => session.userId === userId)).toBe(
-            true
-        );
-    });
-
-    test('getSessionsByUser rejects when unauthenticated', async () => {
-        await expect(
-            t.query(api.sessions.getSessionsByUser, {
-                paginationOpts: { numItems: 10, cursor: null },
-            })
-        ).rejects.toThrow(/Unauthenticated|User not authenticated|AUTH_REQUIRED/);
-    });
-
-    test('invalidateSession rejects another user session and leaves it intact', async () => {
-        const randomSuffix = Math.random().toString(36).substring(2, 15);
-        const otherUser = await createTestUser(t, {
-            userId: 'other-session-user-' + randomSuffix,
-            email: 'other-session-user@example.com-' + randomSuffix,
-            name: 'Other Session User ' + randomSuffix,
-            role: 'user',
-            emailVerified: false,
-        });
-        await ensureTestUserAuth(t, otherUser.docId);
-        const otherSessionId = await createTestSession(t, {
-            userId: otherUser.docId,
-            expiresAt: Date.now() + 1000000,
-            token: 'other-session-token-' + randomSuffix,
-            ipAddress: '127.0.0.2',
-            userAgent: 'other-test-agent',
-        });
-
-        await expect(
-            _userIdentity.mutation(api.sessions.invalidateSession, {
-                sessionId: otherSessionId,
-            })
-        ).rejects.toThrow(/FORBIDDEN|Forbidden|Not authorized/i);
-
-        const otherSession = await t.run(async ctx => {
-            return await ctx.db.get('session', otherSessionId);
-        });
-
-        expect(otherSession).not.toBeNull();
-    });
-
-    test('invalidateSession deletes an owned session', async () => {
-        const ownedSessionId = await createTestSession(t, {
-            userId,
-            expiresAt: Date.now() + 1_000_000,
-            token: `owned-session-${Math.random().toString(36).slice(2)}`,
-        });
-
-        await expect(
-            _userIdentity.mutation(api.sessions.invalidateSession, {
-                sessionId: ownedSessionId,
-            })
-        ).resolves.toBeNull();
-
-        const sessions = await t.run(async ctx => ({
-            current: await ctx.db.get('session', sessionId),
-            invalidated: await ctx.db.get('session', ownedSessionId),
-        }));
-        expect(sessions.current).not.toBeNull();
-        expect(sessions.invalidated).toBeNull();
-    });
-
-    test('invalidateAllOtherSessions only revokes sessions owned by the current user', async () => {
-        const randomSuffix = Math.random().toString(36).substring(2, 15);
-        const ownOtherSessionId = await createTestSession(t, {
-            userId,
-            expiresAt: Date.now() + 1000000,
-            token: 'own-other-session-token-' + randomSuffix,
-            ipAddress: '127.0.0.3',
-            userAgent: 'own-other-test-agent',
-        });
-        const otherUser = await createTestUser(t, {
-            userId: 'other-bulk-session-user-' + randomSuffix,
-            email: 'other-bulk-session-user@example.com-' + randomSuffix,
-            name: 'Other Bulk Session User ' + randomSuffix,
-            role: 'user',
-            emailVerified: false,
-        });
-        const otherUserSessionId = await createTestSession(t, {
-            userId: otherUser.docId,
-            expiresAt: Date.now() + 1000000,
-            token: 'other-bulk-session-token-' + randomSuffix,
-            ipAddress: '127.0.0.4',
-            userAgent: 'other-bulk-test-agent',
-        });
-
-        const result = await _userIdentity.mutation(api.sessions.invalidateAllOtherSessions, {
-            currentSessionId: sessionId,
-        });
-
-        expect(result).toEqual({ revokedCount: 1 });
-
-        const sessions = await t.run(async ctx => {
-            return {
-                current: await ctx.db.get('session', sessionId),
-                ownOther: await ctx.db.get('session', ownOtherSessionId),
-                otherUser: await ctx.db.get('session', otherUserSessionId),
-            };
-        });
-
-        expect(sessions.current).not.toBeNull();
-        expect(sessions.ownOther).toBeNull();
-        expect(sessions.otherUser).not.toBeNull();
-    });
-
-    test('invalidateAllOtherSessions reports only the first batch and finishes asynchronously', async () => {
-        const now = Date.now();
-        await t.run(async ctx => {
-            for (let index = 0; index < 101; index++) {
-                await ctx.db.insert('session', {
-                    userId,
-                    token: `bulk-revoke-${String(userId)}-${index}`,
-                    expiresAt: now + 1_000_000,
-                    ipAddress: null,
-                    userAgent: null,
-                    activeOrganizationId: null,
-                    createdAt: now + index,
-                    updatedAt: now + index,
-                });
-            }
-        });
-
-        const result = await _userIdentity.mutation(api.sessions.invalidateAllOtherSessions, {
-            currentSessionId: sessionId,
-        });
-        expect(result).toEqual({ revokedCount: 100 });
-
-        const afterFirstBatch = await t.run(ctx =>
-            ctx.db
-                .query('session')
-                .withIndex('userId', q => q.eq('userId', userId))
-                .collect()
-        );
-        expect(afterFirstBatch).toHaveLength(2);
-        expect(afterFirstBatch.some(session => session._id === sessionId)).toBe(true);
-
-        await drainScheduledFunctions(t);
-
-        const remaining = await t.run(ctx =>
-            ctx.db
-                .query('session')
-                .withIndex('userId', q => q.eq('userId', userId))
-                .collect()
-        );
-        expect(remaining.map(session => session._id)).toEqual([sessionId]);
-    });
-
-    test.each([
-        ['banned', { banned: true }],
-        ['deleted', { deletedAt: Date.now() }],
-    ] as const)('rejects a %s account even while its session still exists', async (_, patch) => {
-        await t.run(async ctx => {
-            await ctx.db.patch('user', userId, patch);
-        });
-
-        await expect(
-            _userIdentity.query(api.sessions.getSessionsByUser, {
-                paginationOpts: { numItems: 10, cursor: null },
-            })
-        ).rejects.toThrow(/AUTH_REQUIRED/);
-
-        const retainedSession = await t.run(async ctx => ctx.db.get('session', sessionId));
-        expect(retainedSession).not.toBeNull();
-    });
-
-    test('allows an account again after a temporary ban has expired', async () => {
-        await t.run(async ctx => {
-            await ctx.db.patch('user', userId, {
-                banned: true,
-                banReason: 'Temporary ban',
-                banExpires: Date.now() - 1,
+        for (const label of ['user', 'other']) {
+            const created = await createTestUser(t, {
+                userId: `${label}-${suffix}`,
+                email: `${label}-${suffix}@example.com`,
+                name: label,
             });
-        });
 
-        const result = await _userIdentity.query(api.sessions.getSessionsByUser, {
-            paginationOpts: { numItems: 10, cursor: null },
-        });
+            await createTestMember(t, { organizationId, userId: created.docId, role: 'member' });
 
-        expect(result.page.map(session => session._id)).toContain(sessionId);
+            if (label === 'user') {
+                user = created;
+            } else {
+                other = created;
+            }
+        }
     });
 
-    test('session can be retrieved after creation', async () => {
-        const session = await t.run(async (ctx: GenericQueryCtx<DataModel>) => {
-            return await ctx.db.get('session', sessionId);
-        });
+    afterEach(async () => {
+        await t.finishAllScheduledFunctions(() => vi.runAllTimers());
+        vi.useRealTimers();
+    });
 
-        if (!session) {
-            throw new Error('Expected session');
+    const addSessions = (owner: TestUserData, count: number) =>
+        Promise.all(
+            Array.from({ length: count }, (_, index) =>
+                createTestSession(t, {
+                    userId: owner.docId,
+                    activeOrganizationId: organizationId,
+                    expiresAt: Date.now() + 60_000,
+                    token: `extra-${String(owner.docId)}-${index}`,
+                })
+            )
+        );
+
+    const sessionCount = (owner: TestUserData) =>
+        t.run(
+            async ctx =>
+                (
+                    await ctx.db
+                        .query('session')
+                        .withIndex('userId', q => q.eq('userId', owner.docId))
+                        .take(500)
+                ).length
+        );
+
+    test('lists the own sessions with their device data and marks the current one @REQ-AUTENTICACION-006 @REQ-AUTENTICACION-007 @INH-AUT-09', async () => {
+        await addSessions(user, 2);
+
+        const { page } = await t
+            .withIdentity(identityFor(user))
+            .query(api.sessions.listMySessions, { paginationOpts: { numItems: 10, cursor: null } });
+
+        expect(page).toHaveLength(3);
+        expect(page.filter(session => session.isCurrent)).toHaveLength(1);
+        expect(page[0]).toHaveProperty('userAgent');
+    });
+
+    test('revokes its own sessions but never those of another user @REQ-AUTENTICACION-007 @REQ-NF-003', async () => {
+        const [mine] = await addSessions(user, 1);
+        const [theirs] = await addSessions(other, 1);
+
+        if (!mine || !theirs) {
+            throw new Error('Sessions were not created');
         }
-        expect(session.userId).toBe(userId);
-        expect(session.createdAt).toBeDefined();
-        expect(session.updatedAt).toBeDefined();
+
+        const asUser = t.withIdentity(identityFor(user));
+
+        await asUser.mutation(api.sessions.revokeSession, { sessionId: mine });
+        await expect(
+            asUser.mutation(api.sessions.revokeSession, { sessionId: theirs })
+        ).rejects.toThrow('FORBIDDEN');
+
+        expect(await sessionCount(user)).toBe(1);
+        expect(await sessionCount(other)).toBe(2);
+    });
+
+    test('closes every other session in batches of 100, keeping the current one @REQ-AUTENTICACION-008 @INH-AUT-10', async () => {
+        await addSessions(user, 250);
+        await addSessions(other, 3);
+
+        const result = await t
+            .withIdentity(identityFor(user))
+            .mutation(api.sessions.revokeOtherSessions, {});
+
+        expect(result.revokedCount).toBe(100);
+        await t.finishAllScheduledFunctions(() => vi.runAllTimers());
+
+        expect(await sessionCount(user)).toBe(1);
+        expect(await sessionCount(other)).toBe(4);
     });
 });

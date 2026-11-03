@@ -5,15 +5,13 @@ import {
     platformConfigSchema,
     adminAccountSchema,
     organizationSchema,
-    setupCategorySchema,
     registrationPolicySchema,
     type PlatformConfig,
     type AdminAccount,
     type OrganizationConfig,
-    type SetupCategory,
     type RegistrationPolicy,
 } from '../schemas/setup-schema';
-import { DEFAULT_CATEGORIES } from '../lib/default-categories';
+import { categoryDraftSchema, type CategoryDraft } from '@/features/categories/schemas/category';
 
 export const SETUP_STEPS = [
     'platform',
@@ -30,13 +28,15 @@ export interface SetupData {
     platform: PlatformConfig;
     admin: AdminAccount;
     organization: OrganizationConfig;
-    categories: SetupCategory[];
+    categories: CategoryDraft[];
     registration: RegistrationPolicy;
 }
 
+export type CategoryProposals = Record<PlatformConfig['defaultLanguage'], CategoryDraft[]>;
+
 interface SetupState {
     currentStep: number;
-    data: SetupData;
+    data: Omit<SetupData, 'categories'> & { categories: CategoryDraft[] | null };
 }
 
 type SetupAction =
@@ -45,7 +45,7 @@ type SetupAction =
     | { type: 'UPDATE_PLATFORM'; data: Partial<PlatformConfig> }
     | { type: 'UPDATE_ADMIN'; data: Partial<AdminAccount> }
     | { type: 'UPDATE_ORGANIZATION'; data: Partial<OrganizationConfig> }
-    | { type: 'UPDATE_CATEGORIES'; data: SetupCategory[] }
+    | { type: 'UPDATE_CATEGORIES'; data: CategoryDraft[] }
     | { type: 'UPDATE_REGISTRATION'; data: Partial<RegistrationPolicy> };
 
 const initialState: SetupState = {
@@ -60,7 +60,7 @@ const initialState: SetupState = {
             setupSecret: '',
         },
         organization: { name: '', logo: '' },
-        categories: DEFAULT_CATEGORIES,
+        categories: null,
         registration: { policy: 'invitation-only' },
     },
 };
@@ -121,26 +121,23 @@ const stepValidators: Record<SetupStep, (data: SetupData) => boolean> = {
     platform: data => platformConfigSchema.safeParse(data.platform).success,
     admin: data => adminAccountSchema.safeParse(data.admin).success,
     organization: data => organizationSchema.safeParse(data.organization).success,
-    categories: data => {
-        const categories = data.categories;
-        if (!Array.isArray(categories) || categories.length === 0) {
-            return false;
-        }
-        return categories.every(category => setupCategorySchema.safeParse(category).success);
-    },
+    categories: data =>
+        data.categories.every(category => categoryDraftSchema.safeParse(category).success),
     registration: data => registrationPolicySchema.safeParse(data.registration).success,
     summary: () => true,
 };
 
 function readSetupStep(index: number): SetupStep {
     const step = SETUP_STEPS[index];
+
     if (step === undefined) {
         throw new Error('Invalid setup step index');
     }
+
     return step;
 }
 
-export function useSetupWizard() {
+export function useSetupWizard(categoryProposals: CategoryProposals) {
     'use no memo'; // Avoids a compiler cache that dropped updateStepData in production.
 
     const [state, dispatch] = useReducer(setupReducer, initialState);
@@ -151,43 +148,53 @@ export function useSetupWizard() {
     function updateStepData(step: 'platform', data: Partial<PlatformConfig>): void;
     function updateStepData(step: 'admin', data: Partial<AdminAccount>): void;
     function updateStepData(step: 'organization', data: Partial<OrganizationConfig>): void;
-    function updateStepData(step: 'categories', data: SetupCategory[]): void;
+    function updateStepData(step: 'categories', data: CategoryDraft[]): void;
     function updateStepData(step: 'registration', data: Partial<RegistrationPolicy>): void;
     function updateStepData(
         ...args:
             | [step: 'platform', data: Partial<PlatformConfig>]
             | [step: 'admin', data: Partial<AdminAccount>]
             | [step: 'organization', data: Partial<OrganizationConfig>]
-            | [step: 'categories', data: SetupCategory[]]
+            | [step: 'categories', data: CategoryDraft[]]
             | [step: 'registration', data: Partial<RegistrationPolicy>]
     ) {
         const [step, data] = args;
+
         switch (step) {
             case 'platform':
                 dispatch({ type: 'UPDATE_PLATFORM', data });
+
                 return;
             case 'admin':
                 dispatch({ type: 'UPDATE_ADMIN', data });
+
                 return;
             case 'organization':
                 dispatch({ type: 'UPDATE_ORGANIZATION', data });
+
                 return;
             case 'categories':
                 dispatch({ type: 'UPDATE_CATEGORIES', data });
+
                 return;
             case 'registration':
                 dispatch({ type: 'UPDATE_REGISTRATION', data });
         }
     }
 
-    const isStepValid = (step: SetupStep) => stepValidators[step](state.data);
+    const data: SetupData = {
+        ...state.data,
+        categories: state.data.categories ?? categoryProposals[state.data.platform.defaultLanguage],
+    };
+
+    const isStepValid = (step: SetupStep) => stepValidators[step](data);
 
     const currentStepName = readSetupStep(state.currentStep);
 
     return {
         currentStep: state.currentStep,
         currentStepName,
-        data: state.data,
+        data,
         totalSteps: SETUP_STEPS.length,
         nextStep,
         prevStep,

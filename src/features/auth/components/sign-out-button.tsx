@@ -24,6 +24,17 @@ export function SignOutButton() {
         })
     );
 
+    let signOutIcon;
+    let signOutLabel: string;
+
+    if (signOutMutation.isPending) {
+        signOutIcon = <Loader2 className="h-4 w-4 animate-spin" />;
+        signOutLabel = t('actions.signingOut');
+    } else {
+        signOutIcon = <LogOut className="h-4 w-4" />;
+        signOutLabel = t('actions.signOut');
+    }
+
     return (
         <Button
             variant="outline"
@@ -34,14 +45,8 @@ export function SignOutButton() {
             data-testid="logout-button"
             aria-label={t('actions.signOut')}
         >
-            {signOutMutation.isPending ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-                <LogOut className="h-4 w-4" />
-            )}
-            <span className="hidden sm:inline">
-                {signOutMutation.isPending ? t('actions.signingOut') : t('actions.signOut')}
-            </span>
+            {signOutIcon}
+            <span className="hidden sm:inline">{signOutLabel}</span>
         </Button>
     );
 }

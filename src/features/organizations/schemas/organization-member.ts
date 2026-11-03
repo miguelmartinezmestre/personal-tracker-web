@@ -1,4 +1,5 @@
 import { z } from 'zod';
+
 export const organizationMemberSchema = z.object({
     email: z.email(),
     role: z.enum(['owner', 'admin', 'member']),
@@ -12,4 +13,5 @@ export const savedOrganizationMemberSchema = organizationMemberSchema.extend({
 });
 
 export type OrganizationMember = z.infer<typeof savedOrganizationMemberSchema>;
+
 export type CreateOrganizationMember = z.infer<typeof organizationMemberSchema>;

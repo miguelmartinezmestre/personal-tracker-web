@@ -1,38 +1,45 @@
 'use client';
-import type { z } from 'zod';
+
 import { PlusCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import {
-    FieldShell,
-    getFieldError,
-    FormControl,
-    FormDescription,
-    FormItem,
-    FormLabel,
-    FormMessage,
-} from '@/components/ui/form-fields';
+import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import type { CreateOrganization } from '@/features/organizations/schemas/organization';
-import { organizationSchema } from '@/features/organizations/schemas/organization';
+import { useOrganizationFormSchema } from '@/features/organizations/hooks/use-organization-form-schemas';
 import { useTranslations } from 'next-intl';
 import { useTranslations as useTranslationsCommon } from 'next-intl';
 import { useCreateOrganization } from '@/features/organizations/hooks/use-organizations';
 import FormModal from '@/components/forms/form-modal';
+import { getFieldErrors } from '@/components/forms/form-utils';
 import { useRouter } from 'next/navigation';
-const defaultValues: CreateOrganization = {
-    name: '',
-    description: '',
-};
+import { toast } from 'sonner';
+import { useQuery } from '@tanstack/react-query';
+import { convexQuery } from '@convex-dev/react-query';
+import { api } from '@/convex/_generated/api';
+import { CategoryListEditor } from '@/features/categories/components/category-list-editor';
+import { toCategoryDraft } from '@/features/categories/schemas/category';
+
 export default function CreateOrganizationFormModal() {
     const t = useTranslations('Organizations');
     const tCommon = useTranslationsCommon('Common');
     const createOrganization = useCreateOrganization();
+    const organizationSchema = useOrganizationFormSchema();
     const router = useRouter();
+    const catalog = useQuery(convexQuery(api.platformCategories.listPlatformCategories, {}));
+
+    const defaultValues: CreateOrganization = {
+        name: '',
+        categories: catalog.data?.map(toCategoryDraft) ?? [],
+    };
+
     return (
-        <FormModal<z.infer<typeof organizationSchema>>
+        <FormModal<CreateOrganization>
             trigger={
-                <Button className="gap-2" data-testid="organization-create-open">
+                <Button
+                    className="gap-2"
+                    disabled={catalog.isPending}
+                    data-testid="organization-create-open"
+                >
                     <PlusCircle className="h-4 w-4" />
                     {t('createOrganization')}
                 </Button>
@@ -48,6 +55,7 @@ export default function CreateOrganizationFormModal() {
             }}
             onSubmit={async (values: CreateOrganization) => {
                 await createOrganization.mutateAsync(values);
+                toast.success(t('toast.createdAndActive', { name: values.name.trim() }));
                 router.refresh();
             }}
             submitLabel={t('saveOrganization')}
@@ -58,68 +66,47 @@ export default function CreateOrganizationFormModal() {
             submitTestId="organization-save-button"
         >
             {form => (
-                <>
+                <FieldGroup>
                     <form.Field name="name">
-                        {field => (
-                            <FieldShell error={getFieldError(form, field)}>
-                                <FormItem>
-                                    <FormLabel>{t('name')}</FormLabel>
-                                    <FormControl>
-                                        <Input
-                                            placeholder={t('enterOrganizationName')}
-                                            name={field.name}
-                                            value={
-                                                typeof field.state.value === 'string'
-                                                    ? field.state.value
-                                                    : ''
-                                            }
-                                            onChange={event =>
-                                                field.handleChange(event.target.value)
-                                            }
-                                            onBlur={field.handleBlur}
-                                            data-testid="organization-name-input"
-                                        />
-                                    </FormControl>
-                                    <FormDescription>
-                                        {t('giveYourOrganizationAClearConciseTitle')}
-                                    </FormDescription>
-                                    <FormMessage />
-                                </FormItem>
-                            </FieldShell>
-                        )}
-                    </form.Field>
+                        {field => {
+                            const errors = getFieldErrors(form, field);
+                            const isInvalid = !!errors.length;
+                            const value = field.state.value;
 
-                    <form.Field name="description">
+                            return (
+                                <Field data-invalid={isInvalid}>
+                                    <FieldLabel htmlFor={field.name}>{t('name')}</FieldLabel>
+                                    <Input
+                                        id={field.name}
+                                        name={field.name}
+                                        placeholder={t('enterOrganizationName')}
+                                        value={value}
+                                        onChange={event => field.handleChange(event.target.value)}
+                                        onBlur={field.handleBlur}
+                                        aria-invalid={isInvalid}
+                                        data-testid="organization-name-input"
+                                    />
+                                    <FieldDescription>
+                                        {t('giveYourOrganizationAClearConciseTitle')}
+                                    </FieldDescription>
+                                    {isInvalid && <FieldError errors={errors} />}
+                                </Field>
+                            );
+                        }}
+                    </form.Field>
+                    <form.Field name="categories">
                         {field => (
-                            <FieldShell error={getFieldError(form, field)}>
-                                <FormItem>
-                                    <FormLabel>{t('tableDescription')}</FormLabel>
-                                    <FormControl>
-                                        <Textarea
-                                            placeholder={t('describeOrganizationInDetail')}
-                                            className="resize-none min-h-[80px]"
-                                            name={field.name}
-                                            value={
-                                                typeof field.state.value === 'string'
-                                                    ? field.state.value
-                                                    : ''
-                                            }
-                                            onChange={event =>
-                                                field.handleChange(event.target.value)
-                                            }
-                                            onBlur={field.handleBlur}
-                                            data-testid="organization-description-input"
-                                        />
-                                    </FormControl>
-                                    <FormDescription>
-                                        {t('optionalAddDetailsAboutYourOrganization')}
-                                    </FormDescription>
-                                    <FormMessage />
-                                </FormItem>
-                            </FieldShell>
+                            <Field>
+                                <p className="text-sm font-medium">{t('categories')}</p>
+                                <FieldDescription>{t('categoriesDescription')}</FieldDescription>
+                                <CategoryListEditor
+                                    value={field.state.value}
+                                    onChange={field.handleChange}
+                                />
+                            </Field>
                         )}
                     </form.Field>
-                </>
+                </FieldGroup>
             )}
         </FormModal>
     );

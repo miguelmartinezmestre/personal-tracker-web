@@ -1,4 +1,5 @@
 'use client';
+
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useMutation } from '@tanstack/react-query';
@@ -10,20 +11,25 @@ import { AlertCircle } from 'lucide-react';
 import { api } from '@/convex/_generated/api';
 import { authClient } from '@/features/auth/client';
 import { convex } from '@/platform/convex/providers/convex-query-client';
-import { useSetupWizard } from '../hooks/use-setup-wizard';
+import { useSetupWizard, type CategoryProposals } from '../hooks/use-setup-wizard';
 import { resolveErrorMessage } from '@/lib/error-messages';
 import SetupProgress from './setup-progress';
-import type { ErrorContext } from 'better-auth/client';
-import { setLocaleCookie } from '@/lib/locale-cookie';
+import { createOrResumeSetupAccount } from '../lib/setup-account';
 import { throwIfAuthClientError } from '@/features/auth/auth-client-response';
-import { SETUP_SECRET_HEADER } from '@shared/auth-security';
+import { SETUP_SECRET_HEADER } from '@/convex/features/setup/secret';
 import { SetupStepContent, SetupWizardActions } from './setup-step-content';
-export default function SetupWizard() {
+
+export default function SetupWizard({
+    categoryProposals,
+}: {
+    categoryProposals: CategoryProposals;
+}) {
     const router = useRouter();
     const errorLocale = useLocale() === 'es' ? 'es' : 'en';
     const t = useTranslations('Setup');
     const [error, setError] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
+
     const {
         currentStep,
         currentStepName,
@@ -35,73 +41,86 @@ export default function SetupWizard() {
         isStepValid,
         isFirstStep,
         isLastStep,
-    } = useSetupWizard();
+    } = useSetupWizard(categoryProposals);
+
     const { mutateAsync: completeSetup } = useMutation({
         mutationFn: useConvexMutation(api.setup.completeSetup),
     });
+
     const canProceed = isStepValid(currentStepName);
+
     async function handleComplete() {
         setError('');
         setIsSubmitting(true);
         const signUpFailedMsg = t('errors.signUpFailed');
         const setupFailedMsg = t('errors.setupFailed');
-        try {
-            await authClient.signUp.email(
-                {
-                    name: data.admin.username,
-                    email: data.admin.email,
-                    password: data.admin.password,
-                    fetchOptions: data.admin.setupSecret
-                        ? {
-                              headers: {
-                                  [SETUP_SECRET_HEADER]: data.admin.setupSecret,
-                              },
-                          }
-                        : undefined,
+        let fetchOptions;
+
+        if (data.admin.setupSecret) {
+            fetchOptions = {
+                headers: {
+                    [SETUP_SECRET_HEADER]: data.admin.setupSecret,
                 },
-                {
-                    onSuccess: async () => {
-                        const tokenResult = await authClient.convex.token({
-                            fetchOptions: { throw: false },
-                        });
-                        const token = tokenResult.data?.token;
-                        if (!token) {
-                            throw new Error('User not found');
-                        }
-                        convex.setAuth(() => Promise.resolve(token));
-                        const setupResult = await completeSetup({
-                            platformName: data.platform.platformName,
-                            defaultLanguage: data.platform.defaultLanguage,
-                            registrationPolicy: data.registration.policy,
-                            organizationName: data.organization.name,
-                            organizationLogo: data.organization.logo || undefined,
-                            categories: data.categories.map(category => ({
-                                name: category.name,
-                                color: category.color,
-                                icon: category.icon,
-                            })),
-                        });
-                        if (setupResult.organizationId) {
-                            const activeOrganizationResult =
-                                await authClient.organization.setActive({
-                                    organizationId: setupResult.organizationId,
-                                });
-                            throwIfAuthClientError(activeOrganizationResult);
-                        }
-                        setLocaleCookie(data.platform.defaultLanguage);
-                        router.push('/dashboard/home');
-                    },
-                    onError: (errorContext: ErrorContext) => {
-                        setError(errorContext.error.message || signUpFailedMsg);
-                        setIsSubmitting(false);
-                    },
-                }
+            };
+        } else {
+            fetchOptions = undefined;
+        }
+
+        try {
+            const signUpError = await createOrResumeSetupAccount(
+                authClient,
+                data.admin,
+                fetchOptions
             );
+
+            if (signUpError) {
+                setError(signUpError.message || signUpFailedMsg);
+                setIsSubmitting(false);
+
+                return;
+            }
+
+            const tokenResult = await authClient.convex.token({
+                fetchOptions: { throw: false },
+            });
+
+            const token = tokenResult.data?.token;
+
+            if (!token) {
+                throw new Error('User not found');
+            }
+
+            convex.setAuth(() => Promise.resolve(token));
+
+            const setupResult = await completeSetup({
+                platformName: data.platform.platformName,
+                defaultLanguage: data.platform.defaultLanguage,
+                registrationPolicy: data.registration.policy,
+                organizationName: data.organization.name,
+                organizationLogo: data.organization.logo || undefined,
+                categories: data.categories.map(category => ({
+                    name: category.name,
+                    color: category.color,
+                    icon: category.icon,
+                })),
+            });
+
+            if (setupResult.organizationId) {
+                const activeOrganizationResult = await authClient.organization.setActive({
+                    organizationId: setupResult.organizationId,
+                });
+
+                throwIfAuthClientError(activeOrganizationResult);
+            }
+
+            document.cookie = `locale=${data.platform.defaultLanguage};path=/;max-age=31536000;SameSite=Lax`;
+            router.push('/dashboard/home');
         } catch (caughtError) {
             setError(resolveErrorMessage(caughtError, errorLocale, setupFailedMsg));
             setIsSubmitting(false);
         }
     }
+
     return (
         <div className="mx-auto w-full max-w-2xl px-4 py-8">
             <SetupProgress currentStep={currentStep} isStepValid={isStepValid} />

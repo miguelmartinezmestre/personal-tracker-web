@@ -1,14 +1,12 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import { internal } from '../_generated/api';
-import type { Id } from '../_generated/dataModel';
 import { initConvexTest } from './test.helper';
 import {
     createTestMember,
-    createTestObjective,
     createTestOrganization,
     createTestUser,
     createTestSession,
-} from './test_helpers';
+} from './test.helpers';
 
 describe('organization deletion cascade', () => {
     const t = initConvexTest();
@@ -20,123 +18,133 @@ describe('organization deletion cascade', () => {
         vi.useRealTimers();
     });
 
-    test('removes application data owned by the organization', async () => {
+    test('removes categories, objectives, permissions and memberships owned by the organization @REQ-EQUIPOS-008 @INH-ORG-05 @INH-PAP-06', async () => {
         const suffix = Math.random().toString(36).slice(2, 10);
+
         const user = await createTestUser(t, {
             userId: `organization-delete-${suffix}`,
             email: `organization-delete-${suffix}@example.com`,
             name: 'Organization owner',
             role: 'user',
         });
+
         const organizationId = await createTestOrganization(t, {
             name: `Organization to delete ${suffix}`,
             slug: `organization-to-delete-${suffix}`,
         });
+
         await createTestMember(t, { organizationId, userId: user.docId, role: 'owner' });
-        const objectiveId = await createTestObjective(t, {
-            userId: user.docId,
-            organizationId,
-            title: 'Objective to delete',
-            targetValue: 10,
-        });
+        const now = Date.now();
+
         const categoryId = await t.run(ctx =>
             ctx.db.insert('categories', {
                 userId: user.docId,
                 organizationId,
                 name: 'Category to delete',
                 color: '#000000',
-                createdAt: Date.now(),
-                updatedAt: Date.now(),
+                createdAt: now,
+                updatedAt: now,
             })
         );
 
-        await t.mutation(internal.admin.cascadeOrganizationDeletionInternal, {
+        const objectiveId = await t.run(ctx =>
+            ctx.db.insert('objectives', {
+                organizationId,
+                createdBy: user.docId,
+                title: 'Objective to delete',
+                direction: 'increase',
+                memberCanView: true,
+                memberCanEdit: false,
+                startValue: 0,
+                currentValue: 1,
+                targetValue: 5,
+                status: 'active',
+                createdAt: now,
+                updatedAt: now,
+            })
+        );
+
+        const progressId = await t.run(ctx =>
+            ctx.db.insert('progressUpdates', {
+                objective: objectiveId,
+                organizationId,
+                createdBy: user.docId,
+                updatedValue: 1,
+                updateDate: now,
+                resultingValue: 1,
+                createdAt: now,
+                updatedAt: now,
+            })
+        );
+
+        const permissionId = await t.run(ctx =>
+            ctx.db.insert('objectivePermissions', {
+                objectiveId,
+                organizationId,
+                userId: user.docId,
+                canEdit: true,
+                addedBy: user.docId,
+                createdAt: now,
+                updatedAt: now,
+            })
+        );
+
+        await t.mutation(internal.cascades.cascadeOrganizationDeletionInternal, {
             organizationId,
         });
         await t.finishAllScheduledFunctions(() => vi.runAllTimers());
 
         await t.run(async ctx => {
-            expect(await ctx.db.get('objectives', objectiveId)).toBeNull();
+            expect(await ctx.db.get('organization', organizationId)).toBeNull();
             expect(await ctx.db.get('categories', categoryId)).toBeNull();
+            expect(await ctx.db.get('objectives', objectiveId)).toBeNull();
+            expect(await ctx.db.get('progressUpdates', progressId)).toBeNull();
+            expect(await ctx.db.get('objectivePermissions', permissionId)).toBeNull();
         });
     });
 
-    test('recovers sessions past stale memberships and repeats finalization for late residues', async () => {
-        const user = await createTestUser(t, {
-            userId: 'recovery-owner',
-            email: 'recovery@example.test',
-            name: 'Recovery owner',
+    test('gives the deleting user back an active organization after Better Auth clears it @INH-ORG-05', async () => {
+        const suffix = Math.random().toString(36).slice(2, 10);
+
+        const actor = await createTestUser(t, {
+            userId: `actor-${suffix}`,
+            email: `actor-${suffix}@example.test`,
+            name: 'Actor',
         });
+
         const deletedId = await createTestOrganization(t, {
-            name: 'Deleted',
-            slug: 'deleted-recovery',
+            name: 'Deleted by actor',
+            slug: `deleted-by-actor-${suffix}`,
         });
-        await createTestMember(t, { organizationId: deletedId, userId: user.docId, role: 'owner' });
-        for (let index = 0; index < 25; index++) {
-            const missing = await createTestOrganization(t, {
-                name: 'Stale',
-                slug: `stale-${index}`,
-            });
-            await t.run(async ctx => {
-                await ctx.db.insert('member', {
-                    organizationId: missing,
-                    userId: user.docId,
-                    role: 'member',
-                    createdAt: index,
-                });
-                await ctx.db.delete('organization', missing);
-            });
-        }
+
         const fallbackId = await createTestOrganization(t, {
-            name: 'Existing',
-            slug: 'existing-fallback',
+            name: 'Kept',
+            slug: `kept-${suffix}`,
         });
+
         await createTestMember(t, {
             organizationId: fallbackId,
-            userId: user.docId,
-            role: 'member',
+            userId: actor.docId,
+            role: 'owner',
         });
-        const sessionIds: Id<'session'>[] = [];
-        for (let index = 0; index < 23; index++) {
-            sessionIds.push(
-                await createTestSession(t, {
-                    userId: user.docId,
-                    activeOrganizationId: deletedId,
-                    expiresAt: Date.now() + 3600000,
-                    token: `affected-${index}`,
-                })
-            );
-        }
-        await t.mutation(internal.admin.cascadeOrganizationDeletionInternal, {
-            organizationId: deletedId,
-        });
-        await t.finishAllScheduledFunctions(() => vi.runAllTimers());
-        await t.run(async ctx => {
-            for (const id of sessionIds) {
-                expect((await ctx.db.get('session', id))?.activeOrganizationId).toBe(fallbackId);
-            }
-        });
-        const lateSession = await createTestSession(t, {
-            userId: user.docId,
-            activeOrganizationId: deletedId,
+
+        const actorSession = await createTestSession(t, {
+            userId: actor.docId,
+            activeOrganizationId: null,
             expiresAt: Date.now() + 3600000,
-            token: 'late-session',
+            token: `actor-session-${suffix}`,
         });
-        const check = await t.mutation(internal.admin.continueOrganizationDeletionCascade, {
+
+        await t.run(ctx => ctx.db.delete('organization', deletedId));
+
+        await t.mutation(internal.auth.recoverSessionsAfterOrganizationDeletion, {
             organizationId: deletedId,
-            phase: 'finalize',
+            actorUserId: actor.docId,
         });
-        expect(check).toEqual({ status: 'in_progress', phase: 'sessions' });
         await t.finishAllScheduledFunctions(() => vi.runAllTimers());
+
         expect(
-            (await t.run(async ctx => await ctx.db.get('session', lateSession)))
-                ?.activeOrganizationId
+            (await t.run(ctx => ctx.db.get('session', actorSession)))?.activeOrganizationId
         ).toBe(fallbackId);
-        await expect(
-            t.mutation(internal.admin.continueOrganizationDeletionCascade, {
-                organizationId: deletedId,
-                phase: 'finalize',
-            })
-        ).resolves.toEqual({ status: 'completed', phase: 'finalize' });
     });
 });

@@ -1,16 +1,17 @@
 'use client';
+
 import {
+    Award,
     Bell,
-    FileText,
-    Frame,
     Goal,
     Home,
-    Trophy,
-    Settings,
-    Users,
-    Activity,
-    Tag,
     Mail,
+    MonitorSmartphone,
+    Settings,
+    ShieldCheck,
+    Tags,
+    Target,
+    Users,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import {
@@ -29,15 +30,17 @@ import { useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import type { api } from '@/convex/_generated/api';
-import type { FunctionReturnType } from 'convex/server';
-import { isGlobalAdminRole } from '@shared/platform-roles';
+import { useQuery } from '@tanstack/react-query';
+import { convexQuery } from '@convex-dev/react-query';
+import { api } from '@/convex/_generated/api';
+import { isGlobalAdminRole } from '@/convex/features/auth/roles';
+
 type ProjectNavItem = {
     name: string;
     url: Route;
     icon: LucideIcon;
 };
-type CurrentUser = NonNullable<FunctionReturnType<typeof api.auth.getCurrentUser>>;
+
 const baseProjects: ProjectNavItem[] = [
     {
         name: 'home',
@@ -47,17 +50,17 @@ const baseProjects: ProjectNavItem[] = [
     {
         name: 'objectives',
         url: '/dashboard/objectives',
-        icon: Goal,
+        icon: Target,
     },
     {
         name: 'categories',
         url: '/dashboard/categories',
-        icon: Tag,
+        icon: Tags,
     },
     {
         name: 'achievements',
         url: '/dashboard/achievements',
-        icon: Trophy,
+        icon: Award,
     },
     {
         name: 'notifications',
@@ -70,50 +73,40 @@ const baseProjects: ProjectNavItem[] = [
         icon: Mail,
     },
     {
+        name: 'organizations',
+        url: '/dashboard/organizations',
+        icon: Users,
+    },
+    {
         name: 'sessions',
         url: '/dashboard/sessions',
-        icon: Frame,
+        icon: MonitorSmartphone,
     },
     {
         name: 'settings',
         url: '/dashboard/settings',
         icon: Settings,
     },
-    {
-        name: 'organizations',
-        url: '/dashboard/organizations',
-        icon: Users,
-    },
 ];
-const adminProjects: ProjectNavItem[] = [
-    {
-        name: 'users',
-        url: '/dashboard/admin/users',
-        icon: Users,
-    },
-    {
-        name: 'adminSessions',
-        url: '/dashboard/admin/sessions',
-        icon: Activity,
-    },
-    {
-        name: 'adminAudit',
-        url: '/dashboard/admin/audit',
-        icon: FileText,
-    },
-];
-export function AppSidebar({ initialUser }: { initialUser: CurrentUser }) {
+
+const adminProject: ProjectNavItem = { name: 'admin', url: '/dashboard/admin', icon: ShieldCheck };
+
+export function AppSidebar() {
     const t = useTranslations('Sidebar');
     const pathname = usePathname();
+    const user = useQuery(convexQuery(api.auth.getCurrentUser, {}));
+
+    const projects = isGlobalAdminRole(user.data?.role)
+        ? [...baseProjects, adminProject]
+        : baseProjects;
+
     const { isMobile, setOpenMobile } = useSidebar();
-    const user = initialUser;
-    const isAdmin = isGlobalAdminRole(user.role);
-    const projects = isAdmin ? [...baseProjects, ...adminProjects] : baseProjects;
     useEffect(() => {
         if (isMobile) {
             setOpenMobile(false);
         }
     }, [pathname, isMobile, setOpenMobile]);
+
     return (
         <Sidebar data-testid="app-sidebar">
             <SidebarHeader>
@@ -131,28 +124,41 @@ export function AppSidebar({ initialUser }: { initialUser: CurrentUser }) {
                     <nav aria-label={t('navigationLabel')}>
                         <SidebarMenu data-testid="sidebar-menu">
                             {projects.map(item => {
-                                const isActive = pathname === item.url;
+                                let isActive: boolean;
+
+                                if (item.url === '/dashboard/objectives') {
+                                    isActive =
+                                        pathname === item.url ||
+                                        pathname.startsWith(`${item.url}/`);
+                                } else {
+                                    isActive = pathname === item.url;
+                                }
+
                                 return (
                                     <SidebarMenuItem key={item.name}>
-                                        <SidebarMenuButton>
-                                            <Link
-                                                href={item.url}
-                                                prefetch={false}
-                                                className={cn(
-                                                    'relative transition-all duration-200',
-                                                    isActive
-                                                        ? 'bg-accent text-accent-foreground font-medium'
-                                                        : 'hover:bg-accent/50 hover:text-accent-foreground'
-                                                )}
-                                            >
-                                                <item.icon
+                                        <SidebarMenuButton
+                                            render={
+                                                <Link
+                                                    href={item.url}
+                                                    prefetch={false}
+                                                    data-testid={`sidebar-nav-${item.name}`}
                                                     className={cn(
-                                                        'h-4 w-4 transition-all',
-                                                        isActive && 'text-primary'
+                                                        'relative transition-all duration-200',
+                                                        isActive &&
+                                                            'bg-accent text-accent-foreground font-medium',
+                                                        !isActive &&
+                                                            'hover:bg-accent/50 hover:text-accent-foreground'
                                                     )}
                                                 />
-                                                {t(item.name)}
-                                            </Link>
+                                            }
+                                        >
+                                            <item.icon
+                                                className={cn(
+                                                    'h-4 w-4 transition-all',
+                                                    isActive && 'text-primary'
+                                                )}
+                                            />
+                                            {t(item.name)}
                                         </SidebarMenuButton>
                                     </SidebarMenuItem>
                                 );

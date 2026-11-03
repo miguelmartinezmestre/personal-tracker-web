@@ -1,15 +1,25 @@
 import { redirect } from 'next/navigation';
-import { checkPlatformSetUp } from '@/features/setup/server';
+import { isPlatformSetUp } from '@/features/setup/server';
 import SetupWizard from '@/features/setup/components/setup-wizard';
 import { getTranslations } from 'next-intl/server';
+import { translatedPageTitle } from '@/lib/page-metadata';
+import { CATEGORY_PROPOSAL } from '@/features/setup/lib/default-categories';
+
+export const generateMetadata = translatedPageTitle('Setup', 'title');
 
 export const dynamic = 'force-dynamic';
 
+async function categoryProposal(locale: 'en' | 'es') {
+    const t = await getTranslations({ locale, namespace: 'Categories.defaults' });
+
+    return CATEGORY_PROPOSAL.map(({ key, ...category }) => ({ ...category, name: t(key) }));
+}
+
 export default async function SetupPage() {
-    const isPlatformSetUp = await checkPlatformSetUp();
-    if (isPlatformSetUp) {
+    if (await isPlatformSetUp()) {
         redirect('/');
     }
+
     const t = await getTranslations('Setup');
 
     return (
@@ -23,7 +33,12 @@ export default async function SetupPage() {
                         {t('subtitle')}
                     </p>
                 </div>
-                <SetupWizard />
+                <SetupWizard
+                    categoryProposals={{
+                        en: await categoryProposal('en'),
+                        es: await categoryProposal('es'),
+                    }}
+                />
             </div>
         </div>
     );

@@ -1,9 +1,10 @@
 'use client';
 
-import { type ReactNode, useState } from 'react';
+import { type ReactNode, useRef, useState } from 'react';
 import { useForm, type AnyFormOptions } from '@tanstack/react-form';
 import { Button } from '@/components/ui/button';
 import type { TanStackFormApi } from './form-types';
+import { focusFirstInvalidField } from './form-utils';
 import {
     Dialog,
     DialogContent,
@@ -15,29 +16,24 @@ import {
 } from '@/components/ui/dialog';
 
 type FormModalProps<TFormValues extends object> = {
-    trigger?: ReactNode;
-    open?: boolean;
-    onOpenChange?: (open: boolean) => void;
+    trigger: React.ReactElement;
     title: string;
     description?: string;
     formOptions: Omit<AnyFormOptions, 'onSubmit'> & {
         defaultValues: TFormValues;
     };
     onSubmit: (values: TFormValues) => Promise<void>;
-    children: (form: TanStackFormApi) => ReactNode;
+    children: (form: TanStackFormApi<TFormValues>) => ReactNode;
     submitLabel: string;
     cancelLabel: string;
     pendingLabel?: string;
     isPending?: boolean;
-    contentClassName?: string;
     cancelTestId?: string;
     submitTestId?: string;
 };
 
 export default function FormModal<TFormValues extends object>({
     trigger,
-    open: controlledOpen,
-    onOpenChange: controlledOnOpenChange,
     title,
     description,
     formOptions,
@@ -47,47 +43,69 @@ export default function FormModal<TFormValues extends object>({
     cancelLabel,
     pendingLabel,
     isPending = false,
-    contentClassName = 'sm:max-w-[600px] max-h-[90vh] overflow-y-auto',
     cancelTestId,
     submitTestId,
 }: FormModalProps<TFormValues>) {
-    const [uncontrolledOpen, setUncontrolledOpen] = useState(false);
-    const isControlled = controlledOpen !== undefined;
-    const open = isControlled ? controlledOpen : uncontrolledOpen;
+    const [open, setOpenState] = useState(false);
+    const formRef = useRef<HTMLFormElement>(null);
 
     const setOpen = (nextOpen: boolean) => {
-        if (isControlled) {
-            controlledOnOpenChange?.(nextOpen);
-        } else {
-            setUncontrolledOpen(nextOpen);
+        if (!nextOpen) {
+            form.reset();
         }
+
+        setOpenState(nextOpen);
     };
 
     const form = useForm({
         ...formOptions,
         onSubmit: async ({ value }: { value: TFormValues }) => {
-            await onSubmit(value);
+            try {
+                await onSubmit(value);
+            } catch {
+                return;
+            }
+
             setOpen(false);
-            form.reset();
         },
+        onSubmitInvalid: () => focusFirstInvalidField(formRef.current),
     });
 
     return (
-        <Dialog open={open} onOpenChange={setOpen}>
-            {trigger ? <DialogTrigger asChild>{trigger}</DialogTrigger> : null}
-            <DialogContent className={contentClassName}>
+        <Dialog
+            open={open}
+            onOpenChange={(nextOpen, details) => {
+                if (
+                    !nextOpen &&
+                    !['close-press', 'escape-key', 'trigger-press', 'imperative-action'].includes(
+                        details.reason
+                    )
+                ) {
+                    details.cancel();
+
+                    return;
+                }
+
+                setOpen(nextOpen);
+            }}
+            disablePointerDismissal
+        >
+            <DialogTrigger render={trigger} />
+            <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                     <DialogTitle>{title}</DialogTitle>
                     {description && <DialogDescription>{description}</DialogDescription>}
                 </DialogHeader>
 
                 <form
+                    ref={formRef}
+                    noValidate
                     onSubmit={event => {
                         event.preventDefault();
                         event.stopPropagation();
                         void form.handleSubmit();
                     }}
-                    className="space-y-5 py-4"
+                    className="py-4"
                 >
                     {children(form)}
 

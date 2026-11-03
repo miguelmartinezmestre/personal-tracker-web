@@ -1,15 +1,8 @@
 'use client';
+
 import { PlusCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import {
-    FieldShell,
-    getFieldError,
-    FormControl,
-    FormDescription,
-    FormItem,
-    FormLabel,
-    FormMessage,
-} from '@/components/ui/form-fields';
+import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from '@/components/ui/field';
 import type { OrganizationMember } from '@/features/organizations/schemas/organization-member';
 import { savedOrganizationMemberSchema } from '@/features/organizations/schemas/organization-member';
 import {
@@ -24,6 +17,8 @@ import { useTranslations } from 'next-intl';
 import { useTranslations as useTranslationsCommon } from 'next-intl';
 import { useUpdateOrganizationMember } from '@/features/organizations/hooks/use-organization-members';
 import FormModal from '@/components/forms/form-modal';
+import { getFieldErrors } from '@/components/forms/form-utils';
+
 export default function OrganizationMemberEditFormModal({
     defaultValues,
     canAssignOwner,
@@ -33,12 +28,15 @@ export default function OrganizationMemberEditFormModal({
 }) {
     const t = useTranslations('OrganizationMembers');
     const tCommon = useTranslationsCommon('Common');
+
     const roleOptions = [
         ...(canAssignOwner ? [{ value: OrganizationRole.OWNER, label: t('roles.owner') }] : []),
         { value: OrganizationRole.ADMIN, label: t('roles.admin') },
         { value: OrganizationRole.MEMBER, label: t('roles.member') },
     ];
+
     const updateOrganizationMember = useUpdateOrganizationMember();
+
     return (
         <FormModal<OrganizationMember>
             trigger={
@@ -60,6 +58,7 @@ export default function OrganizationMemberEditFormModal({
                 if (!isOrganizationRoleValue(values.role)) {
                     return;
                 }
+
                 await updateOrganizationMember.mutateAsync({
                     memberId: values.id,
                     organizationId: values.organizationId,
@@ -74,47 +73,58 @@ export default function OrganizationMemberEditFormModal({
             submitTestId="organization-member-edit-save-button"
         >
             {form => (
-                <>
+                <FieldGroup>
                     <form.Field name="email">
-                        {field => (
-                            <FieldShell error={getFieldError(form, field)}>
-                                <FormItem>
-                                    <FormLabel>{t('email')}</FormLabel>
-                                    <p className="text-sm text-muted-foreground py-2">
-                                        {typeof field.state.value === 'string'
-                                            ? field.state.value
-                                            : ''}
+                        {field => {
+                            const errors = getFieldErrors(form, field);
+                            const isInvalid = !!errors.length;
+                            const value = field.state.value;
+
+                            return (
+                                <Field data-invalid={isInvalid}>
+                                    <FieldLabel htmlFor={field.name}>{t('email')}</FieldLabel>
+                                    <p
+                                        id={field.name}
+                                        className="text-sm text-muted-foreground py-2"
+                                    >
+                                        {value}
                                     </p>
-                                    <FormDescription>
+                                    <FieldDescription>
                                         {t('giveYourOrganizationMemberAClearConciseEmail')}
-                                    </FormDescription>
-                                    <FormMessage />
-                                </FormItem>
-                            </FieldShell>
-                        )}
+                                    </FieldDescription>
+                                    {isInvalid && <FieldError errors={errors} />}
+                                </Field>
+                            );
+                        }}
                     </form.Field>
 
                     <form.Field name="role">
-                        {field => (
-                            <FieldShell error={getFieldError(form, field)}>
-                                <FormItem>
-                                    <FormLabel>{t('role')}</FormLabel>
+                        {field => {
+                            const errors = getFieldErrors(form, field);
+                            const isInvalid = !!errors.length;
+                            const value = field.state.value;
+
+                            return (
+                                <Field data-invalid={isInvalid}>
+                                    <FieldLabel htmlFor={field.name}>{t('role')}</FieldLabel>
                                     <Select
-                                        onValueChange={value => field.handleChange(value)}
-                                        value={
-                                            typeof field.state.value === 'string'
-                                                ? field.state.value
-                                                : 'member'
-                                        }
+                                        name={field.name}
+                                        onValueChange={value => {
+                                            if (value !== null && isOrganizationRoleValue(value)) {
+                                                field.handleChange(value);
+                                            }
+                                        }}
+                                        value={value}
+                                        items={roleOptions}
                                     >
-                                        <FormControl>
-                                            <SelectTrigger
-                                                onBlur={field.handleBlur}
-                                                data-testid="organization-member-edit-role-select"
-                                            >
-                                                <SelectValue placeholder={t('selectRole')} />
-                                            </SelectTrigger>
-                                        </FormControl>
+                                        <SelectTrigger
+                                            id={field.name}
+                                            onBlur={field.handleBlur}
+                                            aria-invalid={isInvalid}
+                                            data-testid="organization-member-edit-role-select"
+                                        >
+                                            <SelectValue placeholder={t('selectRole')} />
+                                        </SelectTrigger>
                                         <SelectContent>
                                             {roleOptions.map(role => (
                                                 <SelectItem key={role.value} value={role.value}>
@@ -123,15 +133,15 @@ export default function OrganizationMemberEditFormModal({
                                             ))}
                                         </SelectContent>
                                     </Select>
-                                    <FormDescription>
+                                    <FieldDescription>
                                         {t('currentRoleOfYourOrganizationMember')}
-                                    </FormDescription>
-                                    <FormMessage />
-                                </FormItem>
-                            </FieldShell>
-                        )}
+                                    </FieldDescription>
+                                    {isInvalid && <FieldError errors={errors} />}
+                                </Field>
+                            );
+                        }}
                     </form.Field>
-                </>
+                </FieldGroup>
             )}
         </FormModal>
     );

@@ -18,12 +18,13 @@
             "cancel": "Cancelar",
             "signOut": "Cerrar sesión",
             "signingOut": "Cerrando sesión...",
-            "loadMore": "Cargar más"
+            "loadMore": "Cargar más",
+            "close": "Cerrar"
         },
         "fields": {
             "email": "Correo electrónico",
             "name": "Nombre",
-            "username": "Nombre de usuario",
+            "username": "Nombre",
             "password": "Contraseña",
             "confirmPassword": "Confirmar contraseña",
             "role": "Rol"
@@ -31,7 +32,7 @@
         "placeholders": {
             "email": "nombre@correo.com",
             "password": "Ingresa tu contraseña",
-            "username": "username",
+            "username": "Tu nombre",
             "min8Chars": "Mínimo 8 caracteres",
             "confirmPassword": "Confirmar contraseña",
             "userIdForSessions": "ID del usuario para ver sus sesiones..."
@@ -79,25 +80,25 @@
             "na": "N/A"
         },
         "loading": "Cargando...",
-        "updatingData": "Estamos actualizando los datos del panel.",
         "chartData": "Ver datos de la gráfica",
         "skipToContent": "Saltar al contenido",
         "validation": {
             "invalidEmail": "Introduce un correo válido.",
-            "minimumCharacters": "Introduce al menos {count} caracteres."
-        }
+            "minimumCharacters": "Introduce al menos {count} caracteres.",
+            "required": "Este campo es obligatorio."
+        },
+        "toggleSidebar": "Mostrar u ocultar el menú lateral"
     },
     "DashboardHome": {
         "dashboardTitle": "Dashboard",
         "welcome": "Bienvenido {name}",
+        "welcomeAnonymous": "Bienvenido",
+        "emptyState": "Aún no hay objetivos en esta organización. Crea uno para ver aquí tus estadísticas.",
         "stats": {
             "active": "Activos",
             "completed": "Completados"
         },
         "upcomingDeadlines": "Próximos vencimientos",
-        "noUpcomingDeadlines": "Sin vencimientos en los próximos 7 días",
-        "deadlineDaysRemaining": "{days} d",
-        "partialData": "Se muestra un resultado parcial porque hay más datos de los que se pueden procesar a la vez.",
         "recentActivity": "Actividad reciente",
         "activity": {
             "progressUpdates": "Actualizaciones de progreso",
@@ -107,15 +108,31 @@
         },
         "charts": {
             "monthlyProgress": "Progreso mensual",
-            "monthlyProgressDescription": "Actualizaciones de progreso añadidas por mes",
+            "monthlyProgressDescription": "Actualizaciones de progreso de los últimos 12 meses",
             "topObjectives": "Mejores objetivos",
             "topObjectivesDescription": "Top 5 objetivos por avance completado",
             "noDataAvailable": "Sin datos disponibles",
             "updates": "Actualizaciones",
             "progress": "Progreso",
-            "partialData": "Este gráfico muestra un conjunto parcial de datos.",
             "month": "Mes",
-            "objective": "Objetivo"
+            "objective": "Objetivo",
+            "averageProgress": "Progreso medio",
+            "averageProgressDescription": "{count, plural, one {Media de # objetivo} other {Media de # objetivos}}",
+            "averageProgressAria": "Progreso medio de los objetivos: {percent}%",
+            "byCategory": "Objetivos por categoría",
+            "byCategoryDescription": "Número de objetivos en cada categoría",
+            "byCategoryAria": "Gráfico de barras con el número de objetivos por categoría",
+            "uncategorized": "Sin categoría",
+            "objectives": "Objetivos",
+            "completed": "Completados",
+            "topObjectivesAria": "Gráfico de barras con los objetivos de más progreso",
+            "monthlyProgressAria": "Gráfico de barras con las actualizaciones de progreso de cada mes"
+        },
+        "deadlines": {
+            "empty": "Ningún objetivo activo tiene fecha límite.",
+            "overdue": "{days, plural, one {Venció hace # día} other {Venció hace # días}}",
+            "soon": "{days, plural, =0 {Vence hoy} one {Queda # día} other {Quedan # días}}",
+            "onTime": "{days, plural, one {Queda # día} other {Quedan # días}}"
         }
     },
     "HomePage": {
@@ -125,7 +142,7 @@
         "login": "Iniciar sesión",
         "register": "Registrarse",
         "mainFeatures": "Características principales",
-        "goToDashboard": "Ir al Dashboard",
+        "goToDashboard": "Ir al panel",
         "achieveGoals": "Logra tus objetivos con nuestro sistema",
         "ourPlatform": "Nuestra plataforma está diseñada para ayudarte a establecer, controlar y alcanzar tus objetivos personales y profesionales con herramientas intuitivas y visualizaciones informativas.",
         "customizableGoals": "Objetivos personalizables",
@@ -152,7 +169,8 @@
             "passwordsDontMatch": "Las contraseñas no coinciden",
             "weakPassword": "La contraseña debe incluir al menos una mayúscula, una minúscula y un número.",
             "registerFallback": "Error al registrar usuario. Por favor, intenta de nuevo."
-        }
+        },
+        "requestNewResetLink": "Solicitar un enlace nuevo"
     },
     "Sidebar": {
         "appName": "Métricas",
@@ -165,187 +183,15 @@
         "invitations": "Invitaciones",
         "sessions": "Sesiones",
         "settings": "Configuración",
-        "users": "Usuarios",
-        "adminSessions": "Gestión de Sesiones",
-        "adminAudit": "Logs de Auditoría",
-        "organizations": "Organizaciones"
-    },
-    "Achievements": {
-        "title": "Logros",
-        "widget": {
-            "title": "Logros",
-            "viewAll": "Ver todos",
-            "recentlyEarned": "Obtenidos recientemente",
-            "noAchievements": "Aún no tienes logros. ¡Sigue trabajando en tus objetivos!"
-        },
-        "stats": {
-            "totalPoints": "Puntos totales",
-            "earned": "Obtenidos",
-            "completion": "Progreso",
-            "completionDescription": "Completado general"
-        },
-        "filters": {
-            "all": "Todos",
-            "earned": "Obtenidos",
-            "locked": "Bloqueados"
-        },
-        "types": {
-            "individual": "Individual",
-            "organization": "Organización"
-        },
-        "tiers": {
-            "bronze": "Bronce",
-            "silver": "Plata",
-            "gold": "Oro"
-        },
-        "card": {
-            "earned": "Obtenido",
-            "progress": "Progreso",
-            "locked": "Bloqueado",
-            "points": "{points} pts"
-        },
-        "definitions": {
-            "first_objective": {
-                "name": "Primeros pasos",
-                "description": "Crea tu primer objetivo"
-            },
-            "objectives_created_5": {
-                "name": "Planificador",
-                "description": "Crea {threshold} objetivos"
-            },
-            "objectives_created_15": {
-                "name": "Estratega",
-                "description": "Crea {threshold} objetivos"
-            },
-            "objectives_created_30": {
-                "name": "Maestro planificador",
-                "description": "Crea {threshold} objetivos"
-            },
-            "objectives_completed_3": {
-                "name": "Logrador",
-                "description": "Completa {threshold} objetivos"
-            },
-            "objectives_completed_10": {
-                "name": "Campeón",
-                "description": "Completa {threshold} objetivos"
-            },
-            "objectives_completed_25": {
-                "name": "Leyenda",
-                "description": "Completa {threshold} objetivos"
-            },
-            "streak_3": {
-                "name": "Constante",
-                "description": "Registra progreso durante {threshold} días consecutivos"
-            },
-            "streak_7": {
-                "name": "Dedicado",
-                "description": "Registra progreso durante {threshold} días consecutivos"
-            },
-            "streak_14": {
-                "name": "Imparable",
-                "description": "Registra progreso durante {threshold} días consecutivos"
-            },
-            "progress_updates_10": {
-                "name": "Seguidor del progreso",
-                "description": "Registra {threshold} actualizaciones de progreso"
-            },
-            "progress_updates_50": {
-                "name": "Diligente",
-                "description": "Registra {threshold} actualizaciones de progreso"
-            },
-            "progress_updates_100": {
-                "name": "Persistente",
-                "description": "Registra {threshold} actualizaciones de progreso"
-            },
-            "early_bird": {
-                "name": "Madrugador",
-                "description": "Completa un objetivo antes de su fecha límite"
-            },
-            "organization_first_objective": {
-                "name": "Despegue de la organización",
-                "description": "La organización crea su primer objetivo"
-            },
-            "organization_completed_5": {
-                "name": "Organización ganadora",
-                "description": "La organización completa {threshold} objetivos"
-            },
-            "organization_completed_15": {
-                "name": "Escuadrón élite",
-                "description": "La organización completa {threshold} objetivos"
-            },
-            "organization_completed_30": {
-                "name": "Organización de ensueño",
-                "description": "La organización completa {threshold} objetivos"
-            },
-            "organization_streak_7": {
-                "name": "Momentum de la organización",
-                "description": "La organización registra progreso durante {threshold} días consecutivos"
-            }
-        },
-        "empty": {
-            "noAchievements": "No hay logros disponibles.",
-            "noEarned": "Aún no has obtenido ningún logro.",
-            "noLocked": "¡Has obtenido todos los logros disponibles!",
-            "noOrganizationAchievements": "No hay logros de organización disponibles. Únete a una organización para desbloquear logros de organización."
-        }
-    },
-    "Notifications": {
-        "title": "Notificaciones",
-        "description": "Ver tus notificaciones y actualizaciones.",
-        "empty": "Aún no hay notificaciones.",
-        "markAllRead": "Marcar todas como leídas",
-        "allCaughtUp": "No tienes notificaciones pendientes.",
-        "unreadCount": "Tienes {count} notificaciones sin leer.",
-        "unreadCountAtLeast": "Tienes al menos {count} notificaciones sin leer.",
-        "table": {
-            "columns": {
-                "message": "Mensaje",
-                "objective": "Objetivo",
-                "type": "Tipo",
-                "date": "Fecha",
-                "status": "Estado",
-                "actions": "Acciones"
-            },
-            "unknownObjective": "Objetivo desconocido",
-            "read": "Leída",
-            "unread": "Sin leer",
-            "markRead": "Marcar como leída",
-            "markUnread": "Marcar como sin leer",
-            "delete": "Eliminar"
-        },
-        "typeOptions": {
-            "deadline": "Fecha límite",
-            "progress": "Progreso",
-            "status": "Estado"
-        },
-        "toast": {
-            "updated": "Notificación actualizada.",
-            "updateFailed": "No se pudo actualizar la notificación.",
-            "deleted": "Notificación eliminada.",
-            "deleteFailed": "No se pudo eliminar la notificación.",
-            "markAll": "Todas las notificaciones marcadas como leídas.",
-            "markAllFailed": "No se pudieron marcar las notificaciones como leídas."
-        },
-        "confirm": {
-            "deleteTitle": "¿Eliminar notificación?",
-            "deleteDescription": "Esto eliminará la notificación permanentemente.",
-            "deleteConfirm": "Eliminar",
-            "cancel": "Cancelar"
-        },
-        "messages": {
-            "objectiveCompleted": "Objetivo \"{title}\" completado.",
-            "progressAdded": "Progreso añadido a \"{title}\": +{amount, number} {unit}",
-            "deadlineToday": "El objetivo \"{title}\" vence hoy, {date}.",
-            "deadlineUpcoming": "El objetivo \"{title}\" vence en {days, plural, one {# día} other {# días}}, el {date}.",
-            "deadlineOverdue": "El objetivo \"{title}\" venció hace {days, plural, one {# día} other {# días}}, el {date}.",
-            "achievementEarned": "Has desbloqueado \"{name}\" y ganado {points, number} puntos.",
-            "organizationAchievementEarned": "La organización ha desbloqueado \"{name}\" y ganado {points, number} puntos."
-        }
+        "organizations": "Organizaciones",
+        "admin": "Administración"
     },
     "CommandMenu": {
         "placeholder": "Buscar comandos...",
         "empty": "No se encontraron resultados.",
-        "navigation": "Navegación"
+        "navigation": "Navegación",
+        "title": "Paleta de comandos",
+        "description": "Busca un comando para ejecutarlo..."
     },
     "LanguageSwitcher": {
         "label": "Idioma"
@@ -359,7 +205,9 @@
         "activeOrganization": "Organización activa",
         "current": "Actual",
         "switchOrganization": "Cambiar a:",
-        "personal": "Personal"
+        "personal": "Personal",
+        "triggerLabel": "Organización activa: {name}",
+        "personalOrganizationName": "Organización personal"
     },
     "ThemeSwitcher": {
         "toggle": "Cambiar tema",
@@ -379,13 +227,13 @@
     },
     "Objectives": {
         "title": "Objetivos",
-        "pageTitle": "Objetivos | Metrics App",
+        "pageTitle": "Objetivos | Métricas",
         "description": "Define tus objetivos personales y profesionales para alcanzar tus metas.",
         "pageDescription": "Gestiona tus objetivos personales y profesionales.",
         "createObjective": "Crear objetivo",
         "editObjective": "Editar objetivo",
         "deleteObjective": "Eliminar objetivo",
-        "objectiveProgress": "Progreso del objetivo",
+        "objectiveProgress": "Historial de avances",
         "createObjectiveDescription": "Llena el formulario a continuación para crear un nuevo objetivo. Haz clic en guardar cuando hayas terminado.",
         "tableDescription": "Descripción",
         "targetValue": "Valor objetivo",
@@ -400,6 +248,18 @@
         "enterUnit": "Ingresa la unidad de medida",
         "pickADate": "Selecciona una fecha",
         "saveObjective": "Guardar objetivo",
+        "noCategory": "Sin categoría",
+        "backToList": "Volver a objetivos",
+        "completedNotice": "Has alcanzado la meta. Para seguir registrando avances, sube el valor objetivo; si fue un error, edita o elimina un avance.",
+        "completedTitle": "¡Objetivo completado!",
+        "notFound": "Ese objetivo ya no existe.",
+        "toast": {
+            "created": "Objetivo creado",
+            "updated": "Objetivo actualizado",
+            "deleted": "Objetivo movido a la papelera",
+            "deleteFailed": "No se pudo eliminar el objetivo",
+            "completed": "¡Objetivo completado! 🎉"
+        },
         "category": "Categoría",
         "unit": "Unidad",
         "initialValue": "Valor inicial",
@@ -412,17 +272,19 @@
             "all": "Todos los estados",
             "active": "Activo",
             "completed": "Completado",
-            "overdue": "Atrasado"
+            "overdue": "Atrasado",
+            "onTrack": "En camino",
+            "atRisk": "En riesgo"
         },
         "categoryOptions": {
             "all": "Todas las categorías"
         },
         "deadlineRangeOptions": {
-            "all": "Todo el tiempo",
+            "all": "Cualquier fecha",
             "today": "Vence hoy",
-            "week": "Vence esta semana",
+            "week": "Próximos 7 días",
             "month": "Vence este mes",
-            "overdue": "Atrasado"
+            "overdue": "Vencidos"
         },
         "filtersUi": {
             "button": "Filtros",
@@ -434,43 +296,21 @@
         "filters": {
             "search": "Buscar objetivos...",
             "status": "Estado",
-            "category": "Categoría",
+            "options": {
+                "all": "Todos",
+                "active": "Activos",
+                "completed": "Completados"
+            },
             "deadline": "Fecha límite"
         },
         "unitExample": "p. ej., kg, millas, horas",
         "empty": {
-            "noObjectivesFound": "No se encontraron objetivos"
-        },
-        "visibility": {
-            "label": "Visibilidad",
-            "private": "Privado (propietario, colaboradores y administradores)",
-            "organization": "Organización (visible para todos los miembros)",
-            "description": "Los objetivos privados son visibles para su propietario, sus colaboradores y los administradores. Los objetivos de organización son visibles para todos; el propietario, los editores y los administradores pueden añadir progreso."
-        },
-        "collaborators": {
-            "manage": "Colaboradores",
-            "title": "Gestionar colaboradores",
-            "description": "Añade miembros que puedan ver o aportar progreso a este objetivo.",
-            "addMember": "Añadir miembro",
-            "selectMember": "Selecciona un miembro",
-            "add": "Añadir",
-            "current": "Colaboradores actuales",
-            "empty": "Aún no hay colaboradores.",
-            "remove": "Eliminar",
-            "makeOwner": "Hacer propietario",
-            "added": "Colaborador añadido",
-            "addFailed": "Error al añadir colaborador",
-            "removed": "Colaborador eliminado",
-            "removeFailed": "Error al eliminar colaborador",
-            "updateFailed": "Error al actualizar rol del colaborador",
-            "visibilityUpdated": "Visibilidad actualizada",
-            "visibilityUpdateFailed": "Error al actualizar visibilidad",
-            "ownershipTransferred": "Propiedad transferida",
-            "transferFailed": "Error al transferir propiedad",
-            "roles": {
-                "editor": "Editor",
-                "viewer": "Lector"
-            }
+            "all": "Todavía no tienes objetivos.",
+            "active": "No hay objetivos activos.",
+            "completed": "Aún no has completado ningún objetivo.",
+            "allHint": "Crea uno para empezar a registrar tu progreso.",
+            "search": "Ningún objetivo coincide con «{search}».",
+            "filtered": "Ningún objetivo coincide con estos filtros."
         },
         "trash": {
             "title": "Papelera",
@@ -478,7 +318,13 @@
             "restore": "Restaurar",
             "purge": "Eliminar definitivamente",
             "purgeTitle": "¿Eliminar el objetivo definitivamente?",
-            "purgeDescription": "Esto elimina para siempre el objetivo y sus progresos y notificaciones relacionados. No se puede deshacer."
+            "purgeDescription": "Esto elimina para siempre el objetivo y sus progresos y notificaciones relacionados. No se puede deshacer.",
+            "open": "Papelera",
+            "description": "Los objetivos eliminados quedan aquí hasta que se restauran o se eliminan definitivamente.",
+            "deletedOn": "Eliminado",
+            "restored": "Objetivo restaurado",
+            "purged": "Objetivo eliminado definitivamente",
+            "purgeFailed": "No se pudo eliminar el objetivo"
         },
         "confirm": {
             "deleteObjective": "¿Estás seguro de que quieres eliminar este objetivo?",
@@ -525,25 +371,74 @@
                 "targetValueRequired": "Valor objetivo *",
                 "deadline": "Fecha límite"
             }
-        }
-    },
-    "Sessions": {
-        "title": "Sesiones",
-        "description": "Gestiona tus sesiones para mantener un seguimiento de tu progreso.",
-        "device": "Dispositivo",
-        "date": "Fecha",
-        "status": "Estado",
-        "expiresAt": "Expira",
-        "currentSession": "Actual",
-        "active": "Activa",
-        "expired": "Expirada",
-        "revoke": "Revocar",
-        "revoking": "Revocando...",
-        "sessionRevoked": "Sesión revocada",
-        "sessionRevokeFailed": "No se pudo revocar la sesión",
-        "revokeAllOtherSessions": "Cerrar las demás sesiones",
-        "allOtherSessionsRevoked": "Se cerraron {count} sesiones",
-        "allOtherSessionsRevokeFailed": "No se pudieron cerrar las demás sesiones"
+        },
+        "chart": {
+            "title": "Evolución",
+            "ariaLabel": "Evolución del valor del objetivo a lo largo del tiempo",
+            "empty": "Registra un avance para ver la evolución del objetivo.",
+            "value": "Valor",
+            "increment": "Incremento",
+            "comment": "Comentario",
+            "startValue": "Valor inicial",
+            "idealPace": "Ritmo ideal",
+            "legendProgress": "Progreso",
+            "legendTarget": "Meta",
+            "legendPace": "Ritmo ideal hasta la fecha límite",
+            "historyLimited": "La gráfica muestra las últimas 500 actualizaciones y conserva el acumulado anterior."
+        },
+        "validation": {
+            "titleRequired": "Escribe un título.",
+            "numberRequired": "Introduce un número.",
+            "dateInvalid": "Introduce una fecha válida.",
+            "deadlinePast": "La fecha límite no puede estar en el pasado.",
+            "targetDirection": "La meta debe superar el valor inicial si el objetivo aumenta y quedar por debajo si disminuye.",
+            "dueSoonDaysInvalid": "Indica un número entero de días mayor que 0."
+        },
+        "columns": {
+            "title": "Título"
+        },
+        "completedOn": "Completado el {date}",
+        "direction": {
+            "label": "Sentido",
+            "increase": "Aumentar",
+            "decrease": "Reducir",
+            "description": "Si el valor tiene que subir hasta la meta o bajar hasta ella."
+        },
+        "dueSoonDays": "Aviso «próximo a vencer» (días antes)",
+        "dueSoonDaysDescription": "Cuántos días antes de la fecha límite se considera próximo a vencer.",
+        "dateField": {
+            "placeholder": "Escribe una fecha: mañana, en 2 semanas, 25/12…",
+            "hint": "Escribe la fecha o elígela en el calendario.",
+            "understood": "Fecha entendida: {date}",
+            "notUnderstood": "No se entiende esa fecha; elígela en el calendario."
+        },
+        "access": {
+            "manage": "Permisos",
+            "title": "Quién ve y edita este objetivo",
+            "description": "Elige qué puede hacer el rol miembro y da permisos a usuarios concretos.",
+            "memberRole": "Rol miembro",
+            "memberLevels": {
+                "none": "Privado: no lo ven los miembros",
+                "view": "Todos los miembros lo ven",
+                "edit": "Todos los miembros lo ven y lo editan, progreso incluido"
+            },
+            "alwaysFull": "El creador, el owner y los administradores siempre lo ven y lo editan.",
+            "users": "Usuarios concretos",
+            "noUsers": "Ningún usuario tiene permisos individuales.",
+            "levelFor": "Permiso de {name}",
+            "remove": "Quitar los permisos de {name}",
+            "userLevels": {
+                "view": "Ver",
+                "edit": "Ver y editar"
+            },
+            "selectUser": "Elige un miembro",
+            "newUserLevel": "Permiso del nuevo usuario",
+            "add": "Añadir",
+            "save": "Guardar permisos",
+            "cancel": "Cancelar",
+            "saved": "Permisos actualizados"
+        },
+        "progressBar": "Progreso hacia la meta"
     },
     "Organizations": {
         "title": "Organizaciones",
@@ -570,167 +465,27 @@
         },
         "toast": {
             "deletedSuccess": "Organización eliminada exitosamente",
-            "deleteFailed": "Error al eliminar organización"
-        }
-    },
-    "Settings": {
-        "account": "Cuenta",
-        "passwordSettingsDescription": "Edita tus configuraciones de contraseña aquí.",
-        "notifications": "Notificaciones",
-        "notificationsDescription": "Gestiona cómo y cuándo recibes notificaciones.",
-        "preferencesSaved": "Preferencias guardadas",
-        "preferencesSavedDescription": "Tus preferencias de notificación han sido actualizadas.",
-        "preferencesError": "Error",
-        "preferencesErrorDescription": "No se pudieron actualizar las preferencias. Por favor, inténtalo de nuevo.",
-        "achievementNotifications": "Notificaciones de Logros",
-        "achievementNotificationsDescription": "Recibe notificaciones cuando desbloquees logros y ganes puntos.",
-        "deadlineNotifications": "Recordatorios de Fechas Límite",
-        "deadlineNotificationsDescription": "Recibe recordatorios cuando tus objetivos tengan fechas límite próximas.",
-        "progressNotifications": "Alertas de Progreso y Rachas",
-        "progressNotificationsDescription": "Recibe notificaciones sobre tus actualizaciones de progreso y hitos de rachas.",
-        "organizationNotifications": "Notificaciones de Organización",
-        "organizationNotificationsDescription": "Recibe notificaciones sobre logros organizacionales y actividades de miembros.",
-        "title": "Configuración",
-        "description": "Gestiona tus configuraciones para mantener un seguimiento de tu progreso.",
-        "accountSettings": "Configuración de cuenta",
-        "passwordSettings": "Configuración de contraseña",
-        "accountSettingsDescription": "Edita tus configuraciones de cuenta aquí.",
-        "password": "Contraseña",
-        "saveAccount": "Guardar cuenta",
-        "username": "Nombre de usuario",
-        "email": "Correo electrónico",
-        "placeholders": {
-            "enterUsername": "Ingresa el nombre de usuario",
-            "enterEmail": "Ingresa el correo electrónico"
+            "deleteFailed": "Error al eliminar organización",
+            "createdAndActive": "Organización creada. Ahora estás trabajando en «{name}»."
         },
-        "cancel": "Cancelar",
-        "savePassword": "Guardar contraseña",
-        "confirmPassword": "Confirmar contraseña",
-        "newPassword": "Nueva contraseña",
-        "saving": "Guardando...",
-        "passwordMismatch": "Las contraseñas no coinciden.",
-        "passwordSameAsOld": "La nueva contraseña debe ser diferente de la contraseña actual.",
-        "weakPassword": "La contraseña debe incluir al menos una mayúscula, una minúscula y un número.",
-        "passwordUpdateFailed": "No hemos podido actualizar tu contraseña. Inténtalo de nuevo.",
-        "passwordUpdated": "Contraseña actualizada.",
-        "accountUpdated": "Cuenta actualizada.",
-        "emailChangeRequested": "Te hemos enviado un email de verificación para confirmar tu nueva dirección.",
-        "dangerZone": "Zona de Peligro",
-        "dangerZoneSettings": "Zona de Peligro",
-        "dangerZoneSettingsDescription": "Acciones irreversibles para tu cuenta.",
-        "deleteAccountTitle": "Eliminar Cuenta",
-        "deleteAccountDescription": "La cuenta no se podrá recuperar. Se eliminan credenciales, sesiones, datos privados y espacios personales; las contribuciones compartidas solo permanecen como historial anonimizado.",
-        "deleteAccountConfirmLabel": "Confirma ingresando tu correo electrónico",
-        "deleteAccountPlaceholder": "Ingresa tu correo electrónico",
-        "deleteAccountHelpText": "Escribe {email} para confirmar la eliminación",
-        "deleteAccountButton": "Eliminar Mi Cuenta",
-        "deleteAccountSuccess": "Tu cuenta ha sido eliminada. Redireccionando...",
-        "deleteAccountFailed": "No hemos podido eliminar tu cuenta. Inténtalo de nuevo.",
-        "deleteAccountPasswordLabel": "Ingresa tu contraseña para confirmar",
-        "deleteAccountPasswordPlaceholder": "Tu contraseña",
-        "deleteAccountProtectedTitle": "Cuenta protegida",
-        "deleteAccountProtectedDescription": "La cuenta que configuró esta plataforma no puede eliminarse. Transfiere las responsabilidades de administración a otro usuario antes de modificar esta cuenta."
-    },
-    "Admin": {
-        "userManagement": "Gestión de Usuarios",
-        "userManagementDescription": "Gestiona cuentas de usuarios, roles y permisos.",
-        "sessionManagement": "Gestión de Sesiones",
-        "sessionManagementDescription": "Visualiza y gestiona las sesiones de usuario.",
-        "auditLogManagement": "Gestión de Logs de Auditoría",
-        "auditLogManagementDescription": "Visualiza los registros de actividad del sistema.",
-        "usersTable": {
-            "empty": "No se encontraron usuarios.",
-            "emptyWithSearch": "No hay usuarios que coincidan con la búsqueda.",
-            "searchPlaceholder": "Buscar usuarios por nombre o correo...",
-            "roles": {
-                "globalAdmin": "Administrador global",
-                "user": "Usuario"
-            },
-            "defaults": {
-                "banReason": "Bloqueado por el administrador"
-            },
-            "columns": {
-                "id": "ID",
-                "email": "Email",
-                "name": "Nombre",
-                "role": "Rol",
-                "status": "Estado",
-                "actions": "Acciones"
-            },
-            "confirm": {
-                "deleteUser": "¿Estás seguro de que quieres eliminar este usuario?",
-                "deleteUserDescription": "Esta acción no se puede deshacer. Se eliminan credenciales, sesiones, datos privados y espacios personales; las contribuciones compartidas solo permanecen como historial anonimizado.",
-                "deleteConfirm": "Eliminar",
-                "cancel": "Cancelar"
-            },
-            "setupUserDeleteDisabled": "El usuario que configuró la plataforma no puede eliminarse.",
-            "toast": {
-                "bannedSuccess": "Usuario baneado exitosamente",
-                "unbannedSuccess": "Usuario desbaneado exitosamente",
-                "deletedSuccess": "Usuario eliminado exitosamente",
-                "updatedSuccess": "Usuario actualizado exitosamente",
-                "banFailed": "Error al banear usuario: {message}",
-                "unbanFailed": "Error al desbanear usuario: {message}",
-                "deleteFailed": "Error al eliminar usuario: {message}",
-                "updateFailed": "Error al actualizar usuario: {message}"
-            }
+        "validation": {
+            "nameRequired": "Escribe un nombre."
         },
-        "editUserModal": {
-            "title": "Editar usuario",
-            "description": "Modifica la información del usuario",
-            "roles": {
-                "globalAdmin": "Administrador global",
-                "user": "Usuario"
-            }
-        },
-        "userSessions": {
-            "columns": {
-                "id": "ID",
-                "expires": "Expira",
-                "ip": "IP",
-                "userAgent": "User Agent",
-                "actions": "Acciones"
-            },
-            "emptyWithUser": "No se encontraron sesiones para este usuario",
-            "emptyNoUser": "Ingresa un ID de usuario para ver sus sesiones",
-            "buttons": {
-                "revoke": "Revocar sesión",
-                "revokeAll": "Revocar todas"
-            },
-            "confirm": {
-                "revokeAll": "¿Estás seguro de que quieres revocar todas las sesiones de este usuario?"
-            },
-            "toast": {
-                "revokeSuccess": "Sesión revocada exitosamente",
-                "revokeAllSuccess": "Todas las sesiones revocadas exitosamente",
-                "revokeFailed": "Error al revocar sesión: {message}",
-                "revokeAllFailed": "Error al revocar sesiones: {message}"
-            }
-        },
-        "auditLogsTable": {
-            "title": "Logs de Auditoría",
-            "description": "Registro de acciones realizadas en el sistema",
-            "empty": "No hay logs de auditoría registrados",
-            "columns": {
-                "userId": "Usuario ID",
-                "actorUserId": "Realizado por",
-                "action": "Acción",
-                "date": "Fecha"
-            }
-        }
+        "personalOrganizationName": "Organización personal",
+        "categories": "Categorías",
+        "categoriesDescription": "Elegidas del catálogo de la plataforma. Edita, quita o añade las que quieras; serán solo de esta organización."
     },
     "UpdateProgress": {
         "pageDescription": "Registra actualizaciones de progreso para este objetivo.",
-        "createNewUpdateProgress": "Crear nuevo progreso",
-        "editProgress": "Editar progreso",
-        "editProgressDescription": "Llena el formulario a continuación para editar tu progreso. Haz clic en guardar cuando hayas terminado.",
+        "createNewUpdateProgress": "Registrar avance",
+        "editProgress": "Editar avance",
+        "editProgressDescription": "Corrige la diferencia, la fecha o el comentario de este avance.",
         "pickADate": "Selecciona una fecha",
-        "createNewUpdateProgressDescription": "Llena el formulario a continuación para crear un nuevo progreso. Haz clic en guardar cuando hayas terminado.",
-        "updatedValue": "Valor actualizado",
-        "enterUpdatedValue": "Ingresa el valor actualizado",
+        "createNewUpdateProgressDescription": "Registra cuánto has avanzado hacia el objetivo.",
         "comment": "Comentario",
-        "describeYourUpdateProgressInDetail": "Describe tu progreso actualizado en detalle",
-        "saveProgress": "Guardar progreso",
+        "describeYourUpdateProgressInDetail": "¿Qué has hecho? (opcional)",
+        "saveProgress": "Guardar avance",
+        "empty": "Todavía no hay avances.",
         "cancel": "Cancelar",
         "table": {
             "columns": {
@@ -738,18 +493,23 @@
                 "date": "Fecha",
                 "comment": "Comentario",
                 "edit": "Editar",
-                "delete": "Eliminar"
+                "delete": "Eliminar",
+                "difference": "Diferencia",
+                "value": "Valor"
             }
         },
         "confirm": {
-            "deleteTitle": "¿Estás seguro de que quieres eliminar esta actualización?",
-            "deleteDescription": "Esta acción no se puede deshacer. Se eliminará permanentemente esta actualización de progreso.",
+            "deleteTitle": "¿Eliminar este avance?",
+            "deleteDescription": "Su diferencia se descontará del valor actual del objetivo. Esta acción no se puede deshacer.",
             "deleteConfirm": "Eliminar",
             "cancel": "Cancelar"
         },
         "toast": {
-            "deletedSuccess": "Actualización eliminada exitosamente",
-            "deleteFailed": "Error al eliminar actualización"
+            "created": "Avance guardado",
+            "updated": "Avance actualizado",
+            "deletedSuccess": "Avance eliminado",
+            "deleteFailed": "No se pudo eliminar el avance",
+            "completed": "¡Objetivo completado! 🎉"
         },
         "charts": {
             "progressTimeline": "Línea temporal de progreso",
@@ -757,7 +517,31 @@
             "value": "Valor",
             "target": "Objetivo"
         },
-        "historyLimited": "La gráfica muestra las últimas 500 actualizaciones y conserva el acumulado anterior."
+        "validation": {
+            "amountRequired": "Introduce una cantidad.",
+            "dateInvalid": "Introduce una fecha válida.",
+            "dateFuture": "La fecha no puede estar en el futuro.",
+            "amountZero": "La diferencia no puede ser cero.",
+            "valueUnchanged": "El valor nuevo es igual al actual; no hay nada que registrar."
+        },
+        "aria": {
+            "editEntry": "Editar el avance {entry}",
+            "deleteEntry": "Eliminar el avance {entry}"
+        },
+        "mode": {
+            "label": "Cómo lo registras",
+            "difference": "Diferencia",
+            "value": "Valor nuevo",
+            "differenceAmount": "Diferencia",
+            "valueAmount": "Valor nuevo",
+            "differenceHint": "Positiva o negativa; se suma a {value}.",
+            "valueHint": "El valor total; se guarda su diferencia con {value}."
+        },
+        "view": {
+            "label": "Ver el historial como",
+            "difference": "Diferencias",
+            "value": "Valores"
+        }
     },
     "Header": {
         "appName": "Métricas",
@@ -766,45 +550,34 @@
             "openMenu": "Abrir menú"
         }
     },
-    "UserAgent": {
-        "device": "Dispositivo",
-        "smartphone": "Teléfono",
-        "tablet": "Tablet",
-        "botCrawler": "Bot/Crawler"
-    },
     "DeleteConfirmation": {
         "deleting": "Eliminando..."
     },
     "Table": {
         "noResults": "Sin resultados",
-        "showing": "Mostrando",
-        "rows": "filas",
-        "previous": "Anterior",
-        "next": "Siguiente"
+        "showingRows": "Mostrando {count, plural, one {# fila} other {# filas}}"
     },
     "OrganizationMembers": {
-        "createNewOrganizationMember": "Crear nuevo miembro de la organización",
         "selectRole": "Selecciona un rol",
         "roles": {
             "admin": "Administrador",
             "member": "Miembro",
             "owner": "Propietario"
         },
-        "createNewOrganizationMemberDescription": "Llena el formulario a continuación para crear un nuevo miembro de la organización. Haz clic en guardar cuando hayas terminado.",
         "email": "Correo electrónico",
         "enterEmail": "Ingresa el correo electrónico",
         "role": "Rol",
         "joinedAt": "Alta",
-        "currentRoleOfYourOrganizationMember": "Rol actual de tu miembro de la organización.",
-        "saveOrganizationMember": "Guardar miembro de la organización",
+        "currentRoleOfYourOrganizationMember": "Rol del miembro en la organización.",
+        "saveOrganizationMember": "Guardar cambios",
         "cancel": "Cancelar",
         "edit": "Editar",
         "delete": "Eliminar",
         "personalOrgInviteRestricted": "Las organizaciones personales no pueden invitar miembros.",
         "organizationNotFound": "No se ha encontrado la organización.",
         "title": "Miembros de la organización",
-        "editOrganizationMemberDescription": "Llena el formulario a continuación para editar tu miembro de la organización. Haz clic en guardar cuando hayas terminado.",
-        "giveYourOrganizationMemberAClearConciseEmail": "Dale a tu miembro de la organización un correo electrónico claro y conciso.",
+        "editOrganizationMemberDescription": "Cambia el rol de este miembro de la organización.",
+        "giveYourOrganizationMemberAClearConciseEmail": "Correo con el que el miembro accede a la aplicación.",
         "confirm": {
             "deleteTitle": "¿Estás seguro de que quieres eliminar este miembro?",
             "deleteDescription": "Esta acción no se puede deshacer. Se eliminará permanentemente este miembro de la organización.",
@@ -814,6 +587,30 @@
         "toast": {
             "deletedSuccess": "Miembro eliminado exitosamente",
             "deleteFailed": "Error al eliminar miembro"
+        },
+        "inviteMember": "Invitar miembro",
+        "inviteMemberDescription": "Enviaremos una invitación por correo. La persona se unirá cuando la acepte.",
+        "sendInvitation": "Enviar invitación",
+        "inviteEmailHelp": "Recibirá un enlace para unirse a la organización.",
+        "inviteRoleHelp": "Rol con el que se unirá a la organización.",
+        "backToOrganizations": "Volver a organizaciones",
+        "pendingInvitations": {
+            "title": "Invitaciones pendientes",
+            "empty": "No hay invitaciones pendientes.",
+            "expires": "Caduca",
+            "cancel": "Cancelar invitación",
+            "cancelFor": "Cancelar la invitación a {email}",
+            "cancelConfirmTitle": "¿Cancelar la invitación a {email}?",
+            "cancelConfirmDescription": "El enlace que recibió dejará de funcionar. Puedes volver a invitarle cuando quieras.",
+            "keep": "Mantener",
+            "canceled": "Invitación cancelada"
+        },
+        "leave": {
+            "button": "Abandonar organización",
+            "confirmTitle": "¿Abandonar «{name}»?",
+            "confirmDescription": "Dejarás de ver sus objetivos. Para volver necesitarás una nueva invitación.",
+            "confirm": "Abandonar",
+            "success": "Has abandonado «{name}»."
         }
     },
     "Invitations": {
@@ -832,21 +629,22 @@
         "errorAccepting": "Error al aceptar la invitación. Puede haber sido cancelada o expirada.",
         "errorRejecting": "Error al rechazar la invitación. Puede haber sido cancelada o expirada.",
         "verificationRequiredTitle": "Verifica tu correo antes de responder",
-        "verificationRequiredDescription": "Por seguridad, debes demostrar que esta dirección de correo te pertenece antes de aceptar o rechazar una invitación.",
+        "verificationRequiredDescription": "Algunas invitaciones piden demostrar que esta dirección te pertenece antes de responder. Verifica tu correo para verlas.",
         "sendVerificationEmail": "Enviar correo de verificación",
+        "verifyFromInvitations": "Ir a mis invitaciones para verificar",
         "sendingVerificationEmail": "Enviando correo de verificación...",
         "verificationEmailSent": "Correo de verificación enviado. Abre su enlace y vuelve aquí para responder a la invitación.",
         "verificationEmailError": "No hemos podido enviar el correo de verificación. Inténtalo de nuevo.",
-        "acceptedTitle": "¡Invitación Aceptada!",
+        "acceptedTitle": "¡Invitación aceptada!",
         "acceptedDescription": "Te has unido exitosamente a la organización.",
         "redirecting": "Redirigiendo al panel...",
-        "goToDashboard": "Ir al Panel",
-        "loginRequiredTitle": "Se Requiere Iniciar Sesión",
+        "goToDashboard": "Ir al panel",
+        "loginRequiredTitle": "Inicia sesión para continuar",
         "loginRequiredDescription": "Por favor inicia sesión para aceptar esta invitación.",
         "login": "Iniciar sesión",
         "noAccount": "¿No tienes una cuenta?",
         "register": "Registrarse",
-        "acceptTitle": "Aceptar Invitación",
+        "acceptTitle": "Aceptar invitación",
         "acceptDescription": "Has sido invitado a unirte a una organización. Haz clic en aceptar para unirte.",
         "cancel": "Cancelar",
         "orgSwitchNote": "Al aceptar, cambiarás tu organización activa a esta.",
@@ -856,16 +654,25 @@
         "confirmJoin": "Sí, unirme a la organización",
         "activationPendingTitle": "Invitación aceptada",
         "activationPendingDescription": "Ya perteneces a la organización. No hemos podido activarla todavía.",
-        "retryActivation": "Activar organización"
+        "retryActivation": "Activar organización",
+        "invalidTitle": "Invitación no disponible",
+        "invalidDescription": "Este enlace no es válido, ha caducado o la invitación ya se ha usado. Pide a quien te invitó que te envíe una nueva.",
+        "acceptDescriptionNamed": "Te han invitado a unirte a «{organization}». Pulsa aceptar para unirte.",
+        "loginRequiredDescriptionNamed": "Te han invitado a unirte a «{organization}». Inicia sesión o crea una cuenta para aceptar.",
+        "columns": {
+            "organization": "Organización",
+            "role": "Rol",
+            "actions": "Acciones"
+        }
     },
     "Setup": {
-        "title": "Configuración de la Plataforma",
+        "title": "Configuración de la plataforma",
         "subtitle": "Configura tu plataforma antes de comenzar",
         "footer": "Paso {step} de {total}",
         "progressLabel": "Progreso de la configuración",
         "steps": {
             "platform": "Plataforma",
-            "admin": "Cuenta Admin",
+            "admin": "Cuenta de administrador",
             "organization": "Organización",
             "categories": "Categorías",
             "registration": "Registro",
@@ -874,18 +681,18 @@
         "navigation": {
             "next": "Siguiente",
             "back": "Atrás",
-            "complete": "Completar Configuración",
+            "complete": "Completar configuración",
             "completing": "Configurando..."
         },
         "platformConfig": {
-            "title": "Configuración de la Plataforma",
+            "title": "Configuración de la plataforma",
             "description": "Elige un nombre para tu plataforma y establece el idioma por defecto.",
-            "nameLabel": "Nombre de la Plataforma",
-            "namePlaceholder": "Mi Plataforma",
-            "languageLabel": "Idioma por Defecto"
+            "nameLabel": "Nombre de la plataforma",
+            "namePlaceholder": "Mi plataforma",
+            "languageLabel": "Idioma por defecto"
         },
         "adminAccount": {
-            "title": "Cuenta de Administrador",
+            "title": "Cuenta de administrador",
             "description": "Crea la cuenta de administrador para esta plataforma.",
             "setupSecretLabel": "Secreto de configuración",
             "setupSecretPlaceholder": "Pega SETUP_SECRET",
@@ -895,16 +702,53 @@
         "organization": {
             "title": "Organización",
             "description": "Configura tu primera organización.",
-            "nameLabel": "Nombre de la Organización",
-            "namePlaceholder": "Mi Organización",
-            "logoLabel": "URL del Logo (opcional)",
+            "nameLabel": "Nombre de la organización",
+            "namePlaceholder": "Mi organización",
+            "logoLabel": "URL del logo (opcional)",
             "logoPlaceholder": "https://ejemplo.com/logo.png",
             "logoHint": "Proporciona una URL con la imagen del logo de tu organización."
         },
         "categories": {
-            "title": "Categorías por Defecto",
-            "description": "Personaliza las categorías predefinidas para objetivos. Puedes editarlas, añadir nuevas o eliminarlas.",
-            "addNew": "Nueva Categoría",
+            "title": "Catálogo de categorías",
+            "description": "Define las categorías que las organizaciones podrán elegir al crearse. La organización inicial empieza con ellas. Puedes editarlas, añadir nuevas o eliminarlas."
+        },
+        "registrationPolicy": {
+            "title": "Política de registro",
+            "description": "Elige quién puede crear cuentas en esta plataforma.",
+            "openLabel": "Registro abierto",
+            "openDescription": "Cualquier persona puede crear una cuenta y unirse a la plataforma.",
+            "invitationLabel": "Solo por invitación",
+            "invitationDescription": "Solo los usuarios con un enlace de invitación pueden registrarse.",
+            "invitationOnly": "Registro solo por invitación",
+            "invitationOnlyMessage": "Esta plataforma requiere una invitación para registrarse. Contacta con un administrador para obtener acceso.",
+            "invalidInvitation": "Invitación no válida",
+            "invalidInvitationMessage": "Esta invitación no existe, ha caducado o ya se ha utilizado. Solicita una nueva invitación a un administrador."
+        },
+        "summary": {
+            "title": "Revisar configuración",
+            "description": "Revisa tu configuración antes de completar la instalación."
+        },
+        "errors": {
+            "title": "Error",
+            "signUpFailed": "No se pudo crear la cuenta de administrador",
+            "setupFailed": "No se pudo completar la configuración de la plataforma. Inténtalo de nuevo."
+        }
+    },
+    "Categories": {
+        "defaults": {
+            "Health": "Salud",
+            "Career": "Carrera",
+            "Education": "Educación",
+            "Finance": "Finanzas",
+            "Personal": "Personal",
+            "Team": "Equipo",
+            "Creative": "Creatividad",
+            "Fitness": "Forma física",
+            "Productivity": "Productividad"
+        },
+        "editor": {
+            "empty": "No hay categorías elegidas.",
+            "addNew": "Nueva categoría",
             "newPlaceholder": "Nombre de la categoría",
             "add": "Añadir",
             "nameLabel": "Nombre de la categoría {index}",
@@ -912,26 +756,341 @@
             "iconLabel": "Icono de {name}",
             "removeLabel": "Eliminar {name}"
         },
-        "registrationPolicy": {
-            "title": "Política de Registro",
-            "description": "Elige quién puede crear cuentas en esta plataforma.",
-            "openLabel": "Registro Abierto",
-            "openDescription": "Cualquier persona puede crear una cuenta y unirse a la plataforma.",
-            "invitationLabel": "Solo por Invitación",
-            "invitationDescription": "Solo los usuarios con un enlace de invitación pueden registrarse.",
-            "invitationOnly": "Registro Solo por Invitación",
-            "invitationOnlyMessage": "Esta plataforma requiere una invitación para registrarse. Contacta con un administrador para obtener acceso.",
-            "invalidInvitation": "Invitación no válida",
-            "invalidInvitationMessage": "Esta invitación no existe, ha caducado o ya se ha utilizado. Solicita una nueva invitación a un administrador."
+        "page": {
+            "title": "Categorías",
+            "description": "Las categorías de esta organización, compartidas por todos sus miembros para clasificar objetivos.",
+            "empty": "Esta organización aún no tiene categorías."
         },
-        "summary": {
-            "title": "Revisar Configuración",
-            "description": "Revisa tu configuración antes de completar la instalación."
+        "form": {
+            "createTitle": "Nueva categoría",
+            "editTitle": "Editar categoría",
+            "name": "Nombre",
+            "color": "Color",
+            "icon": "Icono",
+            "save": "Guardar",
+            "cancel": "Cancelar"
         },
-        "errors": {
-            "title": "Error",
-            "signUpFailed": "No se pudo crear la cuenta de administrador",
-            "setupFailed": "No se pudo completar la configuración de la plataforma. Inténtalo de nuevo."
+        "validation": {
+            "nameRequired": "Escribe un nombre."
+        },
+        "delete": {
+            "title": "Eliminar categoría",
+            "description": "Se eliminará «{name}». Las categorías que usa algún objetivo no se pueden eliminar.",
+            "confirm": "Eliminar"
+        },
+        "edit": "Editar {name}",
+        "deleteLabel": "Eliminar {name}",
+        "toast": {
+            "created": "Categoría creada",
+            "updated": "Categoría actualizada",
+            "deleted": "Categoría eliminada"
+        },
+        "choose": {
+            "title": "Elige tus categorías",
+            "description": "Tu organización personal empieza con estas categorías del catálogo de la plataforma. Edita, quita o añade las que quieras; podrás cambiarlas después.",
+            "save": "Guardar y continuar",
+            "skip": "Omitir"
+        }
+    },
+    "Settings": {
+        "title": "Configuración",
+        "description": "Tu perfil, tu contraseña y tu cuenta.",
+        "profile": {
+            "title": "Perfil",
+            "description": "El nombre con el que te ven los demás miembros. No tiene por qué ser único.",
+            "name": "Nombre",
+            "save": "Guardar perfil",
+            "saved": "Perfil actualizado"
+        },
+        "password": {
+            "title": "Contraseña",
+            "description": "Cámbiala cuando quieras; necesitas la actual.",
+            "current": "Contraseña actual",
+            "new": "Contraseña nueva",
+            "confirm": "Repite la contraseña nueva",
+            "save": "Cambiar contraseña",
+            "saved": "Contraseña actualizada"
+        },
+        "deletion": {
+            "title": "Borrar la cuenta",
+            "description": "Es irreversible: no podrás volver a entrar.",
+            "deletes": "Se borran tu correo, tus credenciales, tus sesiones, tus preferencias, tus membresías y tu organización personal con todo su contenido.",
+            "keeps": "Lo que hiciste en organizaciones compartidas (objetivos y progreso) se queda allí, con tu nombre.",
+            "confirmEmail": "Escribe tu correo ({email}) para confirmar",
+            "password": "Contraseña",
+            "submit": "Borrar mi cuenta",
+            "needsNewOwner": "Antes de borrar tu cuenta, haz owner a otro miembro de estas organizaciones, donde eres el único owner:",
+            "setupUser": "Esta cuenta configuró la plataforma y no se puede borrar."
+        },
+        "validation": {
+            "nameRequired": "Escribe un nombre.",
+            "passwordRequired": "Escribe tu contraseña actual.",
+            "shortPassword": "La contraseña necesita al menos 8 caracteres.",
+            "weakPassword": "La contraseña debe incluir una mayúscula, una minúscula y un número.",
+            "passwordsDontMatch": "Las contraseñas no coinciden.",
+            "passwordUnchanged": "La contraseña nueva debe ser distinta de la actual."
+        },
+        "notifications": {
+            "title": "Notificaciones",
+            "description": "Elige qué notificaciones recibes. Se aplican en todas tus organizaciones.",
+            "saved": "Preferencias de notificación guardadas",
+            "deadline": {
+                "label": "Vencimientos",
+                "description": "Cuando un objetivo está próximo a vencer, vence hoy o ha vencido."
+            },
+            "progress": {
+                "label": "Progreso",
+                "description": "Cuando un objetivo llega al 25, 50 o 75 % de su meta."
+            },
+            "status": {
+                "label": "Objetivos completados",
+                "description": "Cuando se completa un objetivo que puedes ver."
+            },
+            "achievement": {
+                "label": "Logros",
+                "description": "Cuando tú o tu organización desbloqueáis un logro."
+            }
+        }
+    },
+    "Sessions": {
+        "title": "Sesiones",
+        "description": "Los dispositivos donde tienes la sesión iniciada. Cada sesión dura 7 días y se renueva cada día que la usas.",
+        "device": "Dispositivo",
+        "lastActive": "Última actividad",
+        "started": "Inicio",
+        "current": "Esta sesión",
+        "unknownAgent": "Navegador desconocido",
+        "devices": {
+            "desktop": "Ordenador",
+            "mobile": "Móvil",
+            "tablet": "Tableta",
+            "bot": "Bot"
+        },
+        "revoke": "Cerrar sesión",
+        "revokeTitle": "¿Cerrar esta sesión?",
+        "revokeDescription": "Ese dispositivo tendrá que volver a iniciar sesión.",
+        "revoked": "Sesión cerrada",
+        "revokeFailed": "No se pudo cerrar la sesión",
+        "revokeOthers": "Cerrar las demás sesiones",
+        "revokeOthersTitle": "¿Cerrar todas las demás sesiones?",
+        "revokeOthersDescription": "Solo seguirá abierta la sesión de este dispositivo.",
+        "revokedOthers": "Se están cerrando las demás sesiones",
+        "cancel": "Cancelar",
+        "empty": "No hay sesiones."
+    },
+    "Admin": {
+        "title": "Administración",
+        "description": "Usuarios, bloqueos, roles, sesiones y auditoría de la plataforma. No da acceso a los objetivos de nadie.",
+        "forbidden": "Esta sección es solo para el administrador de la plataforma.",
+        "users": {
+            "title": "Usuarios",
+            "search": "Buscar por nombre o correo",
+            "user": "Usuario",
+            "role": "Rol",
+            "roleOf": "Rol de {name}",
+            "status": "Estado",
+            "active": "Activo",
+            "bannedForever": "Bloqueado",
+            "bannedUntil": "Bloqueado hasta el {date}",
+            "unban": "Desbloquear",
+            "unbanned": "Usuario desbloqueado",
+            "roleChanged": "Rol actualizado",
+            "empty": "No hay usuarios.",
+            "roles": {
+                "user": "Usuario",
+                "globalAdmin": "Administrador"
+            }
+        },
+        "ban": {
+            "open": "Bloquear",
+            "title": "Bloquear a {name}",
+            "description": "Pierde el acceso al momento y se cierran todas sus sesiones.",
+            "reason": "Motivo (opcional)",
+            "duration": "Duración",
+            "durations": {
+                "permanent": "Permanente",
+                "1": "1 día",
+                "7": "7 días",
+                "30": "30 días"
+            },
+            "submit": "Bloquear",
+            "cancel": "Cancelar",
+            "banned": "Usuario bloqueado"
+        },
+        "sessions": {
+            "open": "Sesiones",
+            "title": "Sesiones de {name}",
+            "description": "Dispositivos con la sesión iniciada.",
+            "details": "IP {ip} · caduca el {expires}",
+            "revoke": "Cerrar",
+            "revoked": "Sesión cerrada",
+            "empty": "No tiene sesiones abiertas."
+        },
+        "audit": {
+            "title": "Auditoría",
+            "date": "Fecha",
+            "action": "Acción",
+            "who": "Usuario",
+            "by": "por {name}",
+            "organization": "Organización",
+            "platform": "Plataforma",
+            "metadata": "Detalles",
+            "type": "Tipo de recurso",
+            "organizationFilter": "Organización {id}",
+            "clearOrganization": "Quitar el filtro de organización",
+            "empty": "No hay registros.",
+            "types": {
+                "all": "Todos los tipos",
+                "user": "Usuarios",
+                "session": "Sesiones",
+                "invitation": "Invitaciones",
+                "organization_member": "Miembros",
+                "objective": "Objetivos",
+                "progress": "Progreso",
+                "category": "Categorías"
+            },
+            "severities": {
+                "info": "Info",
+                "warning": "Aviso",
+                "critical": "Crítico"
+            }
+        },
+        "categories": {
+            "title": "Catálogo de categorías",
+            "description": "Lo que eligen las organizaciones al crearse. Cambiarlo no altera las categorías que ya tienen.",
+            "empty": "El catálogo está vacío."
+        }
+    },
+    "Notifications": {
+        "title": "Notificaciones",
+        "description": "Vencimientos, hitos y objetivos completados de esta organización, de la más reciente a la más antigua.",
+        "empty": "No tienes notificaciones.",
+        "markAllRead": "Marcar todas como leídas",
+        "markedAllRead": "Todas las notificaciones están leídas",
+        "markRead": "Marcar como leída",
+        "markUnread": "Marcar como no leída",
+        "delete": "Eliminar notificación",
+        "deleted": "Notificación eliminada",
+        "bell": "Notificaciones, {count} sin leer",
+        "types": {
+            "deadline": "Vencimiento",
+            "progress": "Progreso",
+            "status": "Completado",
+            "achievement": "Logro"
+        },
+        "messages": {
+            "objectiveCompleted": "El objetivo «{title}» se ha completado.",
+            "progressMilestone": "El objetivo «{title}» ha llegado al {percent} % de su meta.",
+            "deadlineUpcoming": "El objetivo «{title}» vence en {days} días, el {date}.",
+            "deadlineToday": "El objetivo «{title}» vence hoy.",
+            "deadlineOverdue": "El objetivo «{title}» venció el {date}.",
+            "achievementEarned": "Has conseguido el logro «{name}» y {points} puntos.",
+            "organizationAchievementEarned": "Tu organización ha conseguido el logro «{name}» y {points} puntos."
+        }
+    },
+    "Achievements": {
+        "title": "Logros",
+        "description": "Tus logros y los de la organización activa, con lo que te falta para los demás.",
+        "userPoints": "Tus puntos",
+        "organizationPoints": "Puntos de la organización",
+        "points": "{points} puntos",
+        "earnedOn": "Conseguido el {date}",
+        "progress": "{progress} / {threshold}",
+        "progressLabel": "Progreso hacia {name}",
+        "tiers": {
+            "bronze": "Bronce",
+            "silver": "Plata",
+            "gold": "Oro"
+        },
+        "scopes": {
+            "individual": "Tuyos",
+            "organization": "De la organización"
+        },
+        "widget": {
+            "title": "Logros",
+            "points": "{points} puntos conseguidos",
+            "recent": "Últimos conseguidos",
+            "next": "Más cerca de conseguir",
+            "none": "Todavía ninguno.",
+            "viewAll": "Ver todos los logros"
+        },
+        "items": {
+            "first_objective": {
+                "name": "Primer paso",
+                "description": "Crea tu primer objetivo."
+            },
+            "objectives_created_5": {
+                "name": "Planificador",
+                "description": "Crea 5 objetivos."
+            },
+            "objectives_created_15": {
+                "name": "Estratega",
+                "description": "Crea 15 objetivos."
+            },
+            "objectives_created_30": {
+                "name": "Visionario",
+                "description": "Crea 30 objetivos."
+            },
+            "objectives_completed_3": {
+                "name": "Cumplidor",
+                "description": "Completa 3 de tus objetivos."
+            },
+            "objectives_completed_10": {
+                "name": "Rematador",
+                "description": "Completa 10 de tus objetivos."
+            },
+            "objectives_completed_25": {
+                "name": "Imparable",
+                "description": "Completa 25 de tus objetivos."
+            },
+            "early_bird": {
+                "name": "Madrugador",
+                "description": "Completa un objetivo antes de su fecha límite."
+            },
+            "streak_3": {
+                "name": "En racha",
+                "description": "Registra progreso 3 días seguidos."
+            },
+            "streak_7": {
+                "name": "Hábito semanal",
+                "description": "Registra progreso 7 días seguidos."
+            },
+            "streak_14": {
+                "name": "Voluntad de hierro",
+                "description": "Registra progreso 14 días seguidos."
+            },
+            "progress_updates_10": {
+                "name": "Arrancando",
+                "description": "Registra progreso 10 veces."
+            },
+            "progress_updates_50": {
+                "name": "Constante",
+                "description": "Registra progreso 50 veces."
+            },
+            "progress_updates_100": {
+                "name": "Entregado",
+                "description": "Registra progreso 100 veces."
+            },
+            "organization_first_objective": {
+                "name": "Puesta en marcha",
+                "description": "La organización crea su primer objetivo."
+            },
+            "organization_completed_5": {
+                "name": "Trabajo en equipo",
+                "description": "La organización completa 5 objetivos."
+            },
+            "organization_completed_15": {
+                "name": "Equipo engrasado",
+                "description": "La organización completa 15 objetivos."
+            },
+            "organization_completed_30": {
+                "name": "Equipo de ensueño",
+                "description": "La organización completa 30 objetivos."
+            },
+            "organization_streak_7": {
+                "name": "Impulso de equipo",
+                "description": "Alguien de la organización registra progreso 7 días seguidos."
+            }
         }
     }
 }

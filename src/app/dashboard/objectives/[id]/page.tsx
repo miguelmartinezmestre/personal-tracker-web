@@ -1,11 +1,25 @@
-import UpdateProgressLayout from '@/features/update-progress/components/update-progress-layout';
-import { redirect } from 'next/navigation';
+import { ObjectiveDetail } from '@/features/objectives';
+import {
+    objectivesListHref,
+    parseObjectiveListFilters,
+} from '@/features/objectives/lib/list-filters';
+import { translatedPageTitle } from '@/lib/page-metadata';
 
-export default async function ObjectiveDetailPage({ params }: { params: Promise<{ id: string }> }) {
-    const { id } = await params;
-    if (!id) {
-        redirect('/dashboard/objectives');
-    }
+export const generateMetadata = translatedPageTitle('Sidebar', 'objectives');
 
-    return <UpdateProgressLayout />;
+export default async function ObjectivePage({
+    params,
+    searchParams,
+}: {
+    params: Promise<{ id: string }>;
+    searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+    const [{ id }, filters] = await Promise.all([params, searchParams]);
+
+    return (
+        <ObjectiveDetail
+            objectiveId={id}
+            listHref={objectivesListHref(parseObjectiveListFilters(filters))}
+        />
+    );
 }

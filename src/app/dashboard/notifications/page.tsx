@@ -1,5 +1,8 @@
-import { NotificationsLayout } from '@/features/notifications';
+import { NotificationsPage } from '@/features/notifications';
+import { translatedPageTitle } from '@/lib/page-metadata';
 
-export default function NotificationsPage() {
-    return <NotificationsLayout />;
+export const generateMetadata = translatedPageTitle('Sidebar', 'notifications');
+
+export default function DashboardNotificationsPage() {
+    return <NotificationsPage />;
 }

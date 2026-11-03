@@ -6,39 +6,45 @@ import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/s
 import { CommandMenu } from '@/features/dashboard';
 import { LanguageSwitcher } from '@/features/landing';
 import { OrganizationSwitcher } from '@/features/organizations';
-import { NotificationBell } from '@/features/notifications';
 import { SignOutButton } from '@/features/auth';
+import { NotificationBell } from '@/features/notifications';
 import { redirect } from 'next/navigation';
-import { checkPlatformSetUp } from '@/features/setup/server';
-import { NotificationSonnerListener } from '@/features/notifications';
+import { isPlatformSetUp } from '@/features/setup/server';
 import { getTranslations } from 'next-intl/server';
 import { SkipToContent } from '@/components/skip-to-content';
+
 export const dynamic = 'force-dynamic';
+
 export default async function Layout({ children }: { children: React.ReactNode }) {
     const t = await getTranslations('Common');
-    const isPlatformSetUp = await checkPlatformSetUp();
-    if (!isPlatformSetUp) {
+
+    if (!(await isPlatformSetUp())) {
         redirect('/setup');
     }
+
     let dashboardContext: Awaited<ReturnType<typeof fetchDashboardContext>>;
+
     try {
         dashboardContext = await fetchDashboardContext();
     } catch (error) {
         if (isAuthRequiredError(error)) {
             redirect('/login');
         }
+
         throw error;
     }
-    const { user: initialUser, organizationId: activeOrganizationId } = dashboardContext;
+
+    const { organizationId: activeOrganizationId } = dashboardContext;
     const dashboardScopeKey = activeOrganizationId ?? 'no-active-organization';
+
     return (
         <SidebarProvider>
             <SkipToContent targetId="dashboard-main" label={t('skipToContent')} />
-            <AppSidebar initialUser={initialUser} />
+            <AppSidebar />
             <SidebarInset>
                 <header className="grid h-16 min-w-0 shrink-0 grid-cols-[auto_minmax(0,1fr)] items-center gap-2 px-4 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12">
                     <div className="flex min-w-0 items-center gap-2">
-                        <SidebarTrigger className="-ml-1" />
+                        <SidebarTrigger className="-ml-1" label={t('toggleSidebar')} />
                     </div>
                     <div className="flex min-w-0 items-center justify-end gap-1 sm:gap-2">
                         <OrganizationSwitcher
@@ -52,7 +58,6 @@ export default async function Layout({ children }: { children: React.ReactNode }
                     </div>
                 </header>
                 <CommandMenu />
-                <NotificationSonnerListener organizationId={activeOrganizationId} />
                 <main
                     id="dashboard-main"
                     tabIndex={-1}
@@ -65,6 +70,7 @@ export default async function Layout({ children }: { children: React.ReactNode }
         </SidebarProvider>
     );
 }
+
 async function fetchDashboardContext() {
     return await fetchAuthQuery(api.auth.getDashboardContext);
 }

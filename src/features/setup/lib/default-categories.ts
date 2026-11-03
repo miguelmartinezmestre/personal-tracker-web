@@ -1,13 +1,13 @@
-import type { SetupCategory } from '../schemas/setup-schema';
+import type { CategoryDraft } from '@/features/categories/schemas/category';
 
-export const DEFAULT_CATEGORIES: SetupCategory[] = [
-    { name: 'Health', color: '#EF4444', icon: 'heart' },
-    { name: 'Career', color: '#3B82F6', icon: 'briefcase' },
-    { name: 'Education', color: '#8B5CF6', icon: 'book' },
-    { name: 'Finance', color: '#10B981', icon: 'dollar-sign' },
-    { name: 'Personal', color: '#F59E0B', icon: 'user' },
-    { name: 'Team', color: '#06B6D4', icon: 'users' },
-    { name: 'Creative', color: '#EC4899', icon: 'palette' },
-    { name: 'Fitness', color: '#14B8A6', icon: 'target' },
-    { name: 'Productivity', color: '#6366F1', icon: 'trending-up' },
-];
+export const CATEGORY_PROPOSAL = [
+    { key: 'Health', color: '#EF4444', icon: 'heart' },
+    { key: 'Career', color: '#3B82F6', icon: 'briefcase' },
+    { key: 'Education', color: '#8B5CF6', icon: 'book' },
+    { key: 'Finance', color: '#10B981', icon: 'dollar-sign' },
+    { key: 'Personal', color: '#F59E0B', icon: 'user' },
+    { key: 'Team', color: '#06B6D4', icon: 'users' },
+    { key: 'Creative', color: '#EC4899', icon: 'palette' },
+    { key: 'Fitness', color: '#14B8A6', icon: 'target' },
+    { key: 'Productivity', color: '#6366F1', icon: 'trending-up' },
+] as const satisfies ReadonlyArray<{ key: string } & Omit<CategoryDraft, 'name'>>;

@@ -50,6 +50,10 @@ export default function StepPlatformConfig({ data, onChange }: StepPlatformConfi
                                 onChange({ defaultLanguage: value });
                             }
                         }}
+                        items={[
+                            { value: 'en', label: 'English' },
+                            { value: 'es', label: 'Español' },
+                        ]}
                     >
                         <SelectTrigger id="defaultLanguage" data-testid="setup-language-select">
                             <SelectValue />

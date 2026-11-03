@@ -1,165 +1,50 @@
-import { appendFileSync, existsSync, mkdirSync, writeFileSync } from 'node:fs';
-import { delimiter, dirname, join } from 'node:path';
-import { spawn, type SpawnOptionsWithoutStdio } from 'node:child_process';
+import { mkdirSync, writeFileSync } from 'node:fs';
+import { dirname } from 'node:path';
 import process from 'node:process';
-import { processEnvironment } from './stack-environment';
-import { installedNodeTool } from './node-tool';
+import { setTimeout as sleep } from 'node:timers/promises';
+import { execa, type Options, type ResultPromise } from 'execa';
 
-const nativePnpm =
-    process.platform === 'win32'
-        ? (process.env.PATH ?? '')
-              .split(delimiter)
-              .map(directory => join(directory, 'pnpm.exe'))
-              .find(candidate => existsSync(candidate))
-        : undefined;
-export const PNPM_COMMAND = nativePnpm ?? 'pnpm';
-export const DOCKER_COMMAND = process.platform === 'win32' ? 'docker.exe' : 'docker';
-export const USE_SHELL_FOR_PNPM = process.platform === 'win32' && !nativePnpm;
+export const PNPM_COMMAND = 'pnpm';
+export const DOCKER_COMMAND = 'docker';
 
-export interface RunCommandOptions extends SpawnOptionsWithoutStdio {
-    ignoreExitCode?: boolean;
-    sensitiveValues?: readonly string[];
+export const POLL_INTERVAL_MS = 1_000;
+export const HTTP_REQUEST_TIMEOUT_MS = 3_000;
+const DEFAULT_WAIT_TIMEOUT_MS = 120_000;
+const PROCESS_STOP_TIMEOUT_MS = 10_000;
+
+export interface RunCommandOptions {
+    env?: NodeJS.ProcessEnv;
+    input?: string;
     logFile?: string;
+    ignoreExitCode?: boolean;
 }
 
-const secretValues = new Set<string>();
+export function overlayEnv(overrides: NodeJS.ProcessEnv = {}): NodeJS.ProcessEnv {
+    const env: NodeJS.ProcessEnv = {};
 
-export function registerSensitiveValues(values: readonly (string | undefined)[]): void {
-    for (const value of values) {
-        if (value && value.length >= 4) secretValues.add(value);
+    for (const [key, value] of Object.entries({ ...process.env, ...overrides })) {
+        if (value !== undefined) {
+            env[key] = value;
+        }
     }
+
+    return env;
 }
 
-export function redactSensitiveText(text: string, values: readonly string[] = []): string {
-    let result = text;
-    const secrets = [...secretValues, ...values]
-        .filter(Boolean)
-        .sort((a, b) => b.length - a.length);
-    for (const secret of secrets) result = result.split(secret).join('[REDACTED]');
-    return result
-        .replace(/convex-self-hosted\|[^\s'"`]+/g, '[REDACTED_ADMIN_KEY]')
-        .replace(/(mysql|postgres(?:ql)?):\/\/[^\s@]+@/gi, '$1://[REDACTED]@')
-        .replace(
-            /((?:SECRET|PASSWORD|TOKEN|ADMIN_KEY|DEPLOY_KEY)["']?\s*[=:]\s*)(?:"[^"]*"|'[^']*'|[^\s,;}]+)/gi,
-            '$1"[REDACTED]"'
-        )
-        .replace(/Bearer\s+[A-Za-z0-9._~-]+/gi, 'Bearer [REDACTED]')
-        .replace(
-            /((?:set-cookie|cookie)["']?\s*:\s*)(?:"[^"]*"|'[^']*'|[^\r\n]+)/gi,
-            '$1"[REDACTED]"'
-        );
+function truncatedLogFile(logFile: string) {
+    mkdirSync(dirname(logFile), { recursive: true });
+    writeFileSync(logFile, '');
+
+    return { file: logFile, append: true };
 }
 
-export function formatCommand(command: string, args: Array<string>): string {
-    return redactSensitiveText([command, ...args].join(' '));
-}
-
-function registerEnvironmentSecrets(env: NodeJS.ProcessEnv): void {
-    registerSensitiveValues(
-        Object.entries(env)
-            .filter(([key]) => /SECRET|PASSWORD|TOKEN|KEY|JWKS/.test(key))
-            .map(([, value]) => value)
-    );
-}
-
-function lineWriter(write: (text: string) => void) {
-    let pending = '';
+function commandOptions(options: RunCommandOptions): Options {
     return {
-        append(chunk: Buffer | string) {
-            pending += String(chunk);
-            const end = pending.lastIndexOf('\n');
-            if (end >= 0) {
-                write(redactSensitiveText(pending.slice(0, end + 1)));
-                pending = pending.slice(end + 1);
-            }
-        },
-        flush() {
-            if (pending) write(redactSensitiveText(pending));
-            pending = '';
-        },
+        env: options.env,
+        extendEnv: false,
+        reject: !options.ignoreExitCode,
+        ...(options.input === undefined ? { stdin: 'ignore' } : { input: options.input }),
     };
-}
-
-function execute(
-    command: string,
-    args: Array<string>,
-    options: RunCommandOptions,
-    input: string | undefined,
-    capture: boolean
-): Promise<string> {
-    const { ignoreExitCode = false, sensitiveValues = [], logFile, ...spawnOptions } = options;
-    let env = { ...(spawnOptions.env ?? processEnvironment()) };
-    const installed = command === PNPM_COMMAND ? installedNodeTool(args) : null;
-    if (installed) {
-        const pathKey = Object.keys(env).find(key => key.toLowerCase() === 'path');
-        const previousPath = pathKey ? env[pathKey] : undefined;
-        if (pathKey && pathKey !== 'PATH') {
-            env = Object.fromEntries(Object.entries(env).filter(([key]) => key !== pathKey));
-        }
-        env.PATH = [join(process.cwd(), 'node_modules', '.bin'), previousPath ?? ''].join(
-            delimiter
-        );
-    }
-    registerEnvironmentSecrets(env);
-    registerSensitiveValues(sensitiveValues);
-    const inputName = args.at(-1) ?? '';
-    if (input && /SECRET|PASSWORD|TOKEN|KEY|JWKS/.test(inputName)) {
-        registerSensitiveValues([input.trim()]);
-    }
-    if (logFile) {
-        mkdirSync(dirname(logFile), { recursive: true });
-        writeFileSync(logFile, '');
-    }
-    const record = (text: string, stream: NodeJS.WriteStream) => {
-        if (logFile) {
-            appendFileSync(logFile, text);
-        }
-        if (!capture) {
-            stream.write(text);
-        }
-    };
-
-    return new Promise((resolve, reject) => {
-        const child = spawn(installed?.command ?? command, installed?.args ?? args, {
-            cwd: process.cwd(),
-            shell: false,
-            ...spawnOptions,
-            ...(installed ? { shell: false } : {}),
-            env,
-            stdio: ['pipe', 'pipe', 'pipe'],
-        });
-        let output = '';
-        const stdout = lineWriter(text => record(text, process.stdout));
-        const stderr = lineWriter(text => record(text, process.stderr));
-        child.stdout.on('data', (chunk: Buffer) => {
-            output += String(chunk);
-            stdout.append(chunk);
-        });
-        child.stderr.on('data', (chunk: Buffer) => {
-            output += String(chunk);
-            stderr.append(chunk);
-        });
-        child.stdin.on('error', () => {
-            /* Exit status reports a closed input pipe. */
-        });
-        child.stdin.end(input);
-        child.on('error', error => reject(new Error(redactSensitiveText(error.message))));
-        child.on('close', (code, signal) => {
-            stdout.flush();
-            stderr.flush();
-            if (code === 0 || ignoreExitCode) {
-                resolve(output);
-            } else {
-                reject(
-                    new Error(
-                        redactSensitiveText(
-                            `Command failed (${formatCommand(command, args)}), exit=${code ?? 'unknown'}, signal=${signal ?? 'none'}\n${output}`
-                        )
-                    )
-                );
-            }
-        });
-    });
 }
 
 export async function runCommand(
@@ -167,22 +52,131 @@ export async function runCommand(
     args: Array<string>,
     options: RunCommandOptions = {}
 ): Promise<void> {
-    await execute(command, args, options, undefined, false);
+    const log = options.logFile ? [truncatedLogFile(options.logFile)] : [];
+    await execa(command, args, {
+        ...commandOptions(options),
+        stdout: ['inherit', ...log],
+        stderr: ['inherit', ...log],
+    });
 }
 
-export async function runCommandWithInput(
-    command: string,
-    args: Array<string>,
-    input: string,
-    options: RunCommandOptions = {}
-): Promise<void> {
-    await execute(command, args, options, input, false);
-}
-
-export function runCommandCapture(
+export async function runCommandCapture(
     command: string,
     args: Array<string>,
     options: RunCommandOptions = {}
 ): Promise<string> {
-    return execute(command, args, options, undefined, true);
+    const result = await execa(command, args, { ...commandOptions(options), all: true });
+
+    return String(result.all ?? '');
+}
+
+export type LongRunningProcess = ResultPromise;
+
+export function startProcess(
+    command: string,
+    args: Array<string>,
+    options: {
+        env?: NodeJS.ProcessEnv;
+        killSignal?: NodeJS.Signals;
+        logFile?: string;
+        output?: 'inherit' | 'pipe';
+    } = {}
+): LongRunningProcess {
+    const output = options.logFile ? truncatedLogFile(options.logFile) : (options.output ?? 'pipe');
+
+    return execa(command, args, {
+        env: options.env,
+        stdin: 'ignore',
+        stdout: output,
+        stderr: output,
+        buffer: false,
+        // Resolves node_modules/.bin directly, so signals reach the tool rather than a pnpm wrapper.
+        preferLocal: true,
+        reject: false,
+        killSignal: options.killSignal ?? 'SIGTERM',
+        forceKillAfterDelay: PROCESS_STOP_TIMEOUT_MS,
+    });
+}
+
+function exitStatus(subprocess: LongRunningProcess): string | null {
+    const { exitCode, signalCode } = subprocess.nodeChildProcess;
+
+    return exitCode === null ? signalCode : String(exitCode);
+}
+
+export async function stopProcess(subprocess: LongRunningProcess): Promise<void> {
+    if (exitStatus(subprocess) !== null) {
+        return;
+    }
+
+    if (process.platform === 'win32' && subprocess.pid !== undefined) {
+        // Windows signals do not reach the process tree behind a .cmd shim.
+        await runCommand('taskkill.exe', ['/PID', String(subprocess.pid), '/T', '/F'], {
+            ignoreExitCode: true,
+        });
+    } else {
+        subprocess.kill();
+    }
+
+    await subprocess;
+}
+
+export function buildUrl(base: string, path: string): string {
+    return `${base.replace(/\/$/, '')}${path}`;
+}
+
+export async function fetchWithTimeout(url: string): Promise<Response> {
+    return fetch(url, { signal: AbortSignal.timeout(HTTP_REQUEST_TIMEOUT_MS) });
+}
+
+export async function isListening(url: string): Promise<boolean> {
+    try {
+        await fetchWithTimeout(url);
+
+        return true;
+    } catch {
+        return false;
+    }
+}
+
+export async function waitForHttp(
+    url: string,
+    options: {
+        timeoutMs?: number;
+        isReady?: (response: Response) => boolean;
+        process?: LongRunningProcess;
+    } = {}
+): Promise<void> {
+    const { timeoutMs = DEFAULT_WAIT_TIMEOUT_MS, isReady = response => response.ok } = options;
+    const start = Date.now();
+    let lastAttempt = 'no response yet';
+
+    for (let attempt = 1; Date.now() - start < timeoutMs; attempt += 1) {
+        const exit = options.process ? exitStatus(options.process) : null;
+
+        if (exit !== null) {
+            throw new Error(`Process exited before ${url} was ready (exit=${exit})`);
+        }
+
+        try {
+            const response = await fetchWithTimeout(url);
+
+            if (isReady(response)) {
+                return;
+            }
+
+            lastAttempt = `last status=${response.status}`;
+        } catch (error) {
+            lastAttempt = `last error=${error instanceof Error ? error.message : String(error)}`;
+        }
+
+        if (attempt % 5 === 0) {
+            const elapsedSeconds = Math.floor((Date.now() - start) / 1000);
+            console.log(`Still waiting for ${url} (${elapsedSeconds}s elapsed, ${lastAttempt})`);
+        }
+
+        await sleep(POLL_INTERVAL_MS);
+    }
+
+    throw new Error(`Timed out waiting for ${url} (${lastAttempt})`);
 }

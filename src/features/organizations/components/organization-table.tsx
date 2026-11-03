@@ -2,7 +2,7 @@
 
 import { DataTable } from '@/components/data-table/components/table';
 import {
-    useOrganizations,
+    usePaginatedOrganizations,
     useDeleteOrganization,
     type Organization,
 } from '@/features/organizations/hooks/use-organizations';
@@ -21,24 +21,22 @@ import {
 
 export default function OrganizationsTable() {
     const t = useTranslations('Organizations');
-    const common = useTranslations('Common');
-    const organizations = useOrganizations();
+    const organizations = usePaginatedOrganizations();
     const deleteOrganization = useDeleteOrganization();
 
     const columns: ColumnDef<DataTableFeatures, Organization>[] = [
         {
             accessorKey: 'name',
             header: t('name'),
+            cell: ({ row }) =>
+                row.original.isPersonal ? t('personalOrganizationName') : row.original.name,
         },
         {
-            accessorKey: 'description',
-            header: t('tableDescription'),
-        },
-        {
-            header: '',
+            header: () => <span className="sr-only">{t('editOrganization')}</span>,
             id: 'update-organization',
             cell: ({ row }) => {
                 const organizationRow = row.original;
+
                 if (organizationRow.isPersonal || !isOrganizationAdminRole(organizationRow.role)) {
                     return null;
                 }
@@ -47,10 +45,11 @@ export default function OrganizationsTable() {
             },
         },
         {
-            header: '',
+            header: () => <span className="sr-only">{t('deleteOrganization')}</span>,
             id: 'delete',
             cell: ({ row }) => {
                 const organizationRow = row.original;
+
                 if (organizationRow.isPersonal || !isOrganizationOwnerRole(organizationRow.role)) {
                     return null;
                 }
@@ -84,7 +83,7 @@ export default function OrganizationsTable() {
             },
         },
         {
-            header: '',
+            header: () => <span className="sr-only">{t('goToOrganization')}</span>,
             id: 'go-to-activity',
             cell: ({ row }) => {
                 const organizationId = row.original.id;
@@ -95,6 +94,7 @@ export default function OrganizationsTable() {
                         <Link
                             href={`/dashboard/organizations/${organizationId}`}
                             prefetch={false}
+                            className="font-medium underline underline-offset-4 hover:text-primary/80"
                             data-testid="organization-detail-link"
                         >
                             {t('goToOrganization')}
@@ -110,23 +110,11 @@ export default function OrganizationsTable() {
     return (
         <div data-testid="organizations-table">
             <DataTable
-                isError={organizations.isError}
-                onRetry={() => {
-                    void organizations.refetch();
-                }}
                 columns={columns}
-                data={organizations.data ?? []}
+                data={organizations.data}
                 isLoading={organizations.isLoading}
+                pagination={organizations}
             />
-            {organizations.hasMore ? (
-                <Button
-                    variant="outline"
-                    disabled={organizations.isFetching}
-                    onClick={organizations.loadMore}
-                >
-                    {common('actions.loadMore')}
-                </Button>
-            ) : null}
         </div>
     );
 }

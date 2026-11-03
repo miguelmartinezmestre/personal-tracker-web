@@ -1,5 +1,8 @@
-import AchievementsLayout from '@/features/achievements/components/achievements-layout';
+import { AchievementsPage } from '@/features/achievements';
+import { translatedPageTitle } from '@/lib/page-metadata';
 
-export default function AchievementsPage() {
-    return <AchievementsLayout />;
+export const generateMetadata = translatedPageTitle('Sidebar', 'achievements');
+
+export default function DashboardAchievementsPage() {
+    return <AchievementsPage />;
 }

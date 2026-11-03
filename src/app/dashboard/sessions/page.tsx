@@ -1,5 +1,8 @@
-import SessionsLayout from '@/features/sessions/components/sessions-layout';
+import { SessionsPage } from '@/features/sessions';
+import { translatedPageTitle } from '@/lib/page-metadata';
 
-export default function SessionsPage() {
-    return <SessionsLayout />;
+export const generateMetadata = translatedPageTitle('Sidebar', 'sessions');
+
+export default function DashboardSessionsPage() {
+    return <SessionsPage />;
 }

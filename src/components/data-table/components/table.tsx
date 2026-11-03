@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { QueryErrorFallback } from '@/components/ui/query-error-fallback';
 import { type ColumnDef, type RowData, useTable, flexRender } from '@tanstack/react-table';
 import {
@@ -10,48 +11,47 @@ import {
 } from '@/components/ui/table';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useTranslations } from 'next-intl';
-import { DataTablePagination } from './data-table-pagination';
+import { LoadMorePagination } from './load-more-pagination';
+import type { PaginatedList } from '../hooks/use-paginated-list';
 import { dataTableFeatures, type DataTableFeatures } from '../data-table-features';
 
-interface DataTableProps<TData extends RowData> {
+type IdentifiedRow = RowData & { id: string };
+
+interface DataTableProps<TData extends IdentifiedRow> {
     columns: ColumnDef<DataTableFeatures, TData>[];
     data: TData[];
     isLoading?: boolean;
     isError?: boolean;
-    error?: unknown;
     onRetry?: () => void;
-    pagination?: {
-        onNextPage: () => void;
-        onPreviousPage: () => void;
-        hasNextPage: boolean;
-        hasPreviousPage: boolean;
-        isLoading?: boolean;
-    };
+    pagination?: PaginatedList;
+    emptyMessage?: ReactNode;
+    columnClassNames?: Partial<Record<string, string>>;
 }
 
-export function DataTable<TData extends RowData>({
+export function DataTable<TData extends IdentifiedRow>({
     columns,
     data,
     isLoading = false,
     isError = false,
-    error,
     onRetry,
     pagination,
+    emptyMessage,
+    columnClassNames,
 }: DataTableProps<TData>) {
     'use no memo';
 
     const t = useTranslations('Table');
-    // TanStack Table returns non-memoizable functions; React Compiler skips this hook by design.
-    // react-doctor-disable-next-line react-hooks-js/incompatible-library -- useTable
+
     const table = useTable({
         features: dataTableFeatures,
         data,
         columns,
+        getRowId: row => row.id,
         manualPagination: true,
     });
 
     if (isError) {
-        return <QueryErrorFallback error={error} onRetry={onRetry} />;
+        return <QueryErrorFallback onRetry={onRetry} />;
     }
 
     if (isLoading) {
@@ -89,6 +89,32 @@ export function DataTable<TData extends RowData>({
         );
     }
 
+    let tableRows;
+
+    if (table.getRowModel().rows.length) {
+        tableRows = table.getRowModel().rows.map(row => (
+            <TableRow key={row.id} data-testid="table-row">
+                {row.getAllCells().map(cell => (
+                    <TableCell
+                        key={cell.id}
+                        className={columnClassNames?.[cell.column.id]}
+                        data-testid="table-cell"
+                    >
+                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                    </TableCell>
+                ))}
+            </TableRow>
+        ));
+    } else {
+        tableRows = (
+            <TableRow>
+                <TableCell colSpan={columns.length} className="h-24 text-center">
+                    {emptyMessage ?? t('noResults')}
+                </TableCell>
+            </TableRow>
+        );
+    }
+
     return (
         <div className="space-y-3">
             <div className="rounded-md border">
@@ -97,11 +123,14 @@ export function DataTable<TData extends RowData>({
                         {table.getHeaderGroups().map(headerGroup => (
                             <TableRow key={headerGroup.id}>
                                 {headerGroup.headers.map(header => {
+                                    const className = columnClassNames?.[header.column.id];
+
                                     if (header.isPlaceholder) {
-                                        return <TableHead key={header.id} />;
+                                        return <TableHead key={header.id} className={className} />;
                                     }
+
                                     return (
-                                        <TableHead key={header.id}>
+                                        <TableHead key={header.id} className={className}>
                                             {flexRender(
                                                 header.column.columnDef.header,
                                                 header.getContext()
@@ -112,40 +141,10 @@ export function DataTable<TData extends RowData>({
                             </TableRow>
                         ))}
                     </TableHeader>
-                    <TableBody>
-                        {table.getRowModel().rows.length ? (
-                            table.getRowModel().rows.map(row => (
-                                <TableRow key={row.id} data-testid="table-row">
-                                    {row.getAllCells().map(cell => (
-                                        <TableCell key={cell.id} data-testid="table-cell">
-                                            {flexRender(
-                                                cell.column.columnDef.cell,
-                                                cell.getContext()
-                                            )}
-                                        </TableCell>
-                                    ))}
-                                </TableRow>
-                            ))
-                        ) : (
-                            <TableRow>
-                                <TableCell colSpan={columns.length} className="h-24 text-center">
-                                    {t('noResults')}
-                                </TableCell>
-                            </TableRow>
-                        )}
-                    </TableBody>
+                    <TableBody>{tableRows}</TableBody>
                 </Table>
             </div>
-            {pagination && (
-                <DataTablePagination
-                    onNextPage={pagination.onNextPage}
-                    onPreviousPage={pagination.onPreviousPage}
-                    hasNextPage={pagination.hasNextPage}
-                    hasPreviousPage={pagination.hasPreviousPage}
-                    rowCount={data.length}
-                    isLoading={pagination.isLoading}
-                />
-            )}
+            {pagination && <LoadMorePagination pagination={pagination} rowCount={data.length} />}
         </div>
     );
 }

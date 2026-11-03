@@ -1,6 +1,7 @@
 **/components/ui/**/*.tsx
 .agents/
 .cursor/
+.convex/
 .next/
 .next-e2e-*/
 coverage/
@@ -13,3 +14,4 @@ skills-lock.json
 convex/_generated/
 infrastructure/data/
 infrastructure/mysql-data/
+tools/oxlint/vendor/

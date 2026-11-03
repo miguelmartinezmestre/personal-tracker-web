@@ -6,11 +6,11 @@ import { NextIntlClientProvider } from 'next-intl';
 import es from '../../../translations/es.json';
 import { DataTable } from './table';
 
-test('failed queries show an error and retry instead of an empty table', async () => {
+test('failed queries show an error and retry instead of an empty table @INH-UI-05', async () => {
     const retry = vi.fn();
     render(
         <NextIntlClientProvider locale="es" messages={es}>
-            <DataTable columns={[]} data={[]} isError error={new Error('Failed')} onRetry={retry} />
+            <DataTable columns={[]} data={[]} isError onRetry={retry} />
         </NextIntlClientProvider>
     );
     expect(screen.getByRole('alert')).toHaveTextContent(es.Common.queryError);

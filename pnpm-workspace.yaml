@@ -1,65 +1,31 @@
 # Only resolve versions published at least this many minutes ago (7 days).
 minimumReleaseAge: 10080
 
-# Security patches are allowed through the seven-day release cooldown.
-minimumReleaseAgeExclude:
-    - brace-expansion@5.0.6
-    - js-yaml@4.3.0
-    - next@16.3.0
-    - '@next/env@16.3.0'
-    - '@next/swc-win32-x64-msvc@16.3.0'
-    - '@next/swc-linux-x64-gnu@16.3.0'
-    - '@next/swc-linux-x64-musl@16.3.0'
-    - react@19.2.8
-    - react-dom@19.2.8
-    - convex-test@0.0.55
-    - hono@4.13.1
-    - next-intl@4.13.5
-    - use-intl@4.13.5
-    - icu-minify@4.13.5
-    - next-intl-swc-plugin-extractor@4.13.5
-    - nodemailer@9.0.5
-    - lucide-react@1.30.0
-    # Security fixes verified 2026-09-08; remove exceptions after the cooldown.
-    - nanoid@3.3.18
-    - browserslist@4.28.7
-    - '@tanstack/react-table@9.1.0'
-    - '@tanstack/table-core@9.1.0'
-    - eslint@10.8.1
-    - typescript-eslint@8.66.0
-    - '@typescript-eslint/eslint-plugin@8.66.0'
-    - '@typescript-eslint/parser@8.66.0'
-    - '@typescript-eslint/utils@8.66.0'
-    - '@typescript-eslint/type-utils@8.66.0'
-    - '@typescript-eslint/types@8.66.0'
-    - '@typescript-eslint/typescript-estree@8.66.0'
-    - '@typescript-eslint/visitor-keys@8.66.0'
-    - '@typescript-eslint/scope-manager@8.66.0'
-    - '@typescript-eslint/project-service@8.66.0'
-    - '@typescript-eslint/tsconfig-utils@8.66.0'
-    - sharp@0.35.0
-    - postcss@8.5.18
-
 overrides:
     lodash: 4.18.1
-    'brace-expansion@>=5.0.0 <5.0.6': 5.0.6
+    'brace-expansion@>=5.0.0 <5.0.11': 5.0.12
     glob: ^11.1.0
     js-yaml: 4.3.0
     '@babel/core': '>=7.29.1'
     esbuild: '>=0.28.1'
     postcss: '>=8.5.18'
-    sharp: '>=0.35.0'
+    sharp: '>=0.35.5'
     tmp: '>=0.2.4'
-    vite: 8.0.16
+    vite: 8.1.6
     ws: '>=8.21.0'
     'nanoid@<3.3.18': 3.3.18
     'browserslist@<4.28.7': 4.28.7
+    undici: '>=8.10.2'
+    source-map-js: '>=1.2.2'
+    dompurify: '>=3.4.17'
+    'zod@>=4.0.0 <5': 4.6.7
+    'nodemailer@<10.1.4': 10.1.4
+    'picomatch@>=4.0.0 <5': 4.0.7
+    '@maildev/mcp>zod': '>=4.6.6'
 
-# kitcn 0.15.14 pins an exact, vulnerable Hono peer. Hono follows semver and
-# 4.12.25+ contains the upstream CORS security fix (GHSA-88fw-hqm2-52qc).
 peerDependencyRules:
     allowedVersions:
-        'kitcn@0.15.14>hono': '>=4.12.25 <5'
+        'kitcn@0.33.11>hono': '>=4.13.11 <5'
 
 allowBuilds:
     '@parcel/watcher': true

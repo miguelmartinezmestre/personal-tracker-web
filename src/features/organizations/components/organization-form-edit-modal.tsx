@@ -1,19 +1,11 @@
 'use client';
-import type { z } from 'zod';
-import { PlusCircle } from 'lucide-react';
+
+import { Pencil } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import {
-    FieldShell,
-    getFieldError,
-    FormControl,
-    FormDescription,
-    FormItem,
-    FormLabel,
-    FormMessage,
-} from '@/components/ui/form-fields';
+import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { savedOrganizationSchema } from '@/features/organizations/schemas/organization';
+import type { SavedOrganization } from '@/features/organizations/schemas/organization';
+import { useSavedOrganizationFormSchema } from '@/features/organizations/hooks/use-organization-form-schemas';
 import { useTranslations } from 'next-intl';
 import { useTranslations as useTranslationsCommon } from 'next-intl';
 import {
@@ -21,6 +13,8 @@ import {
     type Organization,
 } from '@/features/organizations/hooks/use-organizations';
 import FormModal from '@/components/forms/form-modal';
+import { getFieldErrors } from '@/components/forms/form-utils';
+
 export default function EditOrganizationFormModal({
     defaultValues,
 }: {
@@ -29,11 +23,13 @@ export default function EditOrganizationFormModal({
     const t = useTranslations('Organizations');
     const tCommon = useTranslationsCommon('Common');
     const updateOrganization = useUpdateOrganization();
+    const savedOrganizationSchema = useSavedOrganizationFormSchema();
+
     return (
-        <FormModal<z.infer<typeof savedOrganizationSchema>>
+        <FormModal<SavedOrganization>
             trigger={
                 <Button className="gap-2" data-testid="organization-edit-open">
-                    <PlusCircle className="h-4 w-4" />
+                    <Pencil className="h-4 w-4" aria-hidden />
                     {t('editOrganization')}
                 </Button>
             }
@@ -43,18 +39,16 @@ export default function EditOrganizationFormModal({
                 defaultValues: {
                     id: defaultValues.id,
                     name: defaultValues.name,
-                    description: defaultValues.description,
                 },
                 validators: {
                     onChange: savedOrganizationSchema,
                     onSubmit: savedOrganizationSchema,
                 },
             }}
-            onSubmit={async (values: z.infer<typeof savedOrganizationSchema>) => {
+            onSubmit={async (values: SavedOrganization) => {
                 await updateOrganization.mutateAsync({
                     id: values.id,
                     name: values.name,
-                    description: values.description,
                 });
             }}
             submitLabel={t('saveOrganization')}
@@ -65,68 +59,35 @@ export default function EditOrganizationFormModal({
             submitTestId="organization-edit-save-button"
         >
             {form => (
-                <>
+                <FieldGroup>
                     <form.Field name="name">
-                        {field => (
-                            <FieldShell error={getFieldError(form, field)}>
-                                <FormItem>
-                                    <FormLabel>{t('name')}</FormLabel>
-                                    <FormControl>
-                                        <Input
-                                            placeholder={t('enterOrganizationName')}
-                                            name={field.name}
-                                            value={
-                                                typeof field.state.value === 'string'
-                                                    ? field.state.value
-                                                    : ''
-                                            }
-                                            onChange={event =>
-                                                field.handleChange(event.target.value)
-                                            }
-                                            onBlur={field.handleBlur}
-                                            data-testid="organization-edit-name-input"
-                                        />
-                                    </FormControl>
-                                    <FormDescription>
-                                        {t('giveYourOrganizationAClearConciseName')}
-                                    </FormDescription>
-                                    <FormMessage />
-                                </FormItem>
-                            </FieldShell>
-                        )}
-                    </form.Field>
+                        {field => {
+                            const errors = getFieldErrors(form, field);
+                            const isInvalid = !!errors.length;
+                            const value = field.state.value;
 
-                    <form.Field name="description">
-                        {field => (
-                            <FieldShell error={getFieldError(form, field)}>
-                                <FormItem>
-                                    <FormLabel>{t('tableDescription')}</FormLabel>
-                                    <FormControl>
-                                        <Textarea
-                                            placeholder={t('describeOrganizationInDetail')}
-                                            className="resize-none min-h-[80px]"
-                                            name={field.name}
-                                            value={
-                                                typeof field.state.value === 'string'
-                                                    ? field.state.value
-                                                    : ''
-                                            }
-                                            onChange={event =>
-                                                field.handleChange(event.target.value)
-                                            }
-                                            onBlur={field.handleBlur}
-                                            data-testid="organization-edit-description-input"
-                                        />
-                                    </FormControl>
-                                    <FormDescription>
-                                        {t('optionalAddDetailsAboutYourOrganization')}
-                                    </FormDescription>
-                                    <FormMessage />
-                                </FormItem>
-                            </FieldShell>
-                        )}
+                            return (
+                                <Field data-invalid={isInvalid}>
+                                    <FieldLabel htmlFor={field.name}>{t('name')}</FieldLabel>
+                                    <Input
+                                        id={field.name}
+                                        name={field.name}
+                                        placeholder={t('enterOrganizationName')}
+                                        value={value}
+                                        onChange={event => field.handleChange(event.target.value)}
+                                        onBlur={field.handleBlur}
+                                        aria-invalid={isInvalid}
+                                        data-testid="organization-edit-name-input"
+                                    />
+                                    <FieldDescription>
+                                        {t('giveYourOrganizationAClearConciseName')}
+                                    </FieldDescription>
+                                    {isInvalid && <FieldError errors={errors} />}
+                                </Field>
+                            );
+                        }}
                     </form.Field>
-                </>
+                </FieldGroup>
             )}
         </FormModal>
     );

@@ -1,12 +1,29 @@
 import { z } from 'zod';
+import { categoryDraftSchema } from '@/features/categories/schemas/category';
 
-export const organizationSchema = z.object({
-    name: z.string().trim().min(1).max(100),
-    description: z.string(),
-});
+type OrganizationValidationKey = 'nameRequired';
 
-export const savedOrganizationSchema = organizationSchema.extend({
-    id: z.string(),
-});
+export function organizationSchema(message: (key: OrganizationValidationKey) => string) {
+    return z.object({
+        name: z
+            .string()
+            .trim()
+            .min(1, { error: message('nameRequired') }),
+    });
+}
 
-export type CreateOrganization = z.infer<typeof organizationSchema>;
+export function newOrganizationSchema(message: (key: OrganizationValidationKey) => string) {
+    return organizationSchema(message).extend({
+        categories: z.array(categoryDraftSchema),
+    });
+}
+
+export function savedOrganizationSchema(message: (key: OrganizationValidationKey) => string) {
+    return organizationSchema(message).extend({
+        id: z.string(),
+    });
+}
+
+export type CreateOrganization = z.infer<ReturnType<typeof newOrganizationSchema>>;
+
+export type SavedOrganization = z.infer<ReturnType<typeof savedOrganizationSchema>>;

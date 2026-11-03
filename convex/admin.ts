@@ -1,436 +1,289 @@
-import { internalMutation } from './platform/db/internalMutation';
-import { requireAdminTarget, assertAnotherActiveAdministrator } from './domain/adminCapabilities';
-import { paginationOptsValidator, type PaginationOptions } from 'convex/server';
 import { ConvexError, v } from 'convex/values';
-import { internal } from './_generated/api';
-import { type MutationCtx, type QueryCtx } from './_generated/server';
-import { requireAdmin } from './utils/requiredAdmin';
-import { mutationWithRLS, queryWithRLS } from './platform/rls/wrappers';
-import { toSessionListItem } from './sessions';
-import { ERROR_CODES } from './utils/constants';
-import { isPlatformSetupUser } from './platform/admin/access';
+import { paginationOptsValidator, paginationResultValidator } from 'convex/server';
 import type { Id } from './_generated/dataModel';
+import { internalMutation } from './_generated/server';
+import { ERROR_CODES } from './shared/errorCodes';
+import { withNextPageCheck, withPaginationLimits } from './shared/pagination';
+import { mutationWithRLS, queryWithRLS } from './features/authorization/wrappers';
+import { USER_ROLE, isGlobalAdminRole } from './features/auth/roles';
+import { revokeBannedUserSessionsBatch } from './features/auth/sessions';
+import { requireOtherUser, toAdminUser } from './features/auth/users';
 import {
-    continueUserDeletionCascade as continueUserDeletionCascadeJob,
-    startUserDeletionCascade,
-} from './jobs/users/cascadeDeletion';
-import {
-    continueOrganizationDeletionCascade as continueOrganizationDeletionCascadeJob,
-    startOrganizationDeletionCascade,
-} from './jobs/organizations/cascadeDeletion';
-import { continueMemberLeaveCleanup as continueMemberLeaveCleanupJob } from './jobs/organizations/memberLeaveCleanup';
-import { paginatedSessionsValidator, paginatedUsersValidator } from './utils/apiReturnValidators';
-import { withInvalidCursorRetry } from './utils/pagination';
-import { resolveActorUserId, sanitizeAuditMetadata } from './domain/audit/privacy';
-import { GLOBAL_ADMIN_ROLE, USER_ROLE } from '../shared/platform-roles';
-import { USER_EMAIL_MAX_LENGTH, USER_NAME_MAX_LENGTH } from '../shared/input-constraints';
-import { normalizeRequiredBoundedString } from './utils/inputValidation';
-const SESSION_REVOKE_BATCH_SIZE = 100;
-const MAX_DATE_TIMESTAMP = 8640000000000000;
-export async function revokeAllSessionsForUser(
-    ctx: MutationCtx,
-    userId: Id<'user'>,
-    expectedBanUpdatedAt?: number
-): Promise<void> {
-    if (expectedBanUpdatedAt !== undefined) {
-        const user = await ctx.db.get('user', userId);
-        const activeBan =
-            user?.banned === true && (user.banExpires == null || user.banExpires > Date.now());
-        if (!user || !activeBan || user.updatedAt !== expectedBanUpdatedAt) {
-            return;
-        }
-    }
-    const sessions = await ctx.db
-        .query('session')
-        .withIndex('userId', q => q.eq('userId', userId))
-        .take(SESSION_REVOKE_BATCH_SIZE + 1);
-    const batch = sessions.slice(0, SESSION_REVOKE_BATCH_SIZE);
-    for (const session of batch) {
-        await ctx.db.delete('session', session._id);
-    }
-    if (sessions.length > batch.length) {
-        await ctx.scheduler.runAfter(0, internal.admin.continueUserSessionRevocation, {
-            userId,
-            ...(expectedBanUpdatedAt !== undefined ? { expectedBanUpdatedAt } : {}),
-        });
-    }
-}
-function getBanExpiresAt(now: number, banExpiresInSeconds: number | undefined): number | null {
-    if (banExpiresInSeconds === undefined) {
-        return null;
-    }
-    if (
-        !Number.isFinite(banExpiresInSeconds) ||
-        !Number.isSafeInteger(banExpiresInSeconds) ||
-        banExpiresInSeconds <= 0
-    ) {
-        throw new ConvexError(ERROR_CODES.VALIDATION_ERROR);
-    }
-    const durationMs = banExpiresInSeconds * 1000;
-    const expiresAt = now + durationMs;
-    if (
-        !Number.isSafeInteger(durationMs) ||
-        !Number.isSafeInteger(expiresAt) ||
-        expiresAt > MAX_DATE_TIMESTAMP
-    ) {
-        throw new ConvexError(ERROR_CODES.VALIDATION_ERROR);
-    }
-    return expiresAt;
-}
-function getNextUpdatedAt(currentUpdatedAt: number): number {
-    return Math.max(Date.now(), currentUpdatedAt + 1);
-}
-function queryUsersPage(
-    ctx: {
-        db: QueryCtx['db'];
-    },
-    search: string | undefined,
-    paginationOpts: PaginationOptions
-) {
-    if (!search) {
-        return ctx.db.query('user').withIndex('email_name').paginate(paginationOpts);
-    }
-    if (search.includes('@')) {
-        return ctx.db
-            .query('user')
-            .withSearchIndex('search_user_email', q => q.search('email', search))
-            .paginate(paginationOpts);
-    }
-    return ctx.db
-        .query('user')
-        .withSearchIndex('search_user_name', q => q.search('name', search))
-        .paginate(paginationOpts);
-}
+    adminUserValidator,
+    platformRoleValidator,
+    sessionListItemValidator,
+} from './features/auth/validators';
+import { insertAuditLog } from './features/audit/log';
+import { auditEntryValidator } from './features/audit/validators';
+
 export const listUsers = queryWithRLS({
-    args: {
-        paginationOpts: paginationOptsValidator,
-        searchValue: v.optional(v.string()),
-    },
-    returns: paginatedUsersValidator,
+    args: { search: v.optional(v.string()), paginationOpts: paginationOptsValidator },
+    returns: paginationResultValidator(adminUserValidator),
     handler: async (ctx, args) => {
-        await requireAdmin(ctx);
-        const search = args.searchValue?.trim();
-        const result = await withInvalidCursorRetry(args.paginationOpts, paginationOpts =>
-            queryUsersPage(ctx, search, paginationOpts)
-        );
+        if (!isGlobalAdminRole(ctx.role)) {
+            throw new ConvexError(ERROR_CODES.FORBIDDEN);
+        }
+
+        const search = args.search?.trim();
+        const users = ctx.db.query('user');
+        const paginationOpts = withPaginationLimits(args.paginationOpts);
+        let result;
+
+        if (!search) {
+            result = await users.withIndex('email_name').paginate(paginationOpts);
+        } else if (search.includes('@')) {
+            result = await users
+                .withSearchIndex('search_user_email', q => q.search('email', search))
+                .paginate(paginationOpts);
+        } else {
+            result = await users
+                .withSearchIndex('search_user_name', q => q.search('name', search))
+                .paginate(paginationOpts);
+        }
+
         return {
             ...result,
-            page: result.page.filter(user => user.deletedAt === undefined),
+            page: result.page.filter(user => user.deletedAt === undefined).map(toAdminUser),
         };
     },
 });
-export const updateUser = mutationWithRLS({
-    args: {
-        userId: v.id('user'),
-        name: v.string(),
-        email: v.string(),
-        role: v.union(v.literal(GLOBAL_ADMIN_ROLE), v.literal(USER_ROLE)),
-    },
-    returns: v.object({ success: v.boolean() }),
+
+export const setUserRole = mutationWithRLS({
+    args: { userId: v.id('user'), role: platformRoleValidator },
+    returns: v.null(),
     handler: async (ctx, args) => {
-        const target = await requireAdminTarget(ctx, args.userId, 'update', args.role);
-        const name = normalizeRequiredBoundedString(args.name, USER_NAME_MAX_LENGTH);
-        const email = normalizeRequiredBoundedString(
-            args.email,
-            USER_EMAIL_MAX_LENGTH
-        ).toLowerCase();
-        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-            throw new ConvexError(ERROR_CODES.VALIDATION_ERROR);
-        }
-        const emailOwner = await ctx.db
-            .query('user')
-            .withIndex('email_name', q => q.eq('email', email))
-            .first();
-        if (emailOwner && emailOwner._id !== args.userId) {
-            throw new ConvexError(ERROR_CODES.VALIDATION_ERROR);
-        }
-        await ctx.db.patch('user', args.userId, {
-            name,
-            email,
-            role: args.role,
-            updatedAt: getNextUpdatedAt(target.updatedAt),
+        const user = await requireOtherUser(ctx, args.userId);
+        await ctx.db.patch('user', user._id, { role: args.role, updatedAt: Date.now() });
+        await insertAuditLog(ctx, {
+            action: 'user.role_changed',
+            resourceType: 'user',
+            resourceId: user._id,
+            userId: user._id,
+            severity: 'critical',
+            metadata: { before: { role: user.role ?? USER_ROLE }, after: { role: args.role } },
         });
-        return { success: true };
+
+        return null;
     },
 });
+
 export const banUser = mutationWithRLS({
     args: {
         userId: v.id('user'),
-        banReason: v.optional(v.string()),
-        // Ban duration in **seconds from now** (better-auth `banExpiresIn`), not
-        // an absolute timestamp. Omit for a permanent ban.
-        banExpiresInSeconds: v.optional(v.number()),
-    },
-    returns: v.object({ success: v.boolean() }),
-    handler: async (ctx, args) => {
-        const targetUser = await requireAdminTarget(ctx, args.userId, 'ban');
-        const now = Date.now();
-        const banUpdatedAt = getNextUpdatedAt(targetUser.updatedAt);
-        await ctx.db.patch('user', args.userId, {
-            banned: true,
-            banReason: args.banReason || 'No reason',
-            banExpires: getBanExpiresAt(now, args.banExpiresInSeconds),
-            updatedAt: banUpdatedAt,
-        });
-        // The durable status above blocks application access immediately. The
-        // physical session rows can therefore be removed safely in batches.
-        await revokeAllSessionsForUser(ctx, args.userId, banUpdatedAt);
-        return { success: true };
-    },
-});
-export const continueUserSessionRevocation = internalMutation({
-    args: {
-        userId: v.id('user'),
-        expectedBanUpdatedAt: v.optional(v.number()),
+        reason: v.optional(v.string()),
+        durationDays: v.optional(v.number()),
     },
     returns: v.null(),
-    handler: async (ctx, args): Promise<null> => {
-        await revokeAllSessionsForUser(ctx, args.userId, args.expectedBanUpdatedAt);
+    handler: async (ctx, args) => {
+        const user = await requireOtherUser(ctx, args.userId);
+        const now = Date.now();
+
+        if (
+            args.durationDays !== undefined &&
+            (!Number.isInteger(args.durationDays) || args.durationDays < 1)
+        ) {
+            throw new ConvexError(ERROR_CODES.VALIDATION_ERROR);
+        }
+
+        const banUpdatedAt = Math.max(now, user.updatedAt + 1);
+
+        const banExpires =
+            args.durationDays === undefined ? null : now + args.durationDays * 24 * 60 * 60 * 1000;
+
+        await ctx.db.patch('user', user._id, {
+            banned: true,
+            banReason: args.reason?.trim() || null,
+            banExpires,
+            updatedAt: banUpdatedAt,
+        });
+        await insertAuditLog(ctx, {
+            action: 'user.banned',
+            resourceType: 'user',
+            resourceId: user._id,
+            userId: user._id,
+            severity: 'critical',
+            metadata: { after: { banExpires } },
+        });
+        await revokeBannedUserSessionsBatch(ctx, { userId: user._id, banUpdatedAt });
+
         return null;
     },
 });
-export const unbanUser = mutationWithRLS({
-    args: {
-        userId: v.id('user'),
-    },
-    returns: v.object({ success: v.boolean() }),
+
+export const continueBanSessionRevocation = internalMutation({
+    args: { userId: v.id('user'), banUpdatedAt: v.number() },
+    returns: v.null(),
     handler: async (ctx, args) => {
-        const targetUser = await requireAdminTarget(ctx, args.userId, 'unban');
-        await ctx.db.patch('user', args.userId, {
+        await revokeBannedUserSessionsBatch(ctx, args);
+
+        return null;
+    },
+});
+
+export const unbanUser = mutationWithRLS({
+    args: { userId: v.id('user') },
+    returns: v.null(),
+    handler: async (ctx, args) => {
+        const user = await requireOtherUser(ctx, args.userId);
+
+        await ctx.db.patch('user', user._id, {
             banned: false,
             banReason: null,
             banExpires: null,
-            updatedAt: getNextUpdatedAt(targetUser.updatedAt),
+            updatedAt: Math.max(Date.now(), user.updatedAt + 1),
         });
-        return { success: true };
+        await insertAuditLog(ctx, {
+            action: 'user.unbanned',
+            resourceType: 'user',
+            resourceId: user._id,
+            userId: user._id,
+            severity: 'warning',
+        });
+
+        return null;
     },
 });
-export const deleteUser = mutationWithRLS({
-    args: {
-        userId: v.id('user'),
-    },
-    returns: v.object({ success: v.boolean() }),
+
+export const listUserSessions = queryWithRLS({
+    args: { userId: v.id('user'), paginationOpts: paginationOptsValidator },
+    returns: paginationResultValidator(sessionListItemValidator),
     handler: async (ctx, args) => {
-        await requireAdminTarget(ctx, args.userId, 'delete');
-        await ctx.runMutation(internal.admin.cascadeUserDeletionInternal, {
-            userId: args.userId,
-            actorUserId: ctx.userId,
-        });
-        return { success: true };
-    },
-});
-export const revokeUserSession = mutationWithRLS({
-    args: {
-        userId: v.id('user'),
-        sessionId: v.id('session'),
-    },
-    returns: v.object({ success: v.boolean() }),
-    handler: async (ctx, args) => {
-        await requireAdminTarget(ctx, args.userId, 'sessions');
-        const session = await ctx.db.get('session', args.sessionId);
-        if (!session || session.userId !== args.userId) {
+        if (!isGlobalAdminRole(ctx.role)) {
             throw new ConvexError(ERROR_CODES.FORBIDDEN);
         }
-        await ctx.db.delete('session', args.sessionId);
-        return { success: true };
+
+        const result = await ctx.db
+            .query('session')
+            .withIndex('userId', q => q.eq('userId', args.userId))
+            .order('desc')
+            .paginate(withPaginationLimits(args.paginationOpts));
+
+        return await withNextPageCheck(
+            ctx.db,
+            {
+                table: 'session',
+                index: 'userId',
+                prefix: [args.userId],
+                indexKey: doc => [doc.userId],
+                paginationOpts: args.paginationOpts,
+            },
+            result,
+            result.page.map(session => ({
+                id: session._id,
+                createdAt: session.createdAt,
+                updatedAt: session.updatedAt,
+                expiresAt: session.expiresAt,
+                ipAddress: session.ipAddress ?? null,
+                userAgent: session.userAgent ?? null,
+                isCurrent: false,
+            }))
+        );
     },
 });
-export const revokeAllUserSessions = mutationWithRLS({
-    args: { userId: v.id('user') },
-    returns: v.null(),
-    handler: async (ctx, args): Promise<null> => {
-        await requireAdminTarget(ctx, args.userId, 'sessions');
-        await revokeAllSessionsForUser(ctx, args.userId);
-        return null;
-    },
-});
-async function resolveUserDeletionAuditOrganizationId(
-    ctx: MutationCtx,
-    args: {
-        userId: Id<'user'>;
-        actorUserId?: Id<'user'>;
-        wasAlreadyDeleted: boolean;
-    }
-) {
-    const externalActorUserId =
-        args.actorUserId && args.actorUserId !== args.userId ? args.actorUserId : null;
-    const actorMembership =
-        !args.wasAlreadyDeleted && externalActorUserId
-            ? await ctx.db
-                  .query('member')
-                  .withIndex('userId', q => q.eq('userId', externalActorUserId))
-                  .first()
-            : null;
-    const subjectMembership = !args.wasAlreadyDeleted
-        ? await ctx.db
-              .query('member')
-              .withIndex('userId', q => q.eq('userId', args.userId))
-              .first()
-        : null;
-    return actorMembership?.organizationId ?? subjectMembership?.organizationId;
-}
-function userAuditSnapshot(user: {
-    _id: Id<'user'>;
-    emailVerified: boolean;
-    role?: string | null;
-    banned?: boolean | null;
-    banExpires?: number | null;
-    deletedAt?: number;
-    createdAt: number;
-    updatedAt: number;
-}) {
-    return {
-        _id: user._id,
-        emailVerified: user.emailVerified,
-        role: user.role ?? null,
-        banned: user.banned ?? null,
-        banExpires: user.banExpires ?? null,
-        deletedAt: user.deletedAt ?? null,
-        createdAt: user.createdAt,
-        updatedAt: user.updatedAt,
-    };
-}
-/**
- * Anonymizes a deleted account and cleans up its private/operational data in
- * bounded jobs. The anonymized user row is intentionally retained as a
- * tombstone so provenance fields never point at a non-existent document.
- */
-export const cascadeUserDeletionInternal = internalMutation({
-    args: {
-        userId: v.id('user'),
-        actorUserId: v.optional(v.id('user')),
-    },
+
+export const revokeUserSession = mutationWithRLS({
+    args: { sessionId: v.id('session') },
     returns: v.null(),
     handler: async (ctx, args) => {
-        const user = await ctx.db.get('user', args.userId);
-        if (!user) {
-            throw new ConvexError(ERROR_CODES.USER_NOT_FOUND);
+        if (!isGlobalAdminRole(ctx.role)) {
+            throw new ConvexError(ERROR_CODES.FORBIDDEN);
         }
-        if (await isPlatformSetupUser(ctx, args.userId)) {
-            throw new ConvexError(ERROR_CODES.SETUP_USER_DELETE_FORBIDDEN);
+
+        const session = await ctx.db.get('session', args.sessionId);
+
+        if (!session) {
+            throw new ConvexError(ERROR_CODES.FORBIDDEN);
         }
-        await assertAnotherActiveAdministrator(ctx, user);
-        const auditOrganizationId = await resolveUserDeletionAuditOrganizationId(ctx, {
-            userId: args.userId,
-            actorUserId: args.actorUserId,
-            wasAlreadyDeleted: user.deletedAt !== undefined,
-        });
-        await startUserDeletionCascade(ctx, args.userId);
-        if (auditOrganizationId) {
-            const tombstone = await ctx.db.get('user', args.userId);
-            const metadata = sanitizeAuditMetadata('user', {
-                before: userAuditSnapshot(user),
-                after: tombstone ? userAuditSnapshot(tombstone) : undefined,
-                context: 'soft_delete',
-            });
-            await ctx.db.insert('auditLogs', {
-                userId: args.userId,
-                actorUserId: resolveActorUserId(args.userId, args.actorUserId),
-                organizationId: auditOrganizationId,
-                action: 'user.deleted',
-                resourceType: 'user',
-                resourceId: String(args.userId),
-                metadata,
-                createdAt: Date.now(),
+
+        const sessionUserId = ctx.db.normalizeId('user', session.userId);
+
+        if (sessionUserId) {
+            await insertAuditLog(ctx, {
+                action: 'session.revoked_by_admin',
+                resourceType: 'session',
+                resourceId: session._id,
+                userId: sessionUserId,
+                severity: 'warning',
             });
         }
+
+        await ctx.db.delete('session', session._id);
+
         return null;
     },
 });
-const userDeletionPhaseValidator = v.union(
-    v.literal('sessions'),
-    v.literal('accounts'),
-    v.literal('objectives'),
-    v.literal('collaborators'),
-    v.literal('achievements'),
-    v.literal('preferences'),
-    v.literal('notifications'),
-    v.literal('memberships')
-);
-export const continueUserDeletionCascade = internalMutation({
+
+export const listAuditLogs = queryWithRLS({
     args: {
-        userId: v.id('user'),
-        phase: v.optional(userDeletionPhaseValidator),
-    },
-    returns: v.object({
-        status: v.union(v.literal('in_progress'), v.literal('completed')),
-        phase: userDeletionPhaseValidator,
-    }),
-    handler: continueUserDeletionCascadeJob,
-});
-const organizationDeletionPhaseValidator = v.union(
-    v.literal('collaborators'),
-    v.literal('progress'),
-    v.literal('notifications'),
-    v.literal('objectives'),
-    v.literal('categories'),
-    v.literal('achievements'),
-    v.literal('audit'),
-    v.literal('invitations'),
-    v.literal('memberships'),
-    v.literal('sessions'),
-    v.literal('aggregates'),
-    v.literal('finalize')
-);
-export const cascadeOrganizationDeletionInternal = internalMutation({
-    args: {
-        organizationId: v.string(),
-    },
-    returns: v.null(),
-    handler: async (ctx, args) => {
-        const organizationId = ctx.db.normalizeId('organization', args.organizationId);
-        if (!organizationId) {
-            throw new ConvexError(ERROR_CODES.INTERNAL_ERROR);
-        }
-        await startOrganizationDeletionCascade(ctx, organizationId);
-        return null;
-    },
-});
-export const continueOrganizationDeletionCascade = internalMutation({
-    args: {
-        organizationId: v.id('organization'),
-        phase: v.optional(organizationDeletionPhaseValidator),
-    },
-    returns: v.object({
-        status: v.union(v.literal('in_progress'), v.literal('completed')),
-        phase: organizationDeletionPhaseValidator,
-    }),
-    handler: continueOrganizationDeletionCascadeJob,
-});
-const memberLeaveCleanupPhaseValidator = v.union(
-    v.literal('collaborators'),
-    v.literal('objectives')
-);
-export const continueMemberLeaveCleanup = internalMutation({
-    args: {
-        organizationId: v.id('organization'),
-        userId: v.id('user'),
-        phase: v.optional(memberLeaveCleanupPhaseValidator),
-    },
-    returns: v.object({
-        status: v.union(v.literal('in_progress'), v.literal('completed')),
-        phase: memberLeaveCleanupPhaseValidator,
-    }),
-    handler: continueMemberLeaveCleanupJob,
-});
-export const listUserSessions = queryWithRLS({
-    args: {
-        userId: v.id('user'),
+        resourceType: v.optional(v.string()),
+        organizationId: v.optional(v.id('organization')),
         paginationOpts: paginationOptsValidator,
     },
-    returns: paginatedSessionsValidator,
+    returns: paginationResultValidator(auditEntryValidator),
     handler: async (ctx, args) => {
-        await requireAdmin(ctx);
-        const result = await withInvalidCursorRetry(args.paginationOpts, paginationOpts =>
-            ctx.db
-                .query('session')
-                .withIndex('userId', q => q.eq('userId', args.userId))
-                .order('desc')
-                .paginate(paginationOpts)
+        if (!isGlobalAdminRole(ctx.role)) {
+            throw new ConvexError(ERROR_CODES.FORBIDDEN);
+        }
+
+        const logs = ctx.dbForIntegrityChecks.query('auditLogs');
+        let query;
+
+        if (args.resourceType) {
+            const resourceType = args.resourceType;
+            query = logs.withIndex('by_resourceType_createdAt', q =>
+                q.eq('resourceType', resourceType)
+            );
+        } else if (args.organizationId) {
+            const organizationId = args.organizationId;
+            query = logs.withIndex('by_organization_createdAt', q =>
+                q.eq('organizationId', organizationId)
+            );
+        } else {
+            query = logs.withIndex('by_createdAt');
+        }
+
+        const result = await query
+            .order('desc')
+            .paginate(withPaginationLimits(args.paginationOpts));
+
+        const entries = result.page.filter(
+            entry => !args.organizationId || entry.organizationId === args.organizationId
         );
-        return {
-            ...result,
-            page: result.page.map(session => toSessionListItem(session, null)),
+
+        const userNames = new Map<Id<'user'>, string | null>();
+
+        const nameOf = async (userId: Id<'user'> | undefined) => {
+            if (!userId) {
+                return null;
+            }
+
+            if (!userNames.has(userId)) {
+                userNames.set(
+                    userId,
+                    (await ctx.dbForIntegrityChecks.get('user', userId))?.name ?? null
+                );
+            }
+
+            return userNames.get(userId) ?? null;
         };
+
+        const page = [];
+
+        for (const entry of entries) {
+            page.push({
+                id: entry._id,
+                createdAt: entry.createdAt,
+                action: entry.action,
+                resourceType: entry.resourceType,
+                resourceId: entry.resourceId ?? null,
+                severity: entry.severity,
+                userName: await nameOf(entry.userId),
+                actorName: await nameOf(entry.actorUserId),
+                organizationId: entry.organizationId ?? null,
+                metadata: entry.metadata ? JSON.stringify(entry.metadata) : null,
+            });
+        }
+
+        return { ...result, page };
     },
 });

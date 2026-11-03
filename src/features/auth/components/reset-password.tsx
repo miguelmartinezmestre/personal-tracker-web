@@ -2,26 +2,23 @@
 
 import { AlertCircle } from 'lucide-react';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
-import {
-    FieldShell,
-    getFieldError,
-    FormItem,
-    FormLabel,
-    FormControl,
-    FormMessage,
-} from '@/components/ui/form-fields';
+import { Field, FieldError, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
-import type { z } from 'zod';
 import { useForm } from '@tanstack/react-form';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import Link from 'next/link';
-import { resetPasswordSchema } from '@/features/auth/schemas/reset-password';
+import {
+    createResetPasswordSchema,
+    type ResetPasswordFormValues,
+} from '@/features/auth/schemas/reset-password';
 import { authClient } from '@/features/auth/client';
 import { useFormSubmit } from '@/hooks/use-form-submit';
 import { useHydrated } from '@/hooks/use-hydrated';
+import { getFieldErrors } from '@/components/forms/form-utils';
+import { extractErrorCode, resolveErrorMessage } from '@/lib/error-messages';
 
 interface ResetPasswordProps {
     resetPasswordKey?: string;
@@ -30,12 +27,20 @@ interface ResetPasswordProps {
 export default function ResetPassword({ resetPasswordKey }: ResetPasswordProps) {
     const hydrated = useHydrated();
     const router = useRouter();
+    const locale = useLocale() === 'es' ? 'es' : 'en';
     const t = useTranslations('HomePage');
     const tCommon = useTranslations('Common');
 
-    const [registerError, setRegisterError] = useState('');
+    const resetPasswordSchema = createResetPasswordSchema({
+        weakPassword: t('errors.weakPassword'),
+        passwordsDontMatch: t('errors.passwordsDontMatch'),
+        shortPassword: tCommon('validation.minimumCharacters', { count: 8 }),
+    });
 
-    const resetPasswordDefaultValues: z.infer<typeof resetPasswordSchema> = {
+    const [registerError, setRegisterError] = useState('');
+    const [linkUnusable, setLinkUnusable] = useState(false);
+
+    const resetPasswordDefaultValues: ResetPasswordFormValues = {
         password: '',
         confirmPassword: '',
         resetPasswordKey: resetPasswordKey || '',
@@ -47,12 +52,12 @@ export default function ResetPassword({ resetPasswordKey }: ResetPasswordProps) 
             onChange: resetPasswordSchema,
             onSubmit: resetPasswordSchema,
         },
-        onSubmit: async ({ value }: { value: z.infer<typeof resetPasswordSchema> }) => {
+        onSubmit: async ({ value }: { value: ResetPasswordFormValues }) => {
             await onSubmit(value);
         },
     });
 
-    async function handleResetPassword(values: z.infer<typeof resetPasswordSchema>) {
+    async function handleResetPassword(values: ResetPasswordFormValues) {
         setRegisterError('');
 
         if (values.password !== values.confirmPassword) {
@@ -60,13 +65,19 @@ export default function ResetPassword({ resetPasswordKey }: ResetPasswordProps) 
         }
 
         const token = values.resetPasswordKey;
+
         const { error } = await authClient.resetPassword({
             newPassword: values.password,
             token,
         });
 
         if (error) {
-            setRegisterError(error.message || tCommon('genericErrorDescription'));
+            const code = extractErrorCode(error);
+            setLinkUnusable(code === 'INVALID_TOKEN' || code === 'TOKEN_EXPIRED');
+            setRegisterError(
+                resolveErrorMessage(error, locale, tCommon('genericErrorDescription'))
+            );
+
             return;
         }
 
@@ -86,58 +97,76 @@ export default function ResetPassword({ resetPasswordKey }: ResetPasswordProps) 
                     <Alert variant="destructive" className="mb-6">
                         <AlertCircle className="h-4 w-4" />
                         <AlertTitle>{tCommon('error')}</AlertTitle>
-                        <AlertDescription>{registerError}</AlertDescription>
+                        <AlertDescription>
+                            {registerError}{' '}
+                            {linkUnusable && (
+                                <Link
+                                    href="/forget-password"
+                                    prefetch={false}
+                                    className="underline underline-offset-4"
+                                    data-testid="reset-password-request-new-link"
+                                >
+                                    {t('requestNewResetLink')}
+                                </Link>
+                            )}
+                        </AlertDescription>
                     </Alert>
                 )}
 
                 <form.Field name="password">
-                    {field => (
-                        <FieldShell error={getFieldError(form, field)}>
-                            <FormItem>
-                                <FormLabel className="text-foreground">
+                    {field => {
+                        const errors = getFieldErrors(form, field);
+                        const isInvalid = !!errors.length;
+
+                        return (
+                            <Field data-invalid={isInvalid}>
+                                <FieldLabel htmlFor={field.name} className="text-foreground">
                                     {tCommon('fields.password')}
-                                </FormLabel>
-                                <FormControl>
-                                    <Input
-                                        name={field.name}
-                                        value={field.state.value}
-                                        onChange={event => field.handleChange(event.target.value)}
-                                        onBlur={field.handleBlur}
-                                        type="password"
-                                        placeholder={tCommon('placeholders.min8Chars')}
-                                        className="focus:ring-2 focus:ring-primary/20"
-                                        data-testid="reset-password-input"
-                                    />
-                                </FormControl>
-                                <FormMessage />
-                            </FormItem>
-                        </FieldShell>
-                    )}
+                                </FieldLabel>
+                                <Input
+                                    id={field.name}
+                                    name={field.name}
+                                    value={field.state.value}
+                                    onChange={event => field.handleChange(event.target.value)}
+                                    onBlur={field.handleBlur}
+                                    type="password"
+                                    placeholder={tCommon('placeholders.min8Chars')}
+                                    aria-invalid={isInvalid}
+                                    className="focus:ring-2 focus:ring-primary/20"
+                                    data-testid="reset-password-input"
+                                />
+                                {isInvalid && <FieldError errors={errors} />}
+                            </Field>
+                        );
+                    }}
                 </form.Field>
 
                 <form.Field name="confirmPassword">
-                    {field => (
-                        <FieldShell error={getFieldError(form, field)}>
-                            <FormItem>
-                                <FormLabel className="text-foreground">
+                    {field => {
+                        const errors = getFieldErrors(form, field);
+                        const isInvalid = !!errors.length;
+
+                        return (
+                            <Field data-invalid={isInvalid}>
+                                <FieldLabel htmlFor={field.name} className="text-foreground">
                                     {tCommon('fields.confirmPassword')}
-                                </FormLabel>
-                                <FormControl>
-                                    <Input
-                                        name={field.name}
-                                        value={field.state.value}
-                                        onChange={event => field.handleChange(event.target.value)}
-                                        onBlur={field.handleBlur}
-                                        type="password"
-                                        placeholder={tCommon('placeholders.confirmPassword')}
-                                        className="focus:ring-2 focus:ring-primary/20"
-                                        data-testid="reset-password-confirm-input"
-                                    />
-                                </FormControl>
-                                <FormMessage />
-                            </FormItem>
-                        </FieldShell>
-                    )}
+                                </FieldLabel>
+                                <Input
+                                    id={field.name}
+                                    name={field.name}
+                                    value={field.state.value}
+                                    onChange={event => field.handleChange(event.target.value)}
+                                    onBlur={field.handleBlur}
+                                    type="password"
+                                    placeholder={tCommon('placeholders.confirmPassword')}
+                                    aria-invalid={isInvalid}
+                                    className="focus:ring-2 focus:ring-primary/20"
+                                    data-testid="reset-password-confirm-input"
+                                />
+                                {isInvalid && <FieldError errors={errors} />}
+                            </Field>
+                        );
+                    }}
                 </form.Field>
 
                 <Button

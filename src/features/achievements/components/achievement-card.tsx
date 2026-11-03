@@ -1,126 +1,74 @@
 'use client';
 
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import type { FunctionReturnType } from 'convex/server';
+import { useLocale, useTranslations } from 'next-intl';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
+import type { api } from '@/convex/_generated/api';
+import { achievementIcon } from '@/features/achievements/lib/achievement-icons';
 import { cn } from '@/lib/utils';
-import { useLocale, useTranslations } from 'next-intl';
-import { formatDate } from '@/lib/format-date';
-import { AchievementBadge } from './achievement-badge';
-import type {
-    AchievementDefinition,
-    AchievementTier,
-} from '@/features/achievements/types/achievement';
 
-const TIER_LABELS: Record<AchievementTier, string> = {
-    bronze: 'Bronze',
-    silver: 'Silver',
-    gold: 'Gold',
-};
+export type Achievement = FunctionReturnType<
+    typeof api.achievements.getAchievements
+>['achievements'][number];
 
-const TIER_BADGE_VARIANTS: Record<AchievementTier, 'default' | 'secondary' | 'outline'> = {
-    bronze: 'outline',
-    silver: 'secondary',
-    gold: 'default',
-};
+const TIER_STYLES = {
+    bronze: 'text-amber-700 dark:text-amber-500',
+    silver: 'text-slate-500 dark:text-slate-300',
+    gold: 'text-yellow-600 dark:text-yellow-400',
+} as const;
 
-interface AchievementCardProps {
-    definition: AchievementDefinition;
-    currentProgress: number;
-    isEarned: boolean;
-    earnedAt?: number;
-}
-
-export function AchievementCard({
-    definition,
-    currentProgress,
-    isEarned,
-    earnedAt,
-}: AchievementCardProps) {
+export function AchievementCard({ achievement }: { achievement: Achievement }) {
     const t = useTranslations('Achievements');
     const locale = useLocale();
-
-    const progressPercent = Math.min((currentProgress / definition.threshold) * 100, 100);
-
-    const formattedEarnedDate = earnedAt ? formatDate(earnedAt, locale) : null;
-
-    const tier = definition.tier;
+    const Icon = achievementIcon(achievement);
+    const name = t(`items.${achievement.code}.name`);
+    const isEarned = achievement.earnedAt !== null;
 
     return (
-        <Card
-            className={cn(
-                'transition-all hover:shadow-md',
-                isEarned ? 'border-primary/50' : 'border-dashed'
-            )}
-            data-testid={`achievement-card-${definition.code}`}
+        <li
+            className={cn('space-y-3 rounded-lg border p-4', !isEarned && 'border-dashed')}
+            data-testid="achievement-card"
+            data-earned={isEarned}
         >
-            <CardHeader className="flex flex-row items-center gap-4 pb-2">
-                <AchievementBadge
-                    icon={definition.icon}
-                    tier={tier}
-                    name={t(`definitions.${definition.code}.name`, {
-                        defaultValue: definition.code,
-                    })}
-                    earned={isEarned}
-                    size="lg"
-                    showTooltip={false}
+            <div className="flex items-start gap-3">
+                <Icon
+                    className={cn('size-8 shrink-0', TIER_STYLES[achievement.tier])}
+                    aria-hidden
                 />
-                <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                        <h3 className="font-semibold text-sm truncate">
-                            {t(`definitions.${definition.code}.name`, {
-                                defaultValue: definition.code,
-                            })}
-                        </h3>
-                        <Badge variant={TIER_BADGE_VARIANTS[tier]} className="text-xs">
-                            {t(`tiers.${tier}`, {
-                                defaultValue: TIER_LABELS[tier],
-                            })}
-                        </Badge>
-                    </div>
-                    <p className="text-xs text-muted-foreground mt-1">
-                        {t(`definitions.${definition.code}.description`, {
-                            threshold: definition.threshold,
-                            defaultValue: `Reach ${definition.threshold}`,
-                        })}
+                <div className="min-w-0 flex-1 space-y-1">
+                    <p className="font-medium">{name}</p>
+                    <p className="text-muted-foreground text-sm">
+                        {t(`items.${achievement.code}.description`)}
                     </p>
                 </div>
-            </CardHeader>
-            <CardContent>
-                <div className="space-y-2">
-                    {isEarned ? (
-                        <div className="flex items-center justify-between text-xs">
-                            <span className="text-green-700 dark:text-green-400 font-medium">
-                                {t('card.earned')}
-                            </span>
-                            {formattedEarnedDate && (
-                                <span className="text-muted-foreground">{formattedEarnedDate}</span>
-                            )}
-                        </div>
-                    ) : (
-                        <>
-                            <div className="flex items-center justify-between text-xs">
-                                <span className="text-muted-foreground">{t('card.progress')}</span>
-                                <span className="font-medium">
-                                    {currentProgress} / {definition.threshold}
-                                </span>
-                            </div>
-                            <Progress
-                                aria-label={t(`definitions.${definition.code}.name`, {
-                                    threshold: definition.threshold,
-                                })}
-                                value={progressPercent}
-                                className="h-2"
-                            />
-                        </>
-                    )}
-                    <div className="flex items-center justify-end">
-                        <span className="text-xs font-medium text-primary">
-                            {t('card.points', { points: definition.points })}
-                        </span>
-                    </div>
-                </div>
-            </CardContent>
-        </Card>
+            </div>
+            <div className="flex flex-wrap items-center gap-2 text-xs">
+                <Badge variant="outline">{t(`tiers.${achievement.tier}`)}</Badge>
+                <Badge variant="secondary">{t('points', { points: achievement.points })}</Badge>
+                {achievement.earnedAt !== null && (
+                    <span className="text-muted-foreground">
+                        {t('earnedOn', {
+                            date: new Intl.DateTimeFormat(locale, { dateStyle: 'medium' }).format(
+                                achievement.earnedAt
+                            ),
+                        })}
+                    </span>
+                )}
+            </div>
+            <div className="space-y-1">
+                <Progress
+                    value={achievement.progress}
+                    max={achievement.threshold}
+                    aria-label={t('progressLabel', { name })}
+                />
+                <p className="text-muted-foreground text-xs tabular-nums">
+                    {t('progress', {
+                        progress: achievement.progress,
+                        threshold: achievement.threshold,
+                    })}
+                </p>
+            </div>
+        </li>
     );
 }

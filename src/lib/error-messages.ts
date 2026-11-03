@@ -1,19 +1,9 @@
-/**
- * Maps backend `ConvexError` codes (see `convex/utils/constants.ts` `ERROR_CODES`
- * and `shared/password-policy.ts`) to human-friendly, localized messages.
- *
- * The backend throws machine-readable codes such as `NOT_AUTHORIZED_OBJECTIVE`
- * on purpose; without this layer those raw codes were being shown verbatim to
- * users. This module is deliberately framework-free (a static bilingual table)
- * so it can be used from non-React contexts too (e.g. the global mutation-error
- * toast in the query client, which runs outside the React tree).
- */
-import { isRecord } from '@shared/boundary-values';
-
 export type ErrorLocale = 'en' | 'es';
+
 type ErrorDictionary = {
     generic: string;
 } & Record<string, string>;
+
 const EN: ErrorDictionary = {
     USER_ALREADY_EXISTS_USE_ANOTHER_EMAIL: 'An account with this email already exists.',
     INVALID_EMAIL_OR_PASSWORD: 'The email or password is incorrect.',
@@ -38,41 +28,47 @@ const EN: ErrorDictionary = {
     PERSONAL_ORG_INVITE_FORBIDDEN: 'Your personal organization cannot invite members.',
     PERSONAL_ORG_MEMBER_ADD_FORBIDDEN: 'Your personal organization cannot add members.',
     OBJECTIVE_NOT_FOUND: 'That objective no longer exists.',
-    OBJECTIVE_DELETED: 'This objective is in the trash.',
-    OBJECTIVE_NOT_DELETED: 'This objective is not in the trash.',
-    OBJECTIVE_PURGE_IN_PROGRESS: 'This objective is already being permanently deleted.',
     PROGRESS_NOT_FOUND: 'That progress entry no longer exists.',
     CATEGORY_NOT_FOUND: 'That category no longer exists.',
+    NOTIFICATION_NOT_FOUND: 'That notification no longer exists.',
+    CATEGORY_NAME_TAKEN: 'This organization already has a category with that name.',
+    CATEGORY_IN_USE:
+        'This category is still used by some objective, perhaps a private one or one in the trash.',
     USER_NOT_FOUND: 'That user could not be found in this organization.',
     INVITATION_NOT_FOUND: 'That invitation no longer exists.',
+    USER_IS_ALREADY_A_MEMBER_OF_THIS_ORGANIZATION:
+        'That user is already a member of this organization.',
+    USER_IS_ALREADY_INVITED_TO_THIS_ORGANIZATION: 'That user already has a pending invitation.',
+    YOU_ARE_NOT_THE_RECIPIENT_OF_THE_INVITATION:
+        'This invitation was sent to another email address.',
+    ORGANIZATION_SLUG_ALREADY_TAKEN: 'An organization with that identifier already exists.',
+    ORGANIZATION_NAME_TAKEN: 'You already have an organization with that name.',
+    NAME_REQUIRED: 'Enter a name.',
+    OWNER_SUCCESSOR_REQUIRED:
+        'Choose a new owner for the organizations you own before deleting your account.',
+    ORGANIZATION_ALREADY_EXISTS: 'An organization with that identifier already exists.',
+    YOU_CANNOT_LEAVE_THE_ORGANIZATION_AS_THE_ONLY_OWNER:
+        'You are the only owner. Make someone else an owner before leaving.',
+    YOU_CANNOT_LEAVE_THE_ORGANIZATION_WITHOUT_AN_OWNER:
+        'The organization needs an owner. Make someone else an owner before leaving.',
     NOT_AUTHORIZED_OBJECTIVE: "You don't have permission to modify this objective.",
     NOT_AUTHORIZED_PROGRESS: "You don't have permission to modify this progress entry.",
-    COLLABORATOR_NOT_FOUND: 'That collaborator no longer exists.',
-    COLLABORATOR_ALREADY_EXISTS: 'That user is already a collaborator on this objective.',
-    NOT_AUTHORIZED_NOTIFICATION: "You don't have permission to modify this notification.",
-    OBJECTIVE_ID_LIMIT_EXCEEDED: 'Too many objectives were requested at once.',
     PLATFORM_ALREADY_CONFIGURED: 'The platform has already been set up.',
     SETUP_USER_MISMATCH: 'This account cannot complete the platform setup.',
     SETUP_USER_DELETE_FORBIDDEN: 'The platform setup account cannot be deleted.',
-    SETUP_USER_BAN_FORBIDDEN: 'The platform setup account cannot be banned.',
     SETUP_AUTH_REQUIRED: 'You need to sign in to complete the setup.',
     INTERNAL_ERROR: 'An unexpected error occurred. Please try again.',
     VALIDATION_ERROR: 'Some of the information provided is not valid.',
     FUTURE_DATE_NOT_ALLOWED: 'The date cannot be in the future.',
-    DATE_TOO_OLD: 'The date is too far in the past.',
     OBJECTIVE_ALREADY_COMPLETED: 'This objective is already completed.',
     TARGET_NOT_FINITE: 'The target value is not a valid number.',
-    TARGET_TOO_SMALL: 'The target value is too small.',
-    TARGET_TOO_LARGE: 'The target value is too large.',
+    TARGET_DIRECTION_MISMATCH:
+        'The target must be above the starting value when increasing and below it when decreasing.',
     VALUE_NOT_FINITE: 'The value is not a valid number.',
-    VALUE_NEGATIVE: 'The value cannot be negative.',
-    VALUE_TOO_LARGE: 'The value is too large.',
-    DEADLINE_TOO_OLD: 'The deadline is too far in the past.',
-    DEADLINE_TOO_FAR: 'The deadline is too far in the future.',
-    START_AFTER_TARGET: 'The starting value cannot be greater than the target value.',
-    CATEGORY_HAS_OBJECTIVES: 'This category still has objectives and cannot be deleted.',
-    DUPLICATE_CATEGORY_NAME: 'A category with that name already exists.',
+    PROGRESS_ZERO: 'The progress cannot be zero.',
+    DEADLINE_TOO_OLD: 'The deadline cannot be in the past.',
 };
+
 const ES: ErrorDictionary = {
     USER_ALREADY_EXISTS_USE_ANOTHER_EMAIL: 'Ya existe una cuenta con este correo.',
     INVALID_EMAIL_OR_PASSWORD: 'El correo o la contraseña no son correctos.',
@@ -96,68 +92,94 @@ const ES: ErrorDictionary = {
     PERSONAL_ORG_INVITE_FORBIDDEN: 'Tu organización personal no puede invitar a miembros.',
     PERSONAL_ORG_MEMBER_ADD_FORBIDDEN: 'Tu organización personal no puede añadir miembros.',
     OBJECTIVE_NOT_FOUND: 'Ese objetivo ya no existe.',
-    OBJECTIVE_DELETED: 'Este objetivo está en la papelera.',
-    OBJECTIVE_NOT_DELETED: 'Este objetivo no está en la papelera.',
-    OBJECTIVE_PURGE_IN_PROGRESS: 'Este objetivo ya se está eliminando de forma permanente.',
     PROGRESS_NOT_FOUND: 'Ese registro de progreso ya no existe.',
     CATEGORY_NOT_FOUND: 'Esa categoría ya no existe.',
+    NOTIFICATION_NOT_FOUND: 'Esa notificación ya no existe.',
+    CATEGORY_NAME_TAKEN: 'Esta organización ya tiene una categoría con ese nombre.',
+    CATEGORY_IN_USE:
+        'Algún objetivo usa todavía esta categoría, quizá uno privado o en la papelera.',
     USER_NOT_FOUND: 'No se ha encontrado ese usuario en esta organización.',
     INVITATION_NOT_FOUND: 'Esa invitación ya no existe.',
+    USER_IS_ALREADY_A_MEMBER_OF_THIS_ORGANIZATION:
+        'Ese usuario ya es miembro de esta organización.',
+    USER_IS_ALREADY_INVITED_TO_THIS_ORGANIZATION: 'Ese usuario ya tiene una invitación pendiente.',
+    YOU_ARE_NOT_THE_RECIPIENT_OF_THE_INVITATION:
+        'Esta invitación se envió a otra dirección de correo.',
+    ORGANIZATION_SLUG_ALREADY_TAKEN: 'Ya existe una organización con ese identificador.',
+    ORGANIZATION_NAME_TAKEN: 'Ya tienes una organización con ese nombre.',
+    NAME_REQUIRED: 'Escribe un nombre.',
+    OWNER_SUCCESSOR_REQUIRED:
+        'Elige un nuevo owner para las organizaciones que posees antes de borrar tu cuenta.',
+    ORGANIZATION_ALREADY_EXISTS: 'Ya existe una organización con ese identificador.',
+    YOU_CANNOT_LEAVE_THE_ORGANIZATION_AS_THE_ONLY_OWNER:
+        'Eres el único propietario. Nombra a otra persona propietaria antes de salir.',
+    YOU_CANNOT_LEAVE_THE_ORGANIZATION_WITHOUT_AN_OWNER:
+        'La organización necesita un propietario. Nombra a otra persona propietaria antes de salir.',
     NOT_AUTHORIZED_OBJECTIVE: 'No tienes permiso para modificar este objetivo.',
     NOT_AUTHORIZED_PROGRESS: 'No tienes permiso para modificar este registro de progreso.',
-    COLLABORATOR_NOT_FOUND: 'Ese colaborador ya no existe.',
-    COLLABORATOR_ALREADY_EXISTS: 'Ese usuario ya es colaborador de este objetivo.',
-    NOT_AUTHORIZED_NOTIFICATION: 'No tienes permiso para modificar esta notificación.',
-    OBJECTIVE_ID_LIMIT_EXCEEDED: 'Se han solicitado demasiados objetivos a la vez.',
     PLATFORM_ALREADY_CONFIGURED: 'La plataforma ya ha sido configurada.',
     SETUP_USER_MISMATCH: 'Esta cuenta no puede completar la configuración de la plataforma.',
     SETUP_USER_DELETE_FORBIDDEN:
         'La cuenta de configuración de la plataforma no se puede eliminar.',
-    SETUP_USER_BAN_FORBIDDEN: 'La cuenta de configuración de la plataforma no se puede bloquear.',
     SETUP_AUTH_REQUIRED: 'Debes iniciar sesión para completar la configuración.',
     INTERNAL_ERROR: 'Se ha producido un error inesperado. Inténtalo de nuevo.',
     VALIDATION_ERROR: 'Parte de la información proporcionada no es válida.',
     FUTURE_DATE_NOT_ALLOWED: 'La fecha no puede estar en el futuro.',
-    DATE_TOO_OLD: 'La fecha es demasiado antigua.',
     OBJECTIVE_ALREADY_COMPLETED: 'Este objetivo ya está completado.',
     TARGET_NOT_FINITE: 'El valor objetivo no es un número válido.',
-    TARGET_TOO_SMALL: 'El valor objetivo es demasiado pequeño.',
-    TARGET_TOO_LARGE: 'El valor objetivo es demasiado grande.',
+    TARGET_DIRECTION_MISMATCH:
+        'La meta debe superar el valor inicial si el objetivo aumenta y quedar por debajo si disminuye.',
     VALUE_NOT_FINITE: 'El valor no es un número válido.',
-    VALUE_NEGATIVE: 'El valor no puede ser negativo.',
-    VALUE_TOO_LARGE: 'El valor es demasiado grande.',
-    DEADLINE_TOO_OLD: 'La fecha límite es demasiado antigua.',
-    DEADLINE_TOO_FAR: 'La fecha límite está demasiado lejos en el futuro.',
-    START_AFTER_TARGET: 'El valor inicial no puede ser mayor que el valor objetivo.',
-    CATEGORY_HAS_OBJECTIVES: 'Esta categoría todavía tiene objetivos y no se puede eliminar.',
-    DUPLICATE_CATEGORY_NAME: 'Ya existe una categoría con ese nombre.',
+    PROGRESS_ZERO: 'El avance no puede ser cero.',
+    DEADLINE_TOO_OLD: 'La fecha límite no puede estar en el pasado.',
 };
+
 const DICTIONARIES: Record<ErrorLocale, ErrorDictionary> = { en: EN, es: ES };
+
+type ErrorTraversalNode = {
+    data?: unknown;
+    code?: unknown;
+    message?: unknown;
+    cause?: unknown;
+};
+
 function codeFromMessage(message: string): string | undefined {
     const trimmed = message.trim();
+
     if (/^[A-Z][A-Z0-9_]+$/.test(trimmed)) {
         return trimmed;
     }
+
     return trimmed.match(/ConvexError:\s*([A-Z][A-Z0-9_]+)/)?.[1];
 }
 
 export function extractErrorCode(error: unknown): string | undefined {
     const seen = new Set<object>();
+
     function visit(value: unknown, depth: number): string | undefined {
         if (typeof value === 'string') {
             return codeFromMessage(value);
         }
-        if (!isRecord(value) || depth > 8 || seen.has(value)) {
+
+        if (typeof value !== 'object' || value === null || Array.isArray(value)) {
             return undefined;
         }
+
+        if (depth > 8 || seen.has(value)) {
+            return undefined;
+        }
+
         seen.add(value);
+        const node: ErrorTraversalNode = value;
+
         return (
-            visit(value.data, depth + 1) ??
-            visit(value.code, depth + 1) ??
-            visit(value.message, depth + 1) ??
-            visit(value.cause, depth + 1)
+            visit(node.data, depth + 1) ??
+            visit(node.code, depth + 1) ??
+            visit(node.message, depth + 1) ??
+            visit(node.cause, depth + 1)
         );
     }
+
     return visit(error, 0);
 }
 
@@ -168,6 +190,7 @@ export function resolveErrorMessage(
 ): string {
     const dictionary = DICTIONARIES[locale];
     const code = extractErrorCode(error);
+
     return (code ? dictionary[code] : undefined) ?? fallback ?? dictionary.generic;
 }
 
@@ -175,13 +198,6 @@ export function getErrorLocale(): ErrorLocale {
     if (!('document' in globalThis)) {
         return 'en';
     }
-    const match = document.cookie.match(/(?:^|;\s*)locale=(en|es)/);
-    if (!match) {
-        return 'en';
-    }
-    const locale = match[1];
-    if (locale === 'en' || locale === 'es') {
-        return locale;
-    }
-    return 'en';
+
+    return document.documentElement.lang === 'es' ? 'es' : 'en';
 }

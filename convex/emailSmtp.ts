@@ -2,7 +2,8 @@
 
 import { v } from 'convex/values';
 import { internalAction } from './_generated/server';
-import { sendSmtpEmailJob } from './jobs/email/smtpDelivery';
+import nodemailer from 'nodemailer';
+import { getSmtpEmailConfig, requiresSmtpTls } from './features/email/smtpConfig';
 
 export const sendEmail = internalAction({
     args: {
@@ -13,6 +14,29 @@ export const sendEmail = internalAction({
     },
     returns: v.object({ message: v.string() }),
     handler: async (_, args) => {
-        return await sendSmtpEmailJob(args);
+        const config = getSmtpEmailConfig();
+
+        const transporter = nodemailer.createTransport({
+            host: config.host,
+            port: config.port,
+            secure: config.secure,
+            // Without this, Nodemailer silently accepts a STARTTLS downgrade on port 587.
+            requireTLS: requiresSmtpTls(config),
+            tls: { minVersion: 'TLSv1.2' },
+            auth: {
+                user: config.user,
+                pass: config.password,
+            },
+        });
+
+        await transporter.sendMail({
+            from: config.from,
+            to: args.to,
+            subject: args.subject,
+            text: args.text,
+            html: args.html,
+        });
+
+        return { message: 'Email sent successfully' };
     },
 });

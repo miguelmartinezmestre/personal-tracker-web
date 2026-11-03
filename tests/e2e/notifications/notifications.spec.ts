@@ -1,95 +1,74 @@
-import type { Page } from '@playwright/test';
+import { randomUUID } from 'crypto';
 import { test, expect } from '../../fixtures/test-base';
-import {
-    createObjective,
-    ensureDefaultCategories,
-    openCreateProgressModal,
-} from '../../helpers/test-helpers';
-
-async function openObjectiveDetailByTitle(page: Page, title: string): Promise<void> {
-    await page.goto('/dashboard/objectives', { waitUntil: 'domcontentloaded' });
-
-    const row = page.getByTestId('table-row').filter({ hasText: title }).first();
-    await expect(row).toBeVisible({ timeout: 15000 });
-    const progressLink = row.getByTestId('objective-progress-link').first();
-    const href = await progressLink.getAttribute('href');
-    if (href) {
-        await page.goto(href, { waitUntil: 'domcontentloaded' });
-    } else {
-        await Promise.all([
-            page.waitForURL(/\/dashboard\/objectives\/.+/, { timeout: 10000 }),
-            progressLink.click(),
-        ]);
-    }
-
-    await expect(page).toHaveURL(/\/dashboard\/objectives\/.+/);
-    await page.waitForSelector('[data-testid="progress-create-open"]', { timeout: 10000 });
-}
-
-async function seedSystemNotification(page: Page): Promise<{ objectiveTitle: string }> {
-    await ensureDefaultCategories(page);
-    const objective = await createObjective(page, {
-        title: `Notif Obj ${Date.now()}`,
-        ensureCategories: false,
-    });
-
-    await openObjectiveDetailByTitle(page, objective.title);
-    await openCreateProgressModal(page);
-    await page.getByTestId('progress-value-input').fill('10');
-    await page.getByTestId('progress-save-button').click();
-    await expect(page.getByTestId('progress-value-input')).toHaveCount(0, { timeout: 15000 });
-
-    await page.goto('/dashboard/notifications', { waitUntil: 'domcontentloaded' });
-    await expect(page.getByTestId('table-row').filter({ hasText: objective.title })).toBeVisible({
-        timeout: 15000,
-    });
-
-    return { objectiveTitle: objective.title };
-}
 
 test.describe('Notifications', () => {
     test(
-        'mark notification as read',
-        { tag: ['@REQ-NOTIFICACIONES-002', '@REQ-NOTIFICACIONES-003'] },
+        'notifies a completed objective as chosen, then marks and deletes notifications',
+        {
+            tag: [
+                '@REQ-NOTIFICACIONES-001',
+                '@REQ-NOTIFICACIONES-002',
+                '@INH-NOT-04',
+                '@INH-NOT-07',
+            ],
+        },
         async ({ page }) => {
-            const { objectiveTitle } = await seedSystemNotification(page);
+            const title = `Swim ${randomUUID().substring(0, 8)}`;
 
-            const row = page.getByTestId('table-row').filter({ hasText: objectiveTitle }).first();
-            const markReadButton = row.getByTestId('notification-mark-read-button');
-            await expect(markReadButton).toBeVisible();
-            await markReadButton.click();
+            await page.goto('/dashboard/settings', { waitUntil: 'domcontentloaded' });
 
-            await expect(markReadButton).toContainText(/unread|no leída/i, { timeout: 10000 });
-        }
-    );
+            for (const type of ['progress', 'achievement']) {
+                const toggle = page.getByTestId(`notification-preference-${type}`);
+                await expect(toggle).toHaveAttribute('aria-checked', 'true', { timeout: 15000 });
+                await toggle.click();
+                await expect(toggle).toHaveAttribute('aria-checked', 'false');
+            }
 
-    test('delete notification', { tag: ['@REQ-NOTIFICACIONES-003'] }, async ({ page }) => {
-        const { objectiveTitle } = await seedSystemNotification(page);
+            await page.reload({ waitUntil: 'domcontentloaded' });
+            await expect(page.getByTestId('notification-preference-progress')).toHaveAttribute(
+                'aria-checked',
+                'false',
+                { timeout: 15000 }
+            );
 
-        const row = page.getByTestId('table-row').filter({ hasText: objectiveTitle }).first();
-        await row.getByTestId('notification-delete-button').click();
+            await page.goto('/dashboard/objectives', { waitUntil: 'domcontentloaded' });
+            await page.getByTestId('objective-create-open').click();
+            await page.getByTestId('objective-title-input').fill(title);
+            await page.getByTestId('objective-target-input').fill('4');
+            await page.getByTestId('objective-save-button').click();
+            await page.getByTestId('objective-row-link').filter({ hasText: title }).click();
 
-        const confirmButton = page.getByTestId('delete-confirm-button');
-        await expect(confirmButton.first()).toBeVisible({ timeout: 5000 });
-        await confirmButton.first().click();
+            await page.getByTestId('progress-value-input').fill('2');
+            await page.getByTestId('progress-save-button').click();
+            await expect(page.getByTestId('objective-progress-percent')).toContainText('50', {
+                timeout: 15000,
+            });
+            await page.getByTestId('progress-value-input').fill('2');
+            await page.getByTestId('progress-save-button').click();
 
-        await expect(row).toBeHidden({ timeout: 10000 });
-    });
+            await expect(page.getByTestId('objective-completed-notice')).toBeVisible({
+                timeout: 15000,
+            });
+            await expect(page.getByTestId('notification-bell-count')).toHaveText('1', {
+                timeout: 15000,
+            });
 
-    test(
-        'notification links to related objective',
-        { tag: ['@REQ-NOTIFICACIONES-003'] },
-        async ({ page }) => {
-            const { objectiveTitle } = await seedSystemNotification(page);
+            await page.getByTestId('notification-bell').click();
+            const rows = page.getByTestId('notification-row');
+            await expect(rows).toHaveCount(1, { timeout: 15000 });
+            await expect(rows.first()).toContainText(`Objective "${title}" has been completed.`);
 
-            const notificationRow = page
-                .getByTestId('table-row')
-                .filter({ hasText: objectiveTitle })
-                .first();
-            await expect(notificationRow).toBeVisible();
-            await notificationRow.locator('a, [role="button"]').first().click();
+            await page.getByTestId('notifications-mark-all-read').click();
+            await expect(rows.first()).toHaveAttribute('data-read', 'true', { timeout: 15000 });
+            await expect(page.getByTestId('notification-bell-count')).toHaveCount(0);
 
-            await expect(page).toHaveURL(/\/dashboard\/objectives\//);
+            await rows.first().getByTestId('notification-toggle-read').click();
+            await expect(page.getByTestId('notification-bell-count')).toHaveText('1', {
+                timeout: 15000,
+            });
+
+            await rows.first().getByTestId('notification-delete').click();
+            await expect(page.getByTestId('notifications-empty')).toBeVisible({ timeout: 15000 });
         }
     );
 });

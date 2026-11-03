@@ -17,15 +17,19 @@ services:
             retries: 5
             start_period: 30s
 
-    mailhog:
-        container_name: mailhog-metricas
-        image: mailhog/mailhog:v1.0.1@sha256:8d76a3d4ffa32a3661311944007a415332c4bb855657f4f6c57996405c009bea
+    maildev:
+        container_name: maildev-metricas
+        image: maildev/maildev:3.0.0@sha256:6e09695961f4aef9016a390ad391314a078220216601b15a35d389a7df2a3855
         ports:
-            - '127.0.0.1:${MAILHOG_SMTP_PORT:-1025}:1025'
-            - '127.0.0.1:${MAILHOG_UI_PORT:-8025}:8025'
+            - '127.0.0.1:${MAILDEV_SMTP_PORT:-1025}:1025'
+            - '127.0.0.1:${MAILDEV_WEB_PORT:-1080}:1080'
         restart: unless-stopped
+        environment:
+            # The backend always authenticates over plain SMTP with these credentials.
+            - MAILDEV_INCOMING_USER=maildev
+            - MAILDEV_INCOMING_PASS=maildev
         healthcheck:
-            test: ['CMD-SHELL', 'wget -q -O- http://localhost:8025/api/v2/messages >/dev/null']
+            test: ['CMD', 'node', 'dist/bin/healthcheck.js']
             interval: 10s
             timeout: 5s
             retries: 5
@@ -33,11 +37,12 @@ services:
 
     backend:
         container_name: convex-backend-metricas
-        image: ghcr.io/get-convex/convex-backend@sha256:1738f1673f8d63161043a7859710d2301b1e9d6271e06afbb7af31594ea3a58f
+        # Release a3538c6, the same as E2E_CONVEX_BACKEND_VERSION in scripts/run-e2e-stack.ts.
+        image: ghcr.io/convex/convex-backend@sha256:d3338c4a78b622aa4d8b8ed6cdb114d8f7610efc91cdf61769c39314b79bb881
         depends_on:
             mysql:
                 condition: service_healthy
-            mailhog:
+            maildev:
                 condition: service_healthy
         restart: on-failure
         stop_grace_period: 10s
@@ -81,7 +86,7 @@ services:
 
     dashboard:
         container_name: convex-dashboard-metricas
-        image: ghcr.io/get-convex/convex-dashboard@sha256:5f4dca5615a408501ddce6e8d28f4444d9b60d2f5fc17de4c509fdf43191889d
+        image: ghcr.io/convex/convex-dashboard@sha256:6320593f529ab6210d4da473c7f84e491e5d6adbd86c26fb5cc3001c6c32ae42
         depends_on:
             backend:
                 condition: service_healthy

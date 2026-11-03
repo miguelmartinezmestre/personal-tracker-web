@@ -1,126 +1,100 @@
-import { internalMutation } from './platform/db/internalMutation';
-import { v, ConvexError } from 'convex/values';
-import { internal } from './_generated/api';
-import { type MutationCtx } from './_generated/server';
-import { mutationWithRLS, queryWithRLS } from './platform/rls/wrappers';
-import { paginationOptsValidator } from 'convex/server';
-import { getSession } from 'kitcn/auth';
-import { ERROR_CODES } from './utils/constants';
-import type { Doc, Id } from './_generated/dataModel';
-import { paginatedSessionsValidator } from './utils/apiReturnValidators';
-import { withInvalidCursorRetry } from './utils/pagination';
-export type SessionListItem = {
-    _id: Id<'session'>;
-    createdAt: number;
-    expiresAt: number;
-    ipAddress: string | null;
-    userAgent: string | null;
-    isCurrent: boolean;
-};
-const SESSION_REVOCATION_BATCH_SIZE = 100;
-async function revokeOtherSessionsBatch(
-    ctx: Pick<MutationCtx, 'db' | 'scheduler'>,
-    args: {
-        userId: Id<'user'>;
-        currentSessionId: Id<'session'>;
-    }
-): Promise<number> {
-    // Read two extra rows so `hasMore` remains accurate whether the preserved
-    // current session is inside or outside this index window.
-    const sessions = await ctx.db
-        .query('session')
-        .withIndex('userId', q => q.eq('userId', args.userId))
-        .take(SESSION_REVOCATION_BATCH_SIZE + 2);
-    const otherSessions = sessions.filter(session => session._id !== args.currentSessionId);
-    const batch = otherSessions.slice(0, SESSION_REVOCATION_BATCH_SIZE);
-    for (const session of batch) {
-        await ctx.db.delete('session', session._id);
-    }
-    if (otherSessions.length > batch.length) {
-        await ctx.scheduler.runAfter(0, internal.sessions.continueOtherSessionRevocation, {
-            userId: args.userId,
-            currentSessionId: args.currentSessionId,
-        });
-    }
-    return batch.length;
-}
-export function toSessionListItem(
-    session: Doc<'session'>,
-    currentSessionId: Id<'session'> | null
-): SessionListItem {
-    return {
-        _id: session._id,
-        createdAt: session.createdAt,
-        expiresAt: session.expiresAt,
-        ipAddress: session.ipAddress ?? null,
-        userAgent: session.userAgent ?? null,
-        isCurrent: currentSessionId !== null && session._id === currentSessionId,
-    };
-}
-export const getSessionsByUser = queryWithRLS({
-    args: {
-        paginationOpts: paginationOptsValidator,
-    },
-    returns: paginatedSessionsValidator,
+import { ConvexError, v } from 'convex/values';
+import { paginationOptsValidator, paginationResultValidator } from 'convex/server';
+import { internalMutation } from './_generated/server';
+import { ERROR_CODES } from './shared/errorCodes';
+import { withNextPageCheck, withPaginationLimits } from './shared/pagination';
+import { mutationWithRLS, queryWithRLS } from './features/authorization/wrappers';
+import { currentSessionId, revokeOtherSessionsBatch } from './features/auth/sessions';
+import { sessionListItemValidator } from './features/auth/validators';
+import { insertAuditLog } from './features/audit/log';
+
+export const listMySessions = queryWithRLS({
+    args: { paginationOpts: paginationOptsValidator },
+    returns: paginationResultValidator(sessionListItemValidator),
     handler: async (ctx, args) => {
-        const currentSession = await getSession(ctx);
-        if (!currentSession) {
-            throw new ConvexError(ERROR_CODES.AUTH_REQUIRED);
-        }
-        const paginatedSessions = await withInvalidCursorRetry(
-            args.paginationOpts,
-            paginationOpts =>
-                ctx.db
-                    .query('session')
-                    .withIndex('userId', q => q.eq('userId', ctx.userId))
-                    .order('desc')
-                    .paginate(paginationOpts)
+        const currentId = await currentSessionId(ctx);
+
+        const result = await ctx.db
+            .query('session')
+            .withIndex('userId', q => q.eq('userId', ctx.userId))
+            .order('desc')
+            .paginate(withPaginationLimits(args.paginationOpts));
+
+        return await withNextPageCheck(
+            ctx.db,
+            {
+                table: 'session',
+                index: 'userId',
+                prefix: [ctx.userId],
+                indexKey: doc => [doc.userId],
+                paginationOpts: args.paginationOpts,
+            },
+            result,
+            result.page.map(session => ({
+                id: session._id,
+                createdAt: session.createdAt,
+                updatedAt: session.updatedAt,
+                expiresAt: session.expiresAt,
+                ipAddress: session.ipAddress ?? null,
+                userAgent: session.userAgent ?? null,
+                isCurrent: session._id === currentId,
+            }))
         );
-        return {
-            ...paginatedSessions,
-            page: paginatedSessions.page.map(session =>
-                toSessionListItem(session, currentSession._id)
-            ),
-        };
     },
 });
-export const invalidateSession = mutationWithRLS({
+
+export const revokeSession = mutationWithRLS({
     args: { sessionId: v.id('session') },
     returns: v.null(),
     handler: async (ctx, args) => {
         const session = await ctx.db.get('session', args.sessionId);
+
         if (!session || session.userId !== ctx.userId) {
             throw new ConvexError(ERROR_CODES.FORBIDDEN);
         }
+
+        await insertAuditLog(ctx, {
+            action: 'session.revoked',
+            resourceType: 'session',
+            resourceId: session._id,
+            userId: ctx.userId,
+            severity: 'warning',
+        });
         await ctx.db.delete('session', args.sessionId);
+
         return null;
     },
 });
-export const invalidateAllOtherSessions = mutationWithRLS({
-    args: { currentSessionId: v.id('session') },
-    returns: v.object({
-        revokedCount: v.number(),
-    }),
-    handler: async (ctx, args) => {
-        const current = await ctx.db.get('session', args.currentSessionId);
-        if (!current || current.userId !== ctx.userId) {
-            throw new ConvexError(ERROR_CODES.FORBIDDEN);
-        }
+
+export const revokeOtherSessions = mutationWithRLS({
+    args: {},
+    returns: v.object({ revokedCount: v.number() }),
+    handler: async ctx => {
+        const keepSessionId = await currentSessionId(ctx);
+
         const revokedCount = await revokeOtherSessionsBatch(ctx, {
             userId: ctx.userId,
-            currentSessionId: args.currentSessionId,
+            keepSessionId,
         });
+
+        await insertAuditLog(ctx, {
+            action: 'session.revoked_others',
+            resourceType: 'session',
+            userId: ctx.userId,
+            severity: 'warning',
+            metadata: { after: { revokedCount } },
+        });
+
         return { revokedCount };
     },
 });
-export const continueOtherSessionRevocation = internalMutation({
-    args: {
-        userId: v.id('user'),
-        currentSessionId: v.id('session'),
-    },
+
+export const continueSessionRevocation = internalMutation({
+    args: { userId: v.id('user'), keepSessionId: v.id('session') },
     returns: v.null(),
-    handler: async (ctx, args): Promise<null> => {
+    handler: async (ctx, args) => {
         await revokeOtherSessionsBatch(ctx, args);
+
         return null;
     },
 });

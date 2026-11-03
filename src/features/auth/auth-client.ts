@@ -4,8 +4,8 @@ import { convexClient } from 'kitcn/auth/client';
 import { adminClient } from 'better-auth/client/plugins';
 import { organizationClient } from 'better-auth/client/plugins';
 import { createAuthMutations } from 'kitcn/react';
-import { env } from '@/lib/env';
-import { platformRoles } from '@shared/platform-admin-access';
+import { NEXT_PUBLIC_SITE_URL } from '@/lib/env';
+import { platformRoles } from '@/convex/features/auth/roles';
 
 const accountDeletionClient = () =>
     ({
@@ -16,16 +16,18 @@ const accountDeletionClient = () =>
                     method: 'POST',
                     body: { password },
                 });
+
                 if (!result.error) {
                     $store.notify('$sessionSignal');
                 }
+
                 return result;
             },
         }),
     }) satisfies BetterAuthClientPlugin;
 
 export const authClient = createAuthClient({
-    baseURL: env.NEXT_PUBLIC_SITE_URL,
+    baseURL: NEXT_PUBLIC_SITE_URL,
     plugins: [
         convexClient(),
         accountDeletionClient(),

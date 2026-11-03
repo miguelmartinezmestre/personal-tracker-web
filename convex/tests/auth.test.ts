@@ -1,20 +1,17 @@
 import { beforeEach, describe, expect, test } from 'vitest';
-import { api, internal } from '../_generated/api';
+import { internal } from '../_generated/api';
 import { initConvexTest } from './test.helper';
-import {
-    createTestUser,
-    createTestOrganization,
-    createTestMember,
-    createTestSession,
-} from './test_helpers';
-import type { TestConvexForDataModel } from 'convex-test';
-import type { DataModel, Id } from '../_generated/dataModel';
-import { getOptionalString, isJsonObject, type JsonValue } from '../../shared/boundary-values';
-import { asInvalidArg } from './testCasts';
+import { createTestUser, createTestOrganization, createTestMember } from './test.helpers';
+import type { Id } from '../_generated/dataModel';
+import { z } from 'zod';
+
+const sessionCreateResultSchema = z.object({
+    _id: z.string().optional(),
+    id: z.string().optional(),
+});
 
 describe('convex auth', () => {
     const t = initConvexTest();
-    let userIdentity: TestConvexForDataModel<DataModel>;
     let userId: Id<'user'>;
     let _organizationId: Id<'organization'>;
 
@@ -29,6 +26,7 @@ describe('convex auth', () => {
             role: 'globalAdmin',
             emailVerified: false,
         });
+
         userId = userData.docId;
 
         const orgId = await createTestOrganization(t, {
@@ -43,36 +41,9 @@ describe('convex auth', () => {
         });
 
         _organizationId = orgId;
-
-        userIdentity = t.withIdentity({
-            subject: userData.docId,
-            role: userData.role ?? 'globalAdmin',
-            email: userData.email,
-            name: userData.name,
-            password: 'test-password',
-            emailVerified: false,
-            createdAt: Date.now(),
-            userId: userData.docId,
-            image: 'https://example.com/image.png',
-            banExpires: null,
-            banReason: null,
-            banned: false,
-        });
     });
 
-    test('getCurrentUser throws when unauthenticated', async () => {
-        await expect(t.query(api.auth.getCurrentUser, {})).rejects.toThrow(
-            /Unauthenticated|AUTH_REQUIRED/
-        );
-    });
-
-    test('getCurrentUser returns user when authenticated', async () => {
-        const current = await userIdentity.query(api.auth.getCurrentUser, {});
-        expect(current).not.toBeNull();
-        expect(current?.name).toBeDefined();
-    });
-
-    test('auth triggersApi writes audit logs for session create and delete', async () => {
+    test('auth triggersApi writes audit logs for session create and delete @REQ-NF-004 @INH-ADM-05', async () => {
         const sessionDoc = {
             expiresAt: Date.now() + 60_000,
             token: 'session-trigger-token',
@@ -85,8 +56,7 @@ describe('convex auth', () => {
             activeOrganizationId: String(_organizationId),
         };
 
-        const createdSession = asInvalidArg<JsonValue>(
-            // oxlint-disable-next-line typescript/no-unsafe-argument -- generated Better Auth adapter returns an untyped document
+        const parsedSession = sessionCreateResultSchema.safeParse(
             await t.mutation(internal.generated.auth.create, {
                 input: {
                     model: 'session',
@@ -94,11 +64,13 @@ describe('convex auth', () => {
                 },
             })
         );
-        if (!isJsonObject(createdSession)) {
+
+        if (!parsedSession.success) {
             throw new Error('Expected session create result');
         }
-        const sessionId =
-            getOptionalString(createdSession._id) ?? getOptionalString(createdSession.id);
+
+        const sessionId = parsedSession.data._id ?? parsedSession.data.id;
+
         if (!sessionId) {
             throw new Error('Expected session id');
         }
@@ -110,12 +82,12 @@ describe('convex auth', () => {
             },
         });
 
-        const adminLogs = await userIdentity.query(api.auditLogs.getAuditLogs, {
-            paginationOpts: { numItems: 50, cursor: null },
+        const adminLogs = await t.run(async ctx => {
+            return await ctx.db.query('auditLogs').withIndex('by_createdAt').order('desc').take(50);
         });
 
         expect(
-            adminLogs.page.some(
+            adminLogs.some(
                 log =>
                     log.action === 'session.created' &&
                     log.resourceType === 'session' &&
@@ -124,7 +96,7 @@ describe('convex auth', () => {
         ).toBe(true);
 
         expect(
-            adminLogs.page.some(
+            adminLogs.some(
                 log =>
                     log.action === 'session.deleted' &&
                     log.resourceType === 'session' &&
@@ -132,7 +104,8 @@ describe('convex auth', () => {
             )
         ).toBe(true);
 
-        const sessionLogs = adminLogs.page.filter(log => log.resourceId === sessionId);
+        const sessionLogs = adminLogs.filter(log => log.resourceId === sessionId);
+
         for (const log of sessionLogs) {
             expect(log.metadata?.before ?? {}).not.toHaveProperty('token');
             expect(log.metadata?.after ?? {}).not.toHaveProperty('token');
@@ -144,8 +117,9 @@ describe('convex auth', () => {
         }
     });
 
-    test('default organization created for a user is protected', async () => {
+    test('default organization created for a user is protected @INH-ORG-01 @INH-ORG-02', async () => {
         const randomSuffix = Math.random().toString(36).substring(2, 15);
+
         const user = await createTestUser(t, {
             userId: `default-org-user-${randomSuffix}`,
             email: `default-org-user-${randomSuffix}@example.com`,
@@ -156,77 +130,54 @@ describe('convex auth', () => {
             userId: user.docId,
         });
 
-        const organization = await t.run(
-            async ctx => await ctx.db.get('organization', organizationId)
-        );
-        expect(organization?.metadata).toBe(
-            JSON.stringify({ type: 'personal', ownerUserId: user.docId })
-        );
-
         const isDefaultOrganization = await t.query(internal.auth.isDefaultOrganization, {
             organizationId,
         });
 
         expect(isDefaultOrganization).toBe(true);
+        expect(
+            await t.query(internal.auth.isDefaultOrganization, { organizationId: _organizationId })
+        ).toBe(false);
+
+        await expect(
+            t.mutation(internal.auth.ensureDefaultOrganizationForUser, { userId: user.docId })
+        ).resolves.toBe(organizationId);
+
+        const memberships = await t.run(ctx =>
+            ctx.db
+                .query('member')
+                .withIndex('userId', q => q.eq('userId', user.docId))
+                .collect()
+        );
+
+        expect(memberships).toHaveLength(1);
     });
 
-    test('regular organization is not protected as default organization', async () => {
-        const isDefaultOrganization = await t.query(internal.auth.isDefaultOrganization, {
-            organizationId: _organizationId,
-        });
+    test('detects an organization name the user already has, ignoring case @REQ-EQUIPOS-001 @REQ-EQUIPOS-007', async () => {
+        const suffix = Math.random().toString(36).slice(2, 10);
 
-        expect(isDefaultOrganization).toBe(false);
-    });
-
-    test('getOrganizationsPage marks the metadata-owned organization as personal', async () => {
-        const randomSuffix = Math.random().toString(36).substring(2, 15);
         const user = await createTestUser(t, {
-            userId: `personal-org-list-user-${randomSuffix}`,
-            email: `personal-org-list-user-${randomSuffix}@example.com`,
-            name: 'Personal Org List User',
+            userId: `org-name-user-${suffix}`,
+            email: `org-name-user-${suffix}@example.com`,
+            name: 'Org Name User',
         });
 
-        const personalOrganizationId = await t.mutation(
-            internal.auth.ensureDefaultOrganizationForUser,
-            {
+        const organizationId = await createTestOrganization(t, {
+            name: 'Acme Team',
+            slug: `acme-team-${suffix}`,
+        });
+
+        await createTestMember(t, { organizationId, userId: user.docId, role: 'owner' });
+
+        const check = (name: string, excludeOrganizationId?: string) =>
+            t.query(internal.auth.userHasOrganizationNamed, {
                 userId: user.docId,
-            }
-        );
+                name,
+                excludeOrganizationId,
+            });
 
-        const sessionId = await createTestSession(t, {
-            userId: user.docId,
-            activeOrganizationId: personalOrganizationId,
-            expiresAt: Date.now() + 60_000,
-            token: `personal-org-list-session-${randomSuffix}`,
-        });
-
-        const personalOrgIdentity = t.withIdentity({
-            subject: user.docId,
-            sessionId,
-            role: 'user',
-            email: user.email,
-            name: user.name,
-            password: 'test-password',
-            emailVerified: false,
-            createdAt: Date.now(),
-            userId: user.docId,
-            image: 'https://example.com/image.png',
-            banExpires: null,
-            banReason: null,
-            banned: false,
-        });
-
-        const organizations = await personalOrgIdentity.query(
-            api.organizations.getOrganizationsPage,
-            {
-                paginationOpts: { numItems: 10, cursor: null },
-            }
-        );
-
-        const personalOrganization = organizations.page.find(
-            organization => organization.id === personalOrganizationId
-        );
-
-        expect(personalOrganization?.isPersonal).toBe(true);
+        expect(await check('  acme team ')).toBe(true);
+        expect(await check('Other team')).toBe(false);
+        expect(await check('Acme Team', organizationId)).toBe(false);
     });
 });

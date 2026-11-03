@@ -1,46 +1,51 @@
 'use client';
 
 import { PlusCircle } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import type { CreateObjective } from '@/features/objectives/schemas/objective';
-import { objectiveSchema } from '@/features/objectives/schemas/objective';
-import { OBJECTIVE_VISIBILITY } from '@/convex/utils/constants';
+import { toast } from 'sonner';
 import { useMutation } from '@tanstack/react-query';
-import { api } from '@/convex/_generated/api';
 import { useConvexMutation } from '@convex-dev/react-query';
-import { useTranslations } from 'next-intl';
+import { Button } from '@/components/ui/button';
 import FormModal from '@/components/forms/form-modal';
+import { api } from '@/convex/_generated/api';
+import type { Id } from '@/convex/_generated/dataModel';
+import { DEFAULT_DUE_SOON_DAYS } from '@/convex/features/objectives/constants';
+import { dateInputToUtcTimestamp } from '@/features/objectives/lib/dates';
 import { ObjectiveFormFields } from '@/features/objectives/components/objective-form-fields';
-import { useObjectiveCategoryOptions } from '@/features/objectives/hooks/use-objective-category-options';
-import { toCategoryId } from '@/features/objectives/lib/objective-category-selection';
+import { useObjectiveFormSchema } from '@/features/objectives/hooks/use-form-schemas';
+import { NONE_CATEGORY, type ObjectiveFormValues } from '@/features/objectives/schemas/objective';
+import { useTranslations } from 'next-intl';
 
-const defaultValues: CreateObjective = {
+const defaultValues: ObjectiveFormValues = {
     title: '',
     description: '',
-    categoryId: null,
-    targetValue: 100,
-    startValue: 0,
-    deadline: null,
+    categoryId: NONE_CATEGORY,
     unit: '',
-    visibility: OBJECTIVE_VISIBILITY.PRIVATE,
+    direction: 'increase',
+    startValue: 0,
+    targetValue: 1,
+    deadline: '',
+    dueSoonDays: DEFAULT_DUE_SOON_DAYS,
+    memberAccess: 'view',
+    users: [],
 };
 
-export default function CreateObjectiveFormModal() {
+export default function CreateObjectiveFormModal({
+    triggerTestId = 'objective-create-open',
+}: {
+    triggerTestId?: string;
+}) {
     const t = useTranslations('Objectives');
     const tCommon = useTranslations('Common');
-    const createObjective = useConvexMutation(api.objectives.createObjective);
+    const formSchema = useObjectiveFormSchema();
 
-    const createObjectiveMutation = useMutation({
-        mutationFn: async (args: Parameters<typeof createObjective>[0]) =>
-            await createObjective(args),
+    const createObjective = useMutation({
+        mutationFn: useConvexMutation(api.objectives.createObjective),
     });
 
-    const { categoriesQuery, categoryOptions } = useObjectiveCategoryOptions();
-
     return (
-        <FormModal<CreateObjective>
+        <FormModal<ObjectiveFormValues>
             trigger={
-                <Button className="gap-2" data-testid="objective-create-open">
+                <Button className="gap-2" data-testid={triggerTestId}>
                     <PlusCircle className="h-4 w-4" />
                     {t('createObjective')}
                 </Button>
@@ -50,37 +55,41 @@ export default function CreateObjectiveFormModal() {
             formOptions={{
                 defaultValues,
                 validators: {
-                    onChange: objectiveSchema,
-                    onSubmit: objectiveSchema,
+                    onChange: formSchema,
+                    onSubmit: formSchema,
                 },
             }}
-            onSubmit={async (value: CreateObjective) => {
-                await createObjectiveMutation.mutateAsync({
-                    title: value.title,
-                    description: value.description ?? undefined,
-                    categoryId: toCategoryId(value.categoryId),
-                    targetValue: value.targetValue,
-                    startValue: value.startValue ?? 0,
-                    deadline: value.deadline ?? undefined,
-                    unit: value.unit ?? undefined,
-                    visibility: value.visibility ?? 'private',
+            onSubmit={async values => {
+                const categoryId =
+                    values.categoryId === NONE_CATEGORY
+                        ? undefined
+                        : (values.categoryId as Id<'categories'>);
+
+                const deadline = dateInputToUtcTimestamp(values.deadline);
+
+                await createObjective.mutateAsync({
+                    title: values.title,
+                    direction: values.direction,
+                    startValue: values.startValue,
+                    targetValue: values.targetValue,
+                    description: values.description.trim() || undefined,
+                    unit: values.unit.trim() || undefined,
+                    categoryId,
+                    deadline,
+                    dueSoonDays: deadline === undefined ? undefined : values.dueSoonDays,
+                    memberAccess: values.memberAccess,
+                    users: values.users.map(({ userId, access }) => ({ userId, access })),
                 });
+                toast.success(t('toast.created'));
             }}
             submitLabel={t('saveObjective')}
+            pendingLabel={tCommon('actions.saving')}
             cancelLabel={t('cancel')}
-            isPending={createObjectiveMutation.isPending}
-            pendingLabel={tCommon('loading')}
+            isPending={createObjective.isPending}
             cancelTestId="objective-cancel-button"
             submitTestId="objective-save-button"
         >
-            {form => (
-                <ObjectiveFormFields
-                    form={form}
-                    mode="create"
-                    categoryOptions={categoryOptions}
-                    categoriesLoading={categoriesQuery.isLoading}
-                />
-            )}
+            {form => <ObjectiveFormFields form={form} withAccess />}
         </FormModal>
     );
 }

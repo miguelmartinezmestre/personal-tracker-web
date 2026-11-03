@@ -1,7 +1,6 @@
 'use client';
 
 import type { Id } from '@/convex/_generated/dataModel';
-import { requiredRouteParam } from '@/features/lib/route-param';
 
 import { useQuery } from '@tanstack/react-query';
 import { convexQuery } from '@convex-dev/react-query';
@@ -13,10 +12,9 @@ import { Button } from '@/components/ui/button';
 import type { OrganizationMember } from '@/features/organizations/schemas/organization-member';
 import OrganizationMemberEditFormModal from '@/features/organizations/components/organization-members-form-edit-modal';
 import { useLocale, useTranslations } from 'next-intl';
-import { useSession } from '@/features/auth/hooks/use-session';
 import { DeleteConfirmationDialog } from '@/components/data-table/components/delete-confirmation-dialog';
 import { toast } from 'sonner';
-import { useServerPagination } from '@/components/data-table/hooks/use-server-pagination';
+import { usePaginatedList } from '@/components/data-table/hooks/use-paginated-list';
 import { api } from '@/convex/_generated/api';
 import {
     isOrganizationAdminRole,
@@ -24,16 +22,17 @@ import {
     isOrganizationRoleValue,
     type OrganizationRoleValue,
 } from '../types/roles';
-import { DEFAULT_PAGE_SIZE } from '@shared/pagination';
-import { formatDate } from '@/lib/format-date';
 import type { FunctionReturnType } from 'convex/server';
+
 type OrganizationMemberRaw = FunctionReturnType<
     typeof api.organizations.getOrganizationMembers
 >['page'][number];
+
 interface OrganizationMembersTableProps {
-    organizationId: string;
+    organizationId: Id<'organization'>;
     actorRole: OrganizationRoleValue;
 }
+
 export default function OrganizationMembersTable({
     organizationId,
     actorRole,
@@ -41,23 +40,16 @@ export default function OrganizationMembersTable({
     const t = useTranslations('OrganizationMembers');
     const locale = useLocale();
     const deleteOrganizationMember = useDeleteOrganizationMember();
-    const session = useSession();
+    const session = useQuery(convexQuery(api.organizations.getCurrentSession, {}));
     const currentUserId = session.data?.user?.id;
     const canManageMembers = isOrganizationAdminRole(actorRole);
     const canManageOwners = isOrganizationOwnerRole(actorRole);
-    const { paginationOpts, nextPage, previousPage, hasPreviousPage } =
-        useServerPagination(DEFAULT_PAGE_SIZE);
-    const organizationTableId = requiredRouteParam(organizationId) as Id<'organization'>;
-    const membersQuery = useQuery(
-        convexQuery(api.organizations.getOrganizationMembers, {
-            organizationId: organizationTableId,
-            paginationOpts,
-        })
-    );
-    const continueCursor = membersQuery.data?.continueCursor ?? null;
-    const pageIsDone = membersQuery.data?.isDone ?? false;
-    const hasNextPage = Boolean(continueCursor) && !pageIsDone;
-    const members: OrganizationMember[] = (membersQuery.data?.page ?? []).map(
+
+    const membersQuery = usePaginatedList(api.organizations.getOrganizationMembers, {
+        organizationId,
+    });
+
+    const members: OrganizationMember[] = membersQuery.data.map(
         (member: OrganizationMemberRaw) => ({
             id: member.id,
             organizationId: member.organizationId,
@@ -67,6 +59,7 @@ export default function OrganizationMembersTable({
             createdAt: new Date(member.createdAt),
         })
     );
+
     const columns: ColumnDef<DataTableFeatures, OrganizationMember>[] = [
         {
             accessorKey: 'email',
@@ -80,7 +73,10 @@ export default function OrganizationMembersTable({
         {
             accessorKey: 'createdAt',
             header: t('joinedAt'),
-            cell: ({ row }) => formatDate(row.original.createdAt, locale),
+            cell: ({ row }) =>
+                new Intl.DateTimeFormat(locale, { dateStyle: 'medium' }).format(
+                    new Date(row.original.createdAt)
+                ),
         },
         {
             header: t('edit'),
@@ -88,16 +84,22 @@ export default function OrganizationMembersTable({
             cell: ({ row }) => {
                 const organizationMemberRow = row.original;
                 const isCurrentUser = organizationMemberRow.userId === currentUserId;
+
                 const canManageTarget =
                     canManageMembers &&
                     !isCurrentUser &&
                     (!isOrganizationOwnerRole(organizationMemberRow.role) || canManageOwners);
-                return canManageTarget ? (
-                    <OrganizationMemberEditFormModal
-                        defaultValues={organizationMemberRow}
-                        canAssignOwner={canManageOwners}
-                    />
-                ) : null;
+
+                if (canManageTarget) {
+                    return (
+                        <OrganizationMemberEditFormModal
+                            defaultValues={organizationMemberRow}
+                            canAssignOwner={canManageOwners}
+                        />
+                    );
+                }
+
+                return null;
             },
         },
         {
@@ -105,12 +107,15 @@ export default function OrganizationMembersTable({
             id: 'delete',
             cell: ({ row }) => {
                 const isCurrentUser = row.original.userId === currentUserId;
+
                 const canManageTarget =
                     canManageMembers &&
                     (!isOrganizationOwnerRole(row.original.role) || canManageOwners);
+
                 if (isCurrentUser || !canManageTarget) {
                     return null;
                 }
+
                 return (
                     <DeleteConfirmationDialog
                         onConfirm={async () => {
@@ -139,24 +144,18 @@ export default function OrganizationMembersTable({
             },
         },
     ];
+
     return (
         <div data-testid="organization-members-table">
             <DataTable
-                isError={membersQuery.isError}
-                error={membersQuery.error}
-                onRetry={() => {
-                    void membersQuery.refetch();
-                }}
-                columns={columns}
+                columns={
+                    canManageMembers
+                        ? columns
+                        : columns.filter(column => column.id !== 'edit' && column.id !== 'delete')
+                }
                 data={members}
                 isLoading={membersQuery.isLoading}
-                pagination={{
-                    onNextPage: () => nextPage(continueCursor, pageIsDone),
-                    onPreviousPage: previousPage,
-                    hasNextPage,
-                    hasPreviousPage,
-                    isLoading: membersQuery.isFetching,
-                }}
+                pagination={membersQuery}
             />
         </div>
     );

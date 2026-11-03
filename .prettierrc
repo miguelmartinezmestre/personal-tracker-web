@@ -6,5 +6,13 @@
     "printWidth": 100,
     "bracketSpacing": true,
     "arrowParens": "avoid",
-    "proseWrap": "always"
+    "proseWrap": "always",
+    "overrides": [
+        {
+            "files": ["AGENTS.md", "CLAUDE.md"],
+            "options": {
+                "proseWrap": "preserve"
+            }
+        }
+    ]
 }

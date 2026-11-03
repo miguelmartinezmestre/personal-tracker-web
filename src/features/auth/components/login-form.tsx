@@ -2,65 +2,73 @@
 
 import type { Route } from 'next';
 
-import { AlertCircle } from 'lucide-react';
+import { AlertCircle, CheckCircle2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
-import {
-    FieldShell,
-    getFieldError,
-    FormItem,
-    FormLabel,
-    FormControl,
-    FormMessage,
-} from '@/components/ui/form-fields';
+import { Field, FieldError, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
-import { loginSchema } from '@/features/auth/schemas/login';
-import type { z } from 'zod';
+import { createLoginSchema, type LoginFormValues } from '@/features/auth/schemas/login';
 import { useForm } from '@tanstack/react-form';
 import { useState } from 'react';
 import Link from 'next/link';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { authClient } from '@/features/auth/client';
 import { useSignOutMutationOptions } from '@/features/auth/client';
-import { useMutation } from '@tanstack/react-query';
-import { useSession } from '@/features/auth/hooks/use-session';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { useFormSubmit } from '@/hooks/use-form-submit';
-import { getSafeCallbackPath } from '@shared/auth-security';
+import { getSafeCallbackPath } from '@/convex/features/auth/redirects';
 import { useHydrated } from '@/hooks/use-hydrated';
+import { getFieldErrors } from '@/components/forms/form-utils';
+import { api } from '@/convex/_generated/api';
+import { convexQuery } from '@convex-dev/react-query';
+import { resolveErrorMessage } from '@/lib/error-messages';
+
 interface LoginFormProps {
     showPasswordResetSuccess?: boolean;
     callbackUrl?: string;
 }
+
 export default function LoginForm({
     showPasswordResetSuccess = false,
     callbackUrl,
 }: LoginFormProps) {
     const hydrated = useHydrated();
     const router = useRouter();
+    const locale = useLocale() === 'es' ? 'es' : 'en';
     const t = useTranslations('HomePage');
     const tCommon = useTranslations('Common');
+
+    const loginSchema = createLoginSchema({
+        invalidEmail: tCommon('validation.invalidEmail'),
+        shortPassword: tCommon('validation.minimumCharacters', { count: 8 }),
+    });
+
     const [loginError, setLoginError] = useState('');
-    const session = useSession();
+    const session = useQuery(convexQuery(api.organizations.getCurrentSession, {}));
     const signOutMutation = useMutation(useSignOutMutationOptions());
-    const loginDefaultValues: z.infer<typeof loginSchema> = {
+
+    const loginDefaultValues: LoginFormValues = {
         email: '',
         password: '',
     };
+
     const form = useForm({
         defaultValues: loginDefaultValues,
         validators: {
             onChange: loginSchema,
             onSubmit: loginSchema,
         },
-        onSubmit: async ({ value }: { value: z.infer<typeof loginSchema> }) => {
+        onSubmit: async ({ value }: { value: LoginFormValues }) => {
             await onSubmit(value);
         },
     });
-    async function handleSignIn(values: z.infer<typeof loginSchema>) {
+
+    async function handleSignIn(values: LoginFormValues) {
         if (session.data?.user) {
             await signOutMutation.mutateAsync();
         }
+
         setLoginError('');
         await authClient.signIn.email(
             {
@@ -72,12 +80,14 @@ export default function LoginForm({
                     router.push(getSafeCallbackPath(callbackUrl) as Route);
                 },
                 onError: ctx => {
-                    setLoginError(ctx.error.message);
+                    setLoginError(resolveErrorMessage(ctx.error, locale));
                 },
             }
         );
     }
+
     const { submit: onSubmit, isSubmitting } = useFormSubmit(handleSignIn);
+
     return (
         <form
             action={() => {
@@ -87,7 +97,7 @@ export default function LoginForm({
         >
             {showPasswordResetSuccess && (
                 <Alert variant="default" className="mb-6">
-                    <AlertCircle className="h-4 w-4" />
+                    <CheckCircle2 className="h-4 w-4" />
                     <AlertTitle>{tCommon('success')}</AlertTitle>
                     <AlertDescription>{t('resetPasswordSuccess')}</AlertDescription>
                 </Alert>
@@ -102,57 +112,61 @@ export default function LoginForm({
             )}
 
             <form.Field name="email">
-                {field => (
-                    <FieldShell error={getFieldError(form, field)}>
-                        <FormItem>
-                            <FormLabel className="text-foreground">
+                {field => {
+                    const errors = getFieldErrors(form, field);
+                    const isInvalid = !!errors.length;
+
+                    return (
+                        <Field data-invalid={isInvalid}>
+                            <FieldLabel htmlFor={field.name} className="text-foreground">
                                 {tCommon('fields.email')}
-                            </FormLabel>
-                            <FormControl>
-                                <Input
-                                    name={field.name}
-                                    value={field.state.value}
-                                    onChange={event => field.handleChange(event.target.value)}
-                                    onBlur={field.handleBlur}
-                                    disabled={!hydrated}
-                                    type="email"
-                                    placeholder={tCommon('placeholders.email')}
-                                    className="focus:ring-2 focus:ring-primary/20"
-                                    data-testid="email-input"
-                                />
-                            </FormControl>
-                            <FormMessage />
-                        </FormItem>
-                    </FieldShell>
-                )}
+                            </FieldLabel>
+                            <Input
+                                id={field.name}
+                                name={field.name}
+                                value={field.state.value}
+                                onChange={event => field.handleChange(event.target.value)}
+                                onBlur={field.handleBlur}
+                                disabled={!hydrated}
+                                type="email"
+                                placeholder={tCommon('placeholders.email')}
+                                aria-invalid={isInvalid}
+                                className="focus:ring-2 focus:ring-primary/20"
+                                data-testid="email-input"
+                            />
+                            {isInvalid && <FieldError errors={errors} />}
+                        </Field>
+                    );
+                }}
             </form.Field>
 
             <form.Field name="password">
-                {field => (
-                    <FieldShell
-                        error={field.state.meta.isTouched ? field.state.meta.errors[0] : undefined}
-                    >
-                        <FormItem>
-                            <FormLabel className="text-foreground">
+                {field => {
+                    const errors = getFieldErrors(form, field);
+                    const isInvalid = !!errors.length;
+
+                    return (
+                        <Field data-invalid={isInvalid}>
+                            <FieldLabel htmlFor={field.name} className="text-foreground">
                                 {tCommon('fields.password')}
-                            </FormLabel>
-                            <FormControl>
-                                <Input
-                                    name={field.name}
-                                    value={field.state.value}
-                                    onChange={event => field.handleChange(event.target.value)}
-                                    onBlur={field.handleBlur}
-                                    disabled={!hydrated}
-                                    type="password"
-                                    placeholder={tCommon('placeholders.password')}
-                                    className="focus:ring-2 focus:ring-primary/20"
-                                    data-testid="password-input"
-                                />
-                            </FormControl>
-                            <FormMessage />
-                        </FormItem>
-                    </FieldShell>
-                )}
+                            </FieldLabel>
+                            <Input
+                                id={field.name}
+                                name={field.name}
+                                value={field.state.value}
+                                onChange={event => field.handleChange(event.target.value)}
+                                onBlur={field.handleBlur}
+                                disabled={!hydrated}
+                                type="password"
+                                placeholder={tCommon('placeholders.password')}
+                                aria-invalid={isInvalid}
+                                className="focus:ring-2 focus:ring-primary/20"
+                                data-testid="password-input"
+                            />
+                            {isInvalid && <FieldError errors={errors} />}
+                        </Field>
+                    );
+                }}
             </form.Field>
 
             <div className="flex justify-end">

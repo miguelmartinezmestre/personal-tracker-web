@@ -1,199 +1,110 @@
-import { paginateVisible } from './utils/visiblePagination';
-import { paginationOptsValidator, paginationResultValidator } from 'convex/server';
-import { internalMutation } from './platform/db/internalMutation';
 import { ConvexError, v } from 'convex/values';
-import type { Id } from './_generated/dataModel';
-import { mutationWithRLS, queryWithRLS } from './platform/rls/wrappers';
+import { paginationOptsValidator } from 'convex/server';
+import { ERROR_CODES } from './shared/errorCodes';
 import {
-    objectiveCollaboratorRoleValidator,
-    objectiveStatusValidator,
-    objectiveVisibilityValidator,
-} from './utils/validators';
-import { ERROR_CODES, OBJECTIVE_VISIBILITY } from './utils/constants';
-import { withInvalidCursorRetry } from './utils/pagination';
-import { assertValidReferenceTimestamp } from './utils/queryTime';
-import { validateObjectiveMetrics } from './domain/objectives/metrics';
-import { getCategoryForObjective } from './domain/objectives/access';
-import { deadlineRangeValidator } from './domain/objectives/filters';
-import { listObjectives, searchObjectivesPage } from './domain/objectives/list';
+    measurement,
+    objectiveTextFields,
+    requireObjective,
+    requireOrganizationId,
+    resolvedObjectiveFields,
+    roundStoredValue,
+    toObjectiveSummaries,
+    toObjectiveSummary,
+    validateCategory,
+} from './features/objectives/records';
+import { memberAccessFields, objectiveAccess } from './features/objectives/access';
+import { replaceUserGrants } from './features/objectives/grants';
+import { mutationWithRLS, queryWithRLS } from './features/authorization/wrappers';
 import {
-    continueObjectiveDeletion,
-    deleteObjectiveWithDependents,
-} from './jobs/objectives/deleteObjective';
-import { assertObjectiveAction, enrichObjectiveForActor } from './domain/objectives/access';
+    accessLevelValidator,
+    deadlineFilterValidator,
+    objectiveDirectionValidator,
+    objectiveListValidator,
+    objectiveSummaryValidator,
+    userGrantValidator,
+} from './features/objectives/validators';
 import {
-    addObjectiveCollaborator,
-    removeObjectiveCollaborator,
-    updateObjectiveCollaboratorRole,
-} from './domain/objectives/collaborators';
-import { transitionObjective } from './domain/objectives/transitions';
-import {
-    OBJECTIVE_DESCRIPTION_MAX_LENGTH,
-    OBJECTIVE_TITLE_MAX_LENGTH,
-    OBJECTIVE_UNIT_MAX_LENGTH,
-} from '../shared/input-constraints';
-import { toUtcCivilDay } from '../shared/civil-date';
-import {
-    assertOptionalBoundedString,
-    normalizeRequiredBoundedString,
-} from './utils/inputValidation';
-import {
-    collaboratorEnrichedValidator,
-    objectiveCollaboratorDocumentValidator,
-    objectiveWithCapabilitiesValidator,
-    paginatedObjectivesValidator,
-    successResultValidator,
-} from './utils/apiReturnValidators';
-export const getObjectives = queryWithRLS({
+    deadlineRange,
+    dueSoonDaysFor,
+    validateDeadline,
+    validateObjectiveValues,
+} from './features/objectives/rules';
+import { paginateObjectives, searchObjectives } from './features/objectives/listing';
+import { recalculateResultingValues } from './features/objectives/progress';
+
+export const listObjectives = queryWithRLS({
     args: {
-        now: v.optional(v.number()),
-        paginationOpts: paginationOptsValidator,
-        status: v.optional(objectiveStatusValidator),
-        categoryId: v.optional(v.id('categories')),
-        deadlineRange: v.optional(deadlineRangeValidator),
-    },
-    returns: paginatedObjectivesValidator,
-    handler: async (ctx, { paginationOpts, status, categoryId, deadlineRange, now }) => {
-        if (now !== undefined) {
-            assertValidReferenceTimestamp(now);
-        }
-        const page = await withInvalidCursorRetry(paginationOpts, retryPaginationOpts =>
-            listObjectives(ctx, {
-                paginationOpts: retryPaginationOpts,
-                status,
-                categoryId,
-                deadlineRange,
-            })
-        );
-        const enrichedPage = await Promise.all(
-            page.page.map(objective => enrichObjectiveForActor(ctx, objective))
-        );
-        return {
-            ...page,
-            page: enrichedPage,
-        };
-    },
-});
-export const getDeletedObjectives = queryWithRLS({
-    args: {
+        status: v.optional(v.union(v.literal('all'), v.literal('active'), v.literal('completed'))),
+        categoryId: v.optional(v.string()),
+        deadline: v.optional(v.object({ filter: deadlineFilterValidator, today: v.number() })),
+        search: v.optional(v.string()),
         paginationOpts: paginationOptsValidator,
     },
-    returns: paginatedObjectivesValidator,
-    handler: async (ctx, { paginationOpts }) => {
-        const page = await withInvalidCursorRetry(paginationOpts, retryPaginationOpts =>
-            listObjectives(ctx, {
-                paginationOpts: retryPaginationOpts,
-                deletionState: 'deleted',
-            })
-        );
-        return {
-            ...page,
-            page: await Promise.all(
-                page.page.map(objective => enrichObjectiveForActor(ctx, objective))
-            ),
-        };
-    },
-});
-export const searchObjectivesPaginated = queryWithRLS({
-    args: {
-        now: v.optional(v.number()),
-        search: v.string(),
-        paginationOpts: paginationOptsValidator,
-        status: v.optional(objectiveStatusValidator),
-        categoryId: v.optional(v.id('categories')),
-        deadlineRange: v.optional(deadlineRangeValidator),
-    },
-    returns: paginatedObjectivesValidator,
+    returns: objectiveListValidator,
     handler: async (ctx, args) => {
-        if (args.now !== undefined) {
-            assertValidReferenceTimestamp(args.now);
+        const organizationId = requireOrganizationId(ctx.organizationId);
+        const categoryId = args.categoryId && ctx.db.normalizeId('categories', args.categoryId);
+        let status = args.status ?? 'all';
+
+        if (args.deadline?.filter === 'overdue') {
+            if (status === 'completed') {
+                return { page: [], isDone: true, continueCursor: '' };
+            }
+
+            status = 'active';
         }
-        const result = await searchObjectivesPage(ctx, args);
-        return {
-            ...result,
-            page: await Promise.all(
-                result.page.map(objective => enrichObjectiveForActor(ctx, objective))
-            ),
+
+        if (categoryId === null) {
+            return { page: [], isDone: true, continueCursor: '' };
+        }
+
+        const filters = {
+            status,
+            categoryId: categoryId || undefined,
+            deadlineRange:
+                args.deadline && deadlineRange(args.deadline.filter, args.deadline.today),
         };
+
+        const search = args.search?.trim();
+
+        const result = search
+            ? await searchObjectives(ctx.db, organizationId, search, filters, args.paginationOpts)
+            : await paginateObjectives(ctx.db, organizationId, filters, args.paginationOpts);
+
+        return { ...result, page: await toObjectiveSummaries(ctx.db, ctx, result.page) };
     },
 });
 
-export const getObjectiveById = queryWithRLS({
-    args: {
-        id: v.id('objectives'),
-    },
-    returns: v.union(objectiveWithCapabilitiesValidator, v.null()),
+export const getObjective = queryWithRLS({
+    args: { id: v.string() },
+    returns: v.union(objectiveSummaryValidator, v.null()),
     handler: async (ctx, args) => {
-        const objective = await ctx.db.get('objectives', args.id);
-        if (!objective) {
+        const organizationId = requireOrganizationId(ctx.organizationId);
+        const objectiveId = ctx.db.normalizeId('objectives', args.id);
+
+        if (!objectiveId) {
             return null;
         }
-        return await enrichObjectiveForActor(ctx, objective);
-    },
-});
-export const getObjectiveCollaboratorsPage = queryWithRLS({
-    args: { objectiveId: v.id('objectives'), paginationOpts: paginationOptsValidator },
-    returns: v.object({
-        ...paginationResultValidator(collaboratorEnrichedValidator).fields,
-        needsContinuation: v.boolean(),
-    }),
-    handler: async (ctx, args) => {
-        const objective = await ctx.db.get('objectives', args.objectiveId);
-        if (!objective) {
-            throw new ConvexError(ERROR_CODES.OBJECTIVE_NOT_FOUND);
+
+        const objective = await ctx.db.get('objectives', objectiveId);
+
+        if (
+            !objective ||
+            objective.organizationId !== organizationId ||
+            objective.deletedAt !== undefined
+        ) {
+            return null;
         }
-        await assertObjectiveAction(ctx, objective, 'view');
-        const result = await paginateVisible({
-            scope: JSON.stringify([
-                'collaborators',
-                ctx.userId,
-                objective.organizationId,
-                args.objectiveId,
-            ]),
-            paginationOpts: args.paginationOpts,
-            fetchPage: paginationOpts =>
-                ctx.dbForIntegrityChecks
-                    .query('objectiveCollaborators')
-                    .withIndex('by_objective', q => q.eq('objectiveId', args.objectiveId))
-                    .paginate(paginationOpts),
-            get: async id => {
-                const normalized = ctx.db.normalizeId('objectiveCollaborators', id);
-                return normalized
-                    ? await ctx.dbForIntegrityChecks.get('objectiveCollaborators', normalized)
-                    : null;
-            },
-            accepts: collaborator =>
-                collaborator.objectiveId === objective._id &&
-                collaborator.organizationId === objective.organizationId,
-        });
-        const page = await Promise.all(
-            result.page.map(async collaborator => {
-                const [user, member] = await Promise.all([
-                    ctx.dbForIntegrityChecks.get('user', collaborator.userId),
-                    ctx.dbForIntegrityChecks
-                        .query('member')
-                        .withIndex('by_organizationId_and_userId', q =>
-                            q
-                                .eq('organizationId', objective.organizationId)
-                                .eq('userId', collaborator.userId)
-                        )
-                        .first(),
-                ]);
-                return {
-                    id: collaborator._id,
-                    objectiveId: collaborator.objectiveId,
-                    userId: collaborator.userId,
-                    role: collaborator.role,
-                    addedBy: collaborator.addedBy,
-                    createdAt: collaborator.createdAt,
-                    user:
-                        user && member
-                            ? { name: user.name, email: user.email, image: user.image }
-                            : null,
-                };
-            })
+
+        const category = objective.categoryId
+            ? await ctx.db.get('categories', objective.categoryId)
+            : null;
+
+        return toObjectiveSummary(
+            objective,
+            category?.name,
+            await objectiveAccess(ctx.db, ctx, objective)
         );
-        return { ...result, page };
     },
 });
 
@@ -202,380 +113,145 @@ export const createObjective = mutationWithRLS({
         title: v.string(),
         description: v.optional(v.string()),
         categoryId: v.optional(v.id('categories')),
-        targetValue: v.number(),
-        currentValue: v.optional(v.number()),
-        startValue: v.optional(v.number()),
-        deadline: v.optional(v.number()),
         unit: v.optional(v.string()),
-        visibility: v.optional(objectiveVisibilityValidator),
+        deadline: v.optional(v.number()),
+        dueSoonDays: v.optional(v.number()),
+        direction: v.optional(objectiveDirectionValidator),
+        startValue: v.number(),
+        targetValue: v.number(),
+        memberAccess: v.optional(accessLevelValidator),
+        users: v.optional(v.array(userGrantValidator)),
     },
     returns: v.id('objectives'),
     handler: async (ctx, args) => {
-        const userId = ctx.userId;
-        const now = Date.now();
-        const organizationId = ctx.organizationId;
-        if (!organizationId) {
+        const organizationId = requireOrganizationId(ctx.organizationId);
+
+        if (!(await ctx.db.get('organization', organizationId))) {
             throw new ConvexError(ERROR_CODES.NO_ACTIVE_ORG);
         }
-        const title = normalizeRequiredBoundedString(args.title, OBJECTIVE_TITLE_MAX_LENGTH);
-        assertOptionalBoundedString(args.description, OBJECTIVE_DESCRIPTION_MAX_LENGTH);
-        assertOptionalBoundedString(args.unit, OBJECTIVE_UNIT_MAX_LENGTH);
-        if (
-            args.startValue !== undefined &&
-            args.currentValue !== undefined &&
-            args.startValue !== args.currentValue
-        ) {
-            throw new ConvexError(ERROR_CODES.VALIDATION_ERROR);
+
+        const now = Date.now();
+        const direction = args.direction ?? 'increase';
+        const { title, description, unit } = objectiveTextFields(args);
+        await validateCategory(ctx.db, args.categoryId, organizationId);
+        validateObjectiveValues(direction, args.startValue, args.targetValue);
+
+        if (args.deadline !== undefined) {
+            validateDeadline(args.deadline, now);
         }
-        const startValue = args.startValue ?? args.currentValue ?? 0;
-        const deadline = args.deadline === undefined ? undefined : toUtcCivilDay(args.deadline);
-        validateObjectiveMetrics({
-            targetValue: args.targetValue,
-            currentValue: startValue,
-            startValue,
-            deadline,
-        });
-        let resolvedCategoryId: Id<'categories'> | undefined;
-        if (args.categoryId) {
-            const category = await getCategoryForObjective(ctx, organizationId, args.categoryId);
-            resolvedCategoryId = category._id;
-        }
+
         const objectiveId = await ctx.db.insert('objectives', {
-            createdBy: userId,
-            ownerId: userId,
-            visibility: args.visibility ?? OBJECTIVE_VISIBILITY.PRIVATE,
             organizationId,
+            createdBy: ctx.userId,
             title,
-            description: args.description,
-            categoryId: resolvedCategoryId,
+            description,
+            categoryId: args.categoryId,
+            unit,
+            deadline: args.deadline,
+            dueSoonDays: dueSoonDaysFor(args.deadline, args.dueSoonDays),
+            direction,
+            ...memberAccessFields(args.memberAccess ?? 'view'),
+            startValue: args.startValue,
+            currentValue: args.startValue,
             targetValue: args.targetValue,
-            currentValue: startValue,
-            startValue,
-            deadline,
             status: 'active',
-            earlyBirdCompleted: false,
-            unit: args.unit,
             createdAt: now,
             updatedAt: now,
         });
-        await transitionObjective(ctx, objectiveId, { actorUserId: userId, created: true });
+
+        if (args.users?.length) {
+            const { objective } = await requireObjective(ctx.db, ctx, objectiveId);
+            await replaceUserGrants(ctx.db, objective, args.users, ctx.userId, now);
+        }
+
         return objectiveId;
     },
 });
+
 export const updateObjective = mutationWithRLS({
     args: {
         id: v.id('objectives'),
         title: v.optional(v.string()),
-        description: v.optional(v.string()),
+        description: v.optional(v.union(v.string(), v.null())),
         categoryId: v.optional(v.union(v.id('categories'), v.null())),
-        targetValue: v.optional(v.number()),
-        startValue: v.optional(v.number()),
+        unit: v.optional(v.union(v.string(), v.null())),
         deadline: v.optional(v.union(v.number(), v.null())),
-        unit: v.optional(v.string()),
+        dueSoonDays: v.optional(v.number()),
+        direction: v.optional(objectiveDirectionValidator),
+        startValue: v.optional(v.number()),
+        targetValue: v.optional(v.number()),
     },
-    returns: objectiveWithCapabilitiesValidator,
+    returns: objectiveSummaryValidator,
     handler: async (ctx, args) => {
-        const objective = await ctx.db.get('objectives', args.id);
-        if (!objective) {
-            throw new ConvexError(ERROR_CODES.OBJECTIVE_NOT_FOUND);
+        requireOrganizationId(ctx.organizationId);
+        const { objective: existing, access } = await requireObjective(ctx.db, ctx, args.id);
+
+        if (!access.canEdit) {
+            throw new ConvexError(ERROR_CODES.NOT_AUTHORIZED_OBJECTIVE);
         }
-        await assertObjectiveAction(ctx, objective, 'editDefinition');
-        const title =
-            args.title === undefined
-                ? undefined
-                : normalizeRequiredBoundedString(args.title, OBJECTIVE_TITLE_MAX_LENGTH);
-        assertOptionalBoundedString(args.description, OBJECTIVE_DESCRIPTION_MAX_LENGTH);
-        assertOptionalBoundedString(args.unit, OBJECTIVE_UNIT_MAX_LENGTH);
-        const previousStartValue = objective.startValue;
-        const nextStartValue = args.startValue ?? previousStartValue;
-        // `currentValue - startValue` is the transactionally maintained sum of
-        // progress entries. Moving the baseline therefore shifts currentValue
-        // by the same amount without reading the history.
-        const nextCurrentValue = objective.currentValue + (nextStartValue - previousStartValue);
-        let nextDeadline: number | undefined;
-        if (args.deadline === undefined) {
-            nextDeadline = objective.deadline;
-        } else if (args.deadline === null) {
-            nextDeadline = undefined;
-        } else {
-            nextDeadline = toUtcCivilDay(args.deadline);
+
+        if (existing.status === 'completed') {
+            throw new ConvexError(ERROR_CODES.OBJECTIVE_ALREADY_COMPLETED);
         }
-        validateObjectiveMetrics({
-            targetValue: args.targetValue ?? objective.targetValue,
-            currentValue: nextCurrentValue,
-            startValue: nextStartValue,
-            deadline: nextDeadline,
+
+        const now = Date.now();
+        const fields = resolvedObjectiveFields(existing, args);
+        validateObjectiveValues(fields.direction, fields.startValue, fields.targetValue);
+
+        if (fields.deadline !== undefined && fields.deadline !== existing.deadline) {
+            validateDeadline(fields.deadline, now);
+        }
+
+        await validateCategory(ctx.db, fields.categoryId, existing.organizationId);
+
+        const current = measurement(
+            fields,
+            roundStoredValue(existing.currentValue - existing.startValue + fields.startValue),
+            now
+        );
+
+        await ctx.db.replace('objectives', args.id, {
+            organizationId: existing.organizationId,
+            createdBy: existing.createdBy,
+            memberCanView: existing.memberCanView,
+            memberCanEdit: existing.memberCanEdit,
+            ...fields,
+            dueSoonDays: dueSoonDaysFor(fields.deadline, fields.dueSoonDays),
+            ...current,
+            createdAt: existing.createdAt,
+            updatedAt: now,
         });
-        let resolvedCategoryId: Id<'categories'> | undefined;
-        if (args.categoryId) {
-            const category = await getCategoryForObjective(
-                ctx,
-                objective.organizationId,
-                args.categoryId
-            );
-            resolvedCategoryId = category._id;
+
+        if (fields.startValue !== existing.startValue) {
+            await recalculateResultingValues(ctx, args.id, null);
         }
-        const patch: Partial<{
-            title: string;
-            description: string | undefined;
-            categoryId: Id<'categories'> | undefined;
-            targetValue: number;
-            currentValue: number;
-            startValue: number;
-            deadline: number | undefined;
-            unit: string;
-            updatedAt: number;
-        }> = {
-            updatedAt: Date.now(),
-        };
-        if (title !== undefined) {
-            patch.title = title;
-        }
-        if (args.description !== undefined) {
-            patch.description = args.description;
-        }
-        if (args.categoryId !== undefined) {
-            patch.categoryId = resolvedCategoryId;
-        }
-        if (args.targetValue !== undefined) {
-            patch.targetValue = args.targetValue;
-        }
-        if (args.startValue !== undefined) {
-            patch.startValue = args.startValue;
-            patch.currentValue = nextCurrentValue;
-        }
-        if (args.deadline !== undefined) {
-            patch.deadline = nextDeadline;
-        }
-        if (args.unit !== undefined) {
-            patch.unit = args.unit;
-        }
-        await ctx.db.patch('objectives', args.id, patch);
-        await transitionObjective(ctx, args.id, { actorUserId: ctx.userId });
-        const updated = await ctx.db.get('objectives', args.id);
-        if (!updated) {
-            throw new ConvexError(ERROR_CODES.OBJECTIVE_NOT_FOUND);
-        }
-        return await enrichObjectiveForActor(ctx, updated);
+
+        const updated = await requireObjective(ctx.db, ctx, args.id);
+
+        const category = updated.objective.categoryId
+            ? await ctx.db.get('categories', updated.objective.categoryId)
+            : null;
+
+        return toObjectiveSummary(updated.objective, category?.name, updated.access);
     },
 });
+
 export const deleteObjective = mutationWithRLS({
-    args: {
-        id: v.id('objectives'),
-    },
-    returns: v.object({
-        status: v.string(),
-        objectiveId: v.id('objectives'),
-    }),
-    handler: async (ctx, args) => {
-        const objective = await ctx.db.get('objectives', args.id);
-        if (!objective) {
-            throw new ConvexError(ERROR_CODES.OBJECTIVE_NOT_FOUND);
-        }
-        await assertObjectiveAction(ctx, objective, 'delete');
-        const now = Date.now();
-        await ctx.db.patch('objectives', args.id, {
-            deletedAt: now,
-            deletedBy: ctx.userId,
-            updatedAt: now,
-        });
-        return {
-            status: 'soft_deleted',
-            objectiveId: args.id,
-        };
-    },
-});
-export const restoreObjective = mutationWithRLS({
-    args: {
-        id: v.id('objectives'),
-    },
-    returns: objectiveWithCapabilitiesValidator,
-    handler: async (ctx, args) => {
-        const objective = await ctx.db.get('objectives', args.id);
-        if (!objective) {
-            throw new ConvexError(ERROR_CODES.OBJECTIVE_NOT_FOUND);
-        }
-        if (objective.deletedAt === undefined) {
-            throw new ConvexError(ERROR_CODES.OBJECTIVE_NOT_DELETED);
-        }
-        if (objective.purgeToken) {
-            throw new ConvexError(ERROR_CODES.OBJECTIVE_PURGE_IN_PROGRESS);
-        }
-        await assertObjectiveAction(ctx, objective, 'restore');
-        await ctx.db.patch('objectives', args.id, {
-            deletedAt: undefined,
-            deletedBy: undefined,
-            updatedAt: Date.now(),
-        });
-        await transitionObjective(ctx, args.id, { actorUserId: ctx.userId });
-        const restored = await ctx.db.get('objectives', args.id);
-        if (!restored) {
-            throw new ConvexError(ERROR_CODES.OBJECTIVE_NOT_FOUND);
-        }
-        return await enrichObjectiveForActor(ctx, restored);
-    },
-});
-export const setObjectiveVisibility = mutationWithRLS({
-    args: {
-        id: v.id('objectives'),
-        visibility: objectiveVisibilityValidator,
-    },
-    returns: objectiveWithCapabilitiesValidator,
-    handler: async (ctx, args) => {
-        const objective = await ctx.db.get('objectives', args.id);
-        if (!objective) {
-            throw new ConvexError(ERROR_CODES.OBJECTIVE_NOT_FOUND);
-        }
-        await assertObjectiveAction(ctx, objective, 'setVisibility');
-        await ctx.db.patch('objectives', args.id, {
-            visibility: args.visibility,
-            updatedAt: Date.now(),
-        });
-        const updated = await ctx.db.get('objectives', args.id);
-        if (!updated) {
-            throw new ConvexError(ERROR_CODES.OBJECTIVE_NOT_FOUND);
-        }
-        return await enrichObjectiveForActor(ctx, updated);
-    },
-});
-export const transferObjectiveOwnership = mutationWithRLS({
-    args: {
-        id: v.id('objectives'),
-        newOwnerId: v.id('user'),
-    },
-    returns: objectiveWithCapabilitiesValidator,
-    handler: async (ctx, args) => {
-        const objective = await ctx.db.get('objectives', args.id);
-        if (!objective) {
-            throw new ConvexError(ERROR_CODES.OBJECTIVE_NOT_FOUND);
-        }
-        await assertObjectiveAction(ctx, objective, 'transferOwnership');
-        const membership = await ctx.db
-            .query('member')
-            .withIndex('by_organizationId_and_userId', q =>
-                q.eq('organizationId', objective.organizationId).eq('userId', args.newOwnerId)
-            )
-            .first();
-        if (!membership) {
-            throw new ConvexError(ERROR_CODES.USER_NOT_FOUND);
-        }
-        const existingCollaborator = await ctx.db
-            .query('objectiveCollaborators')
-            .withIndex('by_objective_user', q =>
-                q.eq('objectiveId', args.id).eq('userId', args.newOwnerId)
-            )
-            .first();
-        if (existingCollaborator) {
-            await ctx.db.delete('objectiveCollaborators', existingCollaborator._id);
-        }
-        const now = Date.now();
-        await ctx.db.patch('objectives', args.id, {
-            ownerId: args.newOwnerId,
-            updatedAt: now,
-        });
-        const updated = { ...objective, ownerId: args.newOwnerId, updatedAt: now };
-        return await enrichObjectiveForActor(ctx, updated);
-    },
-});
-export const addCollaborator = mutationWithRLS({
-    args: {
-        objectiveId: v.id('objectives'),
-        userId: v.id('user'),
-        role: objectiveCollaboratorRoleValidator,
-    },
-    returns: v.union(objectiveCollaboratorDocumentValidator, v.null()),
-    handler: async (ctx, args) => {
-        const objective = await ctx.db.get('objectives', args.objectiveId);
-        if (!objective) {
-            throw new ConvexError(ERROR_CODES.OBJECTIVE_NOT_FOUND);
-        }
-        await assertObjectiveAction(ctx, objective, 'manageCollaborators');
-        const collaboratorId = await addObjectiveCollaborator(ctx, {
-            objective,
-            userId: args.userId,
-            role: args.role,
-            addedBy: ctx.userId,
-        });
-        return await ctx.db.get('objectiveCollaborators', collaboratorId);
-    },
-});
-export const updateCollaboratorRole = mutationWithRLS({
-    args: {
-        collaboratorId: v.id('objectiveCollaborators'),
-        role: objectiveCollaboratorRoleValidator,
-    },
-    returns: v.union(objectiveCollaboratorDocumentValidator, v.null()),
-    handler: async (ctx, args) => {
-        const collaborator = await ctx.db.get('objectiveCollaborators', args.collaboratorId);
-        if (!collaborator) {
-            throw new ConvexError(ERROR_CODES.COLLABORATOR_NOT_FOUND);
-        }
-        const objective = await ctx.db.get('objectives', collaborator.objectiveId);
-        if (!objective) {
-            throw new ConvexError(ERROR_CODES.OBJECTIVE_NOT_FOUND);
-        }
-        await assertObjectiveAction(ctx, objective, 'manageCollaborators');
-        return await updateObjectiveCollaboratorRole(ctx, {
-            collaboratorId: args.collaboratorId,
-            role: args.role,
-        });
-    },
-});
-export const removeCollaborator = mutationWithRLS({
-    args: {
-        collaboratorId: v.id('objectiveCollaborators'),
-    },
-    returns: successResultValidator,
-    handler: async (ctx, args) => {
-        const collaborator = await ctx.db.get('objectiveCollaborators', args.collaboratorId);
-        if (!collaborator) {
-            throw new ConvexError(ERROR_CODES.COLLABORATOR_NOT_FOUND);
-        }
-        const objective = await ctx.db.get('objectives', collaborator.objectiveId);
-        if (!objective) {
-            throw new ConvexError(ERROR_CODES.OBJECTIVE_NOT_FOUND);
-        }
-        await assertObjectiveAction(ctx, objective, 'manageCollaborators');
-        return await removeObjectiveCollaborator(ctx, args.collaboratorId);
-    },
-});
-export const purgeObjective = mutationWithRLS({
-    args: {
-        id: v.id('objectives'),
-    },
-    returns: v.object({
-        status: v.string(),
-        objectiveId: v.id('objectives'),
-    }),
-    handler: async (ctx, args) => {
-        const objective = await ctx.db.get('objectives', args.id);
-        if (!objective) {
-            throw new ConvexError(ERROR_CODES.OBJECTIVE_NOT_FOUND);
-        }
-        if (objective.deletedAt === undefined) {
-            throw new ConvexError(ERROR_CODES.OBJECTIVE_NOT_DELETED);
-        }
-        if (objective.purgeToken) {
-            throw new ConvexError(ERROR_CODES.OBJECTIVE_PURGE_IN_PROGRESS);
-        }
-        await assertObjectiveAction(ctx, objective, 'purge');
-        const now = Date.now();
-        const purgeToken = `${now.toString(36)}-${Math.random().toString(36).slice(2)}`;
-        await ctx.db.patch('objectives', args.id, {
-            purgeToken,
-            updatedAt: now,
-        });
-        return await deleteObjectiveWithDependents(ctx, { objectiveId: args.id, purgeToken });
-    },
-});
-export const deleteObjectiveContinue = internalMutation({
+    args: { id: v.id('objectives') },
     returns: v.null(),
-    args: {
-        objectiveId: v.id('objectives'),
-        purgeToken: v.string(),
-        phase: v.optional(
-            v.union(v.literal('collaborators'), v.literal('progress'), v.literal('notifications'))
-        ),
+    handler: async (ctx, args) => {
+        requireOrganizationId(ctx.organizationId);
+        const { access } = await requireObjective(ctx.db, ctx, args.id);
+
+        if (!access.canManage) {
+            throw new ConvexError(ERROR_CODES.NOT_AUTHORIZED_OBJECTIVE);
+        }
+
+        await ctx.db.patch('objectives', args.id, {
+            deletedAt: Date.now(),
+            deletedBy: ctx.userId,
+        });
+
+        return null;
     },
-    handler: continueObjectiveDeletion,
 });

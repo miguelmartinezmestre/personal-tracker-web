@@ -1,113 +1,175 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import { AchievementsWidget } from '@/features/achievements/components/achievements-widget';
-import { api } from '@/convex/_generated/api';
-import { Target, CheckCircle } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { convexQuery } from '@convex-dev/react-query';
+import { api } from '@/convex/_generated/api';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { QueryErrorFallback } from '@/components/ui/query-error-fallback';
-import StatCard from '@/features/dashboard/components/stat-card';
-import dynamic from 'next/dynamic';
-import { useReferenceNow } from '@/lib/reference-now';
-import { DashboardWelcome, RecentActivityCard, UpcomingDeadlinesCard } from './home-panels';
+import { Skeleton } from '@/components/ui/skeleton';
+import AverageProgressChart from '@/features/dashboard/components/average-progress-chart';
+import CategoryChart from '@/features/dashboard/components/category-chart';
+import MonthlyUpdatesChart from '@/features/dashboard/components/monthly-updates-chart';
+import RecentActivity from '@/features/dashboard/components/recent-activity';
+import TopObjectivesChart from '@/features/dashboard/components/top-objectives-chart';
+import UpcomingDeadlines from '@/features/dashboard/components/upcoming-deadlines';
+import { AchievementsWidget } from '@/features/achievements';
 
-const MonthlyProgressChart = dynamic(
-    () => import('@/features/dashboard/components/monthly-progress-chart'),
-    { ssr: false }
-);
-const TopObjectivesChart = dynamic(
-    () => import('@/features/dashboard/components/top-objectives-chart'),
-    { ssr: false }
-);
+const TOP_OBJECTIVES = 5;
 
-export default function Home() {
-    const referenceNow = useReferenceNow();
-    const userQuery = useQuery(convexQuery(api.auth.getCurrentUser, {}));
-    const { data: user } = userQuery;
-    const statsQuery = useQuery(convexQuery(api.dashboard.getDashboardStats, {}));
-    const deadlinesQuery = useQuery(
-        convexQuery(api.dashboard.getUpcomingDeadlines, { now: referenceNow })
-    );
-    const activityQuery = useQuery(
-        convexQuery(api.dashboard.getRecentActivity, { now: referenceNow })
-    );
-    const { data: stats } = statsQuery;
-    const { data: upcomingDeadlines } = deadlinesQuery;
-    const { data: recentActivity } = activityQuery;
-    const upcomingDeadlineItems = upcomingDeadlines?.items ?? [];
+function DashboardStats() {
     const t = useTranslations('DashboardHome');
+    const stats = useQuery(convexQuery(api.dashboard.getDashboardStats, {}));
+
+    if (stats.isPending) {
+        return (
+            <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]">
+                <Skeleton className="h-64" />
+                <Skeleton className="h-64" />
+            </div>
+        );
+    }
+
+    if (stats.isError) {
+        return <QueryErrorFallback onRetry={() => void stats.refetch()} />;
+    }
+
+    if (stats.data.total === 0) {
+        return (
+            <p
+                className="text-muted-foreground max-w-prose text-sm"
+                data-testid="dashboard-home-empty"
+            >
+                {t('emptyState')}
+            </p>
+        );
+    }
+
+    const { total, active, completed, averageProgress, categories } = stats.data;
 
     return (
-        <div className="container mx-auto p-4 space-y-6">
-            <div className="text-center mb-8">
-                <h1 className="text-2xl font-bold mb-2">{t('dashboardTitle')}</h1>
-                <div data-testid="welcome-message" className="text-muted-foreground">
-                    <DashboardWelcome
-                        isError={userQuery.isError}
-                        error={userQuery.error}
-                        onRetry={() => {
-                            void userQuery.refetch();
-                        }}
-                        name={user?.name}
-                    />
-                </div>
+        <div className="space-y-2" data-testid="dashboard-stats">
+            <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]">
+                <Card>
+                    <CardHeader>
+                        <CardTitle>{t('charts.averageProgress')}</CardTitle>
+                        <CardDescription>
+                            {t('charts.averageProgressDescription', { count: total })}
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                        <AverageProgressChart
+                            averageProgress={averageProgress}
+                            ariaLabel={t('charts.averageProgressAria', {
+                                percent: averageProgress,
+                            })}
+                        />
+                        <dl className="grid grid-cols-2 gap-2 text-center text-sm">
+                            <div>
+                                <dt className="text-muted-foreground">{t('stats.active')}</dt>
+                                <dd className="text-lg font-semibold">{active}</dd>
+                            </div>
+                            <div>
+                                <dt className="text-muted-foreground">{t('stats.completed')}</dt>
+                                <dd className="text-lg font-semibold">{completed}</dd>
+                            </div>
+                        </dl>
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardHeader>
+                        <CardTitle>{t('charts.byCategory')}</CardTitle>
+                        <CardDescription>{t('charts.byCategoryDescription')}</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <CategoryChart categories={categories} />
+                    </CardContent>
+                </Card>
             </div>
+            <DashboardDetails />
+        </div>
+    );
+}
 
-            {statsQuery.isError ? (
-                <QueryErrorFallback
-                    error={statsQuery.error}
-                    onRetry={() => {
-                        void statsQuery.refetch();
-                    }}
-                />
-            ) : (
-                <div className="grid grid-cols-2 gap-4" data-testid="dashboard-stats">
-                    <StatCard
-                        label={t('stats.active')}
-                        value={stats?.pendingObjectives}
-                        icon={Target}
-                    />
-                    <StatCard
-                        label={t('stats.completed')}
-                        value={stats?.completedObjectives}
-                        icon={CheckCircle}
-                    />
-                </div>
-            )}
+function DashboardDetails() {
+    const t = useTranslations('DashboardHome');
+    const top = useQuery(convexQuery(api.dashboard.getTopObjectives, { limit: TOP_OBJECTIVES }));
+    const monthly = useQuery(convexQuery(api.dashboard.getMonthlyUpdates, {}));
+    const deadlines = useQuery(convexQuery(api.dashboard.getUpcomingDeadlines, {}));
+    const activity = useQuery(convexQuery(api.dashboard.getRecentActivity, {}));
+    const queries = [top, monthly, deadlines, activity];
+    const failed = queries.find(query => query.isError);
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <MonthlyProgressChart />
-                <TopObjectivesChart />
+    if (failed) {
+        return <QueryErrorFallback onRetry={() => void failed.refetch()} />;
+    }
+
+    if (!top.data || !monthly.data || !deadlines.data || !activity.data) {
+        return (
+            <div className="grid gap-4 lg:grid-cols-2">
+                <Skeleton className="h-64" />
+                <Skeleton className="h-64" />
             </div>
+        );
+    }
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                <div className="md:col-span-1">
-                    <AchievementsWidget />
-                </div>
-                <UpcomingDeadlinesCard
-                    query={{
-                        isError: deadlinesQuery.isError,
-                        error: deadlinesQuery.error,
-                        onRetry: () => {
-                            void deadlinesQuery.refetch();
-                        },
-                    }}
-                    items={upcomingDeadlineItems}
-                    isTruncated={upcomingDeadlines?.isTruncated ?? false}
-                    isLoaded={Boolean(upcomingDeadlines)}
-                />
-                <RecentActivityCard
-                    query={{
-                        isError: activityQuery.isError,
-                        error: activityQuery.error,
-                        onRetry: () => {
-                            void activityQuery.refetch();
-                        },
-                    }}
-                    activity={recentActivity}
-                />
-            </div>
+    return (
+        <div className="grid gap-4 lg:grid-cols-2">
+            <Card>
+                <CardHeader>
+                    <CardTitle>{t('charts.topObjectives')}</CardTitle>
+                    <CardDescription>{t('charts.topObjectivesDescription')}</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <TopObjectivesChart objectives={top.data} />
+                </CardContent>
+            </Card>
+            <Card>
+                <CardHeader>
+                    <CardTitle>{t('charts.monthlyProgress')}</CardTitle>
+                    <CardDescription>{t('charts.monthlyProgressDescription')}</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <MonthlyUpdatesChart months={monthly.data} />
+                </CardContent>
+            </Card>
+            <Card>
+                <CardHeader>
+                    <CardTitle>{t('upcomingDeadlines')}</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <UpcomingDeadlines objectives={deadlines.data} />
+                </CardContent>
+            </Card>
+            <Card>
+                <CardHeader>
+                    <CardTitle>{t('recentActivity')}</CardTitle>
+                    <CardDescription>{t('activity.period', { days: 7 })}</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <RecentActivity activity={activity.data} />
+                </CardContent>
+            </Card>
+        </div>
+    );
+}
+
+export default function Home() {
+    const t = useTranslations('DashboardHome');
+    const userQuery = useQuery(convexQuery(api.auth.getCurrentUser, {}));
+    const { data: user, isError, refetch } = userQuery;
+
+    if (isError) {
+        return <QueryErrorFallback onRetry={() => void refetch()} />;
+    }
+
+    return (
+        <div className="flex flex-col gap-4" data-testid="dashboard-home-stub">
+            <h1 className="text-2xl font-semibold tracking-tight" data-testid="welcome-message">
+                {user?.name ? t('welcome', { name: user.name }) : t('welcomeAnonymous')}
+            </h1>
+            <DashboardStats />
+            <AchievementsWidget />
         </div>
     );
 }

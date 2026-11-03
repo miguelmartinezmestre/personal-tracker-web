@@ -1,379 +1,225 @@
-import { beforeEach, describe, expect, test } from 'vitest';
+import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import { api, internal } from '../_generated/api';
-import { drainScheduledFunctions, initConvexTest } from './test.helper';
+import type { Id } from '../_generated/dataModel';
+import { DAY_MS, startOfUtcDay } from '../features/objectives/rules';
+import { initConvexTest } from './test.helper';
 import {
     createTestMember,
-    createTestNotification,
-    createTestObjective,
     createTestOrganization,
     createTestUser,
-} from './test_helpers';
-import type { DataModel, Id } from '../_generated/dataModel';
-import type { TestConvexForDataModel } from 'convex-test';
+    type TestUserData,
+} from './test.helpers';
+import { identityFor } from './test.identities';
 
-describe('convex notifications', async () => {
+const page = { numItems: 20, cursor: null };
+
+describe('notifications', () => {
     const t = initConvexTest();
-    let userIdentity: TestConvexForDataModel<DataModel>;
-    let userId: Id<'user'>;
-    let adminUserId: Id<'user'>;
-    let objectiveId: Id<'objectives'>;
-    let userOrganizationId: Id<'organization'>;
-    let adminOrganizationId: Id<'organization'>;
-    const DAY_MS = 24 * 60 * 60 * 1000;
+    let organizationId: Id<'organization'>;
+    let owner: TestUserData;
+    let creator: TestUserData;
+    let granted: TestUserData;
+    let outsider: TestUserData;
+
+    const as = (user: TestUserData) => t.withIdentity(identityFor(user));
+    const runScheduled = () => t.finishAllScheduledFunctions(() => vi.runAllTimers());
+
+    async function joinAs(role: string, name: string, organization = organizationId) {
+        const suffix = Math.random().toString(36).slice(2, 10);
+
+        const user = await createTestUser(t, {
+            userId: `${name}-${suffix}`,
+            email: `${name}-${suffix}@example.com`,
+            name,
+            role: 'user',
+        });
+
+        await createTestMember(t, { organizationId: organization, userId: user.docId, role });
+
+        return user;
+    }
+
+    const keysOf = async (user: TestUserData) =>
+        (await as(user).query(api.notifications.listNotifications, { paginationOpts: page })).page
+            .filter(notification => notification.type !== 'achievement')
+            .map(notification => `${notification.messageKey}:${notification.message}`)
+            .sort();
 
     beforeEach(async () => {
-        const userRandom = Math.random().toString(36).substring(2, 15);
-        const userData = await createTestUser(t, {
-            userId: 'test-user-notifications-' + userRandom,
-            email: 'notifications-test@example.com-' + userRandom,
-            name: 'Notifications Test User ' + userRandom,
-            password: 'test-password',
-            role: 'user',
-            emailVerified: false,
+        vi.useFakeTimers();
+        const suffix = Math.random().toString(36).slice(2, 10);
+        organizationId = await createTestOrganization(t, {
+            name: `Notices ${suffix}`,
+            slug: `notices-${suffix}`,
         });
-        userId = userData.docId;
-
-        userOrganizationId = await createTestOrganization(t, {
-            name: 'Notifications User Org ' + userRandom,
-            slug: 'notifications-user-org-' + userRandom,
-        });
-        await createTestMember(t, { organizationId: userOrganizationId, userId, role: 'owner' });
-
-        userIdentity = t.withIdentity({
-            subject: userData.docId,
-            role: userData.role ?? 'user',
-            email: userData.email,
-            name: userData.name,
-            password: 'test-password',
-            emailVerified: false,
-            createdAt: Date.now(),
-            userId: userData.docId,
-            image: 'https://example.com/image.png',
-            banExpires: null,
-            banReason: null,
-            banned: false,
-        });
-
-        const adminRandom = Math.random().toString(36).substring(2, 15);
-        const adminData = await createTestUser(t, {
-            userId: 'test-admin-notifications-' + adminRandom,
-            email: 'notifications-admin@example.com-' + adminRandom,
-            name: 'Notifications Admin User ' + adminRandom,
-            password: 'test-password',
-            role: 'globalAdmin',
-            emailVerified: false,
-        });
-        adminUserId = adminData.docId;
-        adminOrganizationId = await createTestOrganization(t, {
-            name: 'Notifications Admin Org ' + adminRandom,
-            slug: 'notifications-admin-org-' + adminRandom,
-        });
-        await createTestMember(t, {
-            organizationId: adminOrganizationId,
-            userId: adminUserId,
-            role: 'owner',
-        });
-        objectiveId = await createTestObjective(t, {
-            userId,
-            organizationId: userOrganizationId,
-            title: 'Test Objective for Notifications',
-            targetValue: 100,
-            currentValue: 0,
-        });
+        owner = await joinAs('owner', 'owner');
+        creator = await joinAs('member', 'creator');
+        granted = await joinAs('member', 'granted');
+        outsider = await joinAs('member', 'outsider');
     });
 
-    test('getNotificationsByUser returns own notifications ordered by date', async () => {
-        const firstNotificationDate = Date.now() - DAY_MS;
-        const secondNotificationDate = Date.now();
-        await createTestNotification(t, {
-            userId,
-            organizationId: userOrganizationId,
-            objective: objectiveId,
-            notificationType: 'deadline',
-            message: 'First',
-            notificationDate: firstNotificationDate,
-        });
-        await createTestNotification(t, {
-            userId,
-            organizationId: userOrganizationId,
-            objective: objectiveId,
-            notificationType: 'deadline',
-            message: 'Second',
-            notificationDate: secondNotificationDate,
-        });
-
-        const adminObjectiveId = await createTestObjective(t, {
-            userId: adminUserId,
-            organizationId: adminOrganizationId,
-            title: 'Admin Objective',
-            targetValue: 100,
-            currentValue: 0,
-        });
-        await createTestNotification(t, {
-            userId: adminUserId,
-            organizationId: adminOrganizationId,
-            objective: adminObjectiveId,
-            notificationType: 'deadline',
-            message: 'Admin notification',
-        });
-
-        const result = await userIdentity.query(api.notifications.getNotificationsByUser, {
-            paginationOpts: { numItems: 10, cursor: null },
-        });
-
-        expect(result.page.map(notification => notification.message)).toEqual(['Second', 'First']);
-        expect(result.page.map(notification => notification.notificationDate)).toEqual([
-            secondNotificationDate,
-            firstNotificationDate,
-        ]);
-        expect(result.page.every(notification => Number.isFinite(notification._creationTime))).toBe(
-            true
-        );
-        expect(result.page.every(notification => notification.userId === userId)).toBe(true);
+    afterEach(() => {
+        vi.useRealTimers();
     });
 
-    test('getNotificationOverview caps unread badge count and reports truncation', async () => {
-        const now = Date.now();
-        await t.run(async ctx => {
-            for (let index = 0; index < 101; index += 1) {
-                await ctx.db.insert('notifications', {
-                    userId,
-                    organizationId: userOrganizationId,
-                    objective: objectiveId,
-                    read: false,
-                    notificationType: 'deadline',
-                    notificationDate: now + index,
-                    message: `Unread ${index}`,
-                });
-            }
+    test('milestones and completion reach everyone who can see the objective, as they choose @REQ-NOTIFICACIONES-001 @INH-NOT-01 @INH-NOT-03 @INH-NOT-04 @INH-NOT-08', async () => {
+        await as(owner).mutation(api.notifications.updateNotificationPreferences, {
+            deadline: true,
+            progress: false,
+            status: true,
+            achievement: true,
         });
 
-        const overview = await userIdentity.query(api.notifications.getNotificationOverview, {});
-        expect(overview.notifications).toHaveLength(20);
-        expect(overview.unreadCount).toBe(100);
-        expect(overview.isUnreadTruncated).toBe(true);
+        const objectiveId = await as(creator).mutation(api.objectives.createObjective, {
+            title: 'Run',
+            startValue: 0,
+            targetValue: 10,
+            memberAccess: 'none',
+            users: [{ userId: granted.docId, access: 'view' }],
+        });
+
+        await as(creator).mutation(api.progress.createProgress, {
+            objectiveId,
+            updatedValue: 6,
+            updateDate: startOfUtcDay(Date.now()),
+        });
+        await runScheduled();
+
+        const milestone = 'progressMilestone:Objective "Run" reached 50% of its target.';
+        expect(await keysOf(creator)).toEqual([milestone]);
+        expect(await keysOf(granted)).toEqual([milestone]);
+        expect(await keysOf(owner)).toEqual([]);
+
+        await as(creator).mutation(api.progress.createProgress, {
+            objectiveId,
+            updatedValue: 4,
+            updateDate: startOfUtcDay(Date.now()),
+        });
+        await runScheduled();
+
+        const completed = 'objectiveCompleted:Objective "Run" has been completed.';
+        expect(await keysOf(creator)).toEqual([completed, milestone]);
+        expect(await keysOf(granted)).toEqual([completed, milestone]);
+        expect(await keysOf(owner)).toEqual([completed]);
+        expect(await keysOf(outsider)).toEqual([]);
+
+        await as(creator).mutation(api.objectives.deleteObjective, { id: objectiveId });
+        await as(creator).mutation(api.trash.purgeObjective, { id: objectiveId });
+        await runScheduled();
+
+        expect(await keysOf(creator)).toEqual([]);
     });
 
-    test('getObjectivesForNotifications returns visible deduplicated objectives and rejects oversized lists', async () => {
-        const hiddenObjectiveId = await createTestObjective(t, {
-            userId: adminUserId,
-            organizationId: adminOrganizationId,
-            title: 'Hidden Admin Objective',
-            targetValue: 100,
-            currentValue: 0,
-        });
+    test('the daily task tells each deadline stage once per objective and day @REQ-NOTIFICACIONES-001 @INH-NOT-02 @INH-OBJ-19', async () => {
+        const today = startOfUtcDay(Date.now());
 
-        const objectives = await userIdentity.query(
-            api.notifications.getObjectivesForNotifications,
-            {
-                objectiveIds: [objectiveId, objectiveId, hiddenObjectiveId, objectiveId],
-            }
-        );
-
-        expect(objectives).toEqual([
-            { _id: objectiveId, title: 'Test Objective for Notifications' },
-        ]);
-        await expect(
-            userIdentity.query(api.notifications.getObjectivesForNotifications, {
-                objectiveIds: Array.from({ length: 51 }, () => objectiveId),
-            })
-        ).rejects.toThrow(/too many|limit|maximum|OBJECTIVE_ID_LIMIT/i);
-    });
-
-    test('setNotificationRead toggles read state', async () => {
-        const notification = await createTestNotification(t, {
-            userId,
-            organizationId: userOrganizationId,
-            objective: objectiveId,
-            notificationType: 'deadline',
-            message: 'Toggle',
-        });
-
-        await expect(
-            userIdentity.mutation(api.notifications.setNotificationRead, {
-                id: notification._id,
-                read: true,
-            })
-        ).resolves.toBeNull();
-        await expect(
-            userIdentity.run(ctx => ctx.db.get('notifications', notification._id))
-        ).resolves.toMatchObject({ read: true });
-        await expect(
-            userIdentity.mutation(api.notifications.setNotificationRead, {
-                id: notification._id,
-                read: false,
-            })
-        ).resolves.toBeNull();
-        await expect(
-            userIdentity.run(ctx => ctx.db.get('notifications', notification._id))
-        ).resolves.toMatchObject({ read: false });
-    });
-
-    test('markAllNotificationsRead marks unread notifications in the active organization', async () => {
-        const read = await createTestNotification(t, {
-            userId,
-            organizationId: userOrganizationId,
-            objective: objectiveId,
-            notificationType: 'deadline',
-            message: 'Read',
-        });
-        await userIdentity.mutation(api.notifications.setNotificationRead, {
-            id: read._id,
-            read: true,
-        });
-        await createTestNotification(t, {
-            userId,
-            organizationId: userOrganizationId,
-            objective: objectiveId,
-            notificationType: 'deadline',
-            message: 'Unread',
-        });
-
-        await expect(
-            userIdentity.mutation(api.notifications.markAllNotificationsRead, {})
-        ).resolves.toBeNull();
-        await drainScheduledFunctions(t);
-
-        const result = await userIdentity.query(api.notifications.getNotificationsByUser, {
-            paginationOpts: { numItems: 10, cursor: null },
-        });
-        expect(result.page).toHaveLength(2);
-        expect(result.page.every(notification => notification.read)).toBe(true);
-    });
-
-    test('deleteNotification removes the notification document', async () => {
-        const notification = await createTestNotification(t, {
-            userId,
-            organizationId: userOrganizationId,
-            objective: objectiveId,
-            notificationType: 'deadline',
-            message: 'To Delete',
-        });
-
-        await expect(
-            userIdentity.mutation(api.notifications.deleteNotification, {
-                id: notification._id,
-            })
-        ).resolves.toBeNull();
-        await expect(
-            userIdentity.run(async ctx => ctx.db.get('notifications', notification._id))
-        ).resolves.toBeNull();
-    });
-
-    test('deadline cron creates due notifications once for eligible active objectives', async () => {
-        const now = Date.now();
-        for (const [title, deadline] of [
-            ['Due Today', now + 3600000],
-            ['Overdue', now - DAY_MS],
-            ['Due Soon', now + 2 * DAY_MS],
-        ] as const) {
-            await createTestObjective(t, {
-                userId,
-                organizationId: userOrganizationId,
+        const create = (title: string, days: number, dueSoonDays?: number) =>
+            as(creator).mutation(api.objectives.createObjective, {
                 title,
-                targetValue: 100,
-                currentValue: 50,
-                status: 'active',
-                deadline,
+                startValue: 0,
+                targetValue: 10,
+                deadline: today + days * DAY_MS,
+                dueSoonDays,
             });
+
+        await create('Soon', 3, 3);
+        await create('Now', 0);
+        await create('Later', 5);
+
+        for (let run = 0; run < 2; run++) {
+            await t.mutation(internal.notifications.sendDeadlineNotifications, { today });
+            await runScheduled();
         }
 
-        await t.mutation(internal.notifications.runDeadlineNotificationsCron, {});
-        const firstResult = await userIdentity.query(api.notifications.getNotificationsByUser, {
-            paginationOpts: { numItems: 10, cursor: null },
-        });
-        await t.mutation(internal.notifications.runDeadlineNotificationsCron, {});
-        const secondResult = await userIdentity.query(api.notifications.getNotificationsByUser, {
-            paginationOpts: { numItems: 10, cursor: null },
-        });
-
-        expect(firstResult.page.length).toBeGreaterThan(0);
-        expect(secondResult.page.map(notification => notification._id)).toEqual(
-            firstResult.page.map(notification => notification._id)
-        );
+        const keys = await keysOf(outsider);
+        expect(keys).toHaveLength(2);
+        expect(keys[0]).toMatch(/^deadlineToday:Objective "Now" is due today/);
+        expect(keys[1]).toMatch(/^deadlineUpcoming:Objective "Soon" is due in 3 days/);
     });
 
-    test('deadline cron skips disabled preferences and ineligible objectives', async () => {
-        const now = Date.now();
-        await userIdentity.mutation(api.notificationPreferences.updateUserPreferences, {
-            deadlineNotifications: false,
+    test('users read, mark and delete only their own notifications in the active organization @REQ-NOTIFICACIONES-002 @REQ-NOTIFICACIONES-003 @REQ-NOTIFICACIONES-004 @INH-NOT-06 @INH-NOT-07 @REQ-NF-008', async () => {
+        const otherOrganizationId = await createTestOrganization(t, {
+            name: 'Elsewhere',
+            slug: `elsewhere-${Math.random().toString(36).slice(2, 10)}`,
         });
-        await userIdentity.run(async ctx => {
-            for (const objective of [
-                {
-                    title: 'Disabled Preference',
-                    status: 'active' as const,
-                    deadline: now + DAY_MS,
-                },
-                {
-                    title: 'Completed',
-                    status: 'completed' as const,
-                    deadline: now + DAY_MS,
-                    currentValue: 100,
-                },
-                {
-                    title: 'Deleted',
-                    status: 'active' as const,
-                    deadline: now + DAY_MS,
-                    deletedAt: now,
-                    deletedBy: userId,
-                },
-                {
-                    title: 'No Deadline',
-                    status: 'active' as const,
-                },
-            ]) {
-                await ctx.db.insert('objectives', {
-                    createdBy: userId,
-                    ownerId: userId,
-                    visibility: 'private',
-                    organizationId: userOrganizationId,
-                    targetValue: 100,
-                    currentValue: objective.currentValue ?? 50,
-                    startValue: objective.currentValue ?? 50,
-                    earlyBirdCompleted: false,
-                    createdAt: now,
-                    updatedAt: now,
-                    ...objective,
-                });
+
+        const notice = {
+            notificationType: 'achievement' as const,
+            messageKey: 'achievementEarned',
+            messageParams: { code: 'first_objective' },
+            message: 'Achievement earned.',
+            read: false,
+        };
+
+        const [ownFirst, othersId] = await t.run(async ctx => {
+            const ids = [];
+
+            for (let index = 0; index < 150; index++) {
+                ids.push(
+                    await ctx.db.insert('notifications', {
+                        ...notice,
+                        userId: creator.docId,
+                        organizationId,
+                        notificationDate: index,
+                    })
+                );
             }
+
+            await ctx.db.insert('notifications', {
+                ...notice,
+                userId: creator.docId,
+                organizationId: otherOrganizationId,
+                notificationDate: 0,
+            });
+
+            const othersNotification = await ctx.db.insert('notifications', {
+                ...notice,
+                userId: owner.docId,
+                organizationId,
+                notificationDate: 0,
+            });
+
+            return [ids[0], othersNotification];
         });
 
-        await t.mutation(internal.notifications.runDeadlineNotificationsCron, {});
-        const result = await userIdentity.query(api.notifications.getNotificationsByUser, {
-            paginationOpts: { numItems: 10, cursor: null },
+        const listed = await as(creator).query(api.notifications.listNotifications, {
+            paginationOpts: page,
         });
 
-        expect(result.page).toEqual([]);
-    });
-
-    test('public notification functions reject unauthenticated callers', async () => {
-        const notification = await createTestNotification(t, {
-            userId,
-            organizationId: userOrganizationId,
-            objective: objectiveId,
-            notificationType: 'deadline',
-            message: 'Private',
-        });
+        expect(listed.page.map(notification => notification.date)).toEqual(
+            Array.from({ length: 20 }, (_, index) => 149 - index)
+        );
+        expect(await as(creator).query(api.notifications.countUnreadNotifications, {})).toBe(100);
 
         await expect(
-            t.query(api.notifications.getNotificationsByUser, {
-                paginationOpts: { numItems: 10, cursor: null },
-            })
-        ).rejects.toThrow(/Unauthenticated|User not authenticated|AUTH_REQUIRED/);
-        await expect(
-            t.mutation(api.notifications.setNotificationRead, {
-                id: notification._id,
+            as(creator).mutation(api.notifications.setNotificationRead, {
+                id: othersId,
                 read: true,
             })
-        ).rejects.toThrow(/Unauthenticated|User not authenticated|AUTH_REQUIRED/);
-        await expect(t.mutation(api.notifications.markAllNotificationsRead, {})).rejects.toThrow(
-            /Unauthenticated|User not authenticated|AUTH_REQUIRED/
-        );
-        await expect(
-            t.mutation(api.notifications.deleteNotification, {
-                id: notification._id,
-            })
-        ).rejects.toThrow(/Unauthenticated|User not authenticated|AUTH_REQUIRED/);
+        ).rejects.toThrow('NOTIFICATION_NOT_FOUND');
+
+        await as(creator).mutation(api.notifications.markAllNotificationsRead, {});
+        await runScheduled();
+
+        await t.run(async ctx => {
+            const unread = await ctx.db
+                .query('notifications')
+                .withIndex('by_user_organization_read', q => q.eq('userId', creator.docId))
+                .collect();
+
+            expect(unread.filter(row => !row.read).map(row => row.organizationId)).toEqual([
+                otherOrganizationId,
+            ]);
+            expect((await ctx.db.get('notifications', othersId))?.read).toBe(false);
+        });
+
+        await as(creator).mutation(api.notifications.setNotificationRead, {
+            id: ownFirst,
+            read: false,
+        });
+        expect(await as(creator).query(api.notifications.countUnreadNotifications, {})).toBe(1);
+
+        await as(creator).mutation(api.notifications.deleteNotification, { id: ownFirst });
+        expect(await as(creator).query(api.notifications.countUnreadNotifications, {})).toBe(0);
     });
 });

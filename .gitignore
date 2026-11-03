@@ -26,6 +26,7 @@ convex/.env.*.local
 *.tsbuildinfo
 next-env.d.ts
 .next
+.convex/
 
 # local stack data
 /infrastructure/mysql-data
@@ -63,9 +64,7 @@ error-handling-audit-report.md
 *.tgz
 *.rar
 
-# Private local stack credentials and generated release evidence
+# Private local stack credentials
 /.local-stack/
 /artifacts/
-/reports/quality/
 /reports/e2e/
-/reports/evidence-manifest.json

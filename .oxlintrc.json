@@ -1,6 +1,10 @@
 {
     "$schema": "./node_modules/oxlint/configuration_schema.json",
     "plugins": ["typescript", "react", "nextjs"],
+    "jsPlugins": ["./tools/oxlint/index.ts"],
+    "rules": {
+        "tfg/require-readable-spacing": "error"
+    },
     "categories": {
         "correctness": "off"
     },
@@ -28,10 +32,10 @@
         "test-results/**",
         "playwright-report/**",
         "blob-report/**",
-        "tests/.auth/**",
         "next-env.d.ts",
         "convex/_generated/**",
         "convex/generated/**",
+        "tools/oxlint/vendor/**",
         "infrastructure/data/**",
         "infrastructure/mysql-data/**"
     ],
@@ -242,7 +246,7 @@
             }
         },
         {
-            "files": ["src/**/*.{ts,tsx}", "shared/**/*.ts", "convex/**/*.ts"],
+            "files": ["src/**/*.{ts,tsx}", "convex/**/*.ts"],
             "excludeFiles": [
                 "convex/tests/**/*.ts",
                 "convex/_generated/**",

@@ -1,167 +1,288 @@
-import { internalMutation } from './platform/db/internalMutation';
-import { paginationOptsValidator } from 'convex/server';
 import { ConvexError, v } from 'convex/values';
+import { paginationOptsValidator, paginationResultValidator } from 'convex/server';
 import { internal } from './_generated/api';
-import { mutationWithRLS, queryWithRLS } from './platform/rls/wrappers';
-import { runDeadlineNotificationsJob } from './jobs/notifications/deadlineNotifications';
-import { markAllReadBatchJob } from './jobs/notifications/markAllRead';
-import { canReadObjectiveFromNotification } from './domain/notifications/delivery';
-import { ERROR_CODES } from './utils/constants';
+import { internalMutation } from './_generated/server';
+import { ERROR_CODES } from './shared/errorCodes';
+import { withNextPageCheck, withPaginationLimits } from './shared/pagination';
+import { mutationWithRLS, queryWithRLS } from './features/authorization/wrappers';
+import { objectiveAccess } from './features/objectives/access';
+import { requireOrganizationId } from './features/objectives/records';
+import { DAY_MS, startOfUtcDay } from './features/objectives/rules';
 import {
-    objectivesArrayValidator,
-    paginatedNotificationsValidator,
-} from './utils/apiReturnValidators';
-import { notificationDocumentValidator } from './utils/documentValidators';
-import { withInvalidCursorRetry } from './utils/pagination';
-import { DEFAULT_PAGE_SIZE } from '../shared/pagination';
-const OBJECTIVE_ID_LIMIT = 50;
-const UNREAD_BADGE_LIMIT = 100;
-const EMPTY_NOTIFICATION_PAGE = {
-    page: [],
-    continueCursor: '',
-    isDone: true,
-};
-export const getNotificationsByUser = queryWithRLS({
-    args: {
-        paginationOpts: paginationOptsValidator,
-    },
-    returns: paginatedNotificationsValidator,
-    handler: async (ctx, { paginationOpts }) => {
-        const organizationId = ctx.organizationId;
-        if (!organizationId) {
-            return EMPTY_NOTIFICATION_PAGE;
-        }
-        return await withInvalidCursorRetry(paginationOpts, retryPaginationOpts =>
-            ctx.db
-                .query('notifications')
-                .withIndex('by_user_organization_date', q =>
-                    q.eq('userId', ctx.userId).eq('organizationId', organizationId)
-                )
-                .order('desc')
-                .paginate(retryPaginationOpts)
+    DEFAULT_PREFERENCES,
+    NOTIFICATION_BATCH_SIZE,
+    UNREAD_COUNT_LIMIT,
+} from './features/notifications/constants';
+import { isNotificationEnabled } from './features/notifications/delivery';
+import { markReadBatch } from './features/notifications/inbox';
+import { deadlineNotice } from './features/notifications/notices';
+import {
+    noticeValidator,
+    notificationPreferencesValidator,
+    notificationValidator,
+} from './features/notifications/validators';
+
+export const listNotifications = queryWithRLS({
+    args: { paginationOpts: paginationOptsValidator },
+    returns: paginationResultValidator(notificationValidator),
+    handler: async (ctx, args) => {
+        const organizationId = requireOrganizationId(ctx.organizationId);
+
+        const result = await ctx.db
+            .query('notifications')
+            .withIndex('by_user_organization_date', q =>
+                q.eq('userId', ctx.userId).eq('organizationId', organizationId)
+            )
+            .order('desc')
+            .paginate(withPaginationLimits(args.paginationOpts));
+
+        return await withNextPageCheck(
+            ctx.db,
+            {
+                table: 'notifications',
+                index: 'by_user_organization_date',
+                prefix: [ctx.userId, organizationId],
+                indexKey: doc => [doc.userId, doc.organizationId, doc.notificationDate],
+                paginationOpts: args.paginationOpts,
+            },
+            result,
+            result.page.map(notification => ({
+                id: notification._id,
+                type: notification.notificationType,
+                date: notification.notificationDate,
+                read: notification.read,
+                objectiveId: notification.objective ?? null,
+                messageKey: notification.messageKey,
+                messageParams: notification.messageParams,
+                message: notification.message,
+            }))
         );
     },
 });
-export const getObjectivesForNotifications = queryWithRLS({
-    args: {
-        objectiveIds: v.array(v.id('objectives')),
-    },
-    returns: objectivesArrayValidator,
-    handler: async (ctx, args) => {
-        if (args.objectiveIds.length > OBJECTIVE_ID_LIMIT) {
-            throw new ConvexError(ERROR_CODES.OBJECTIVE_ID_LIMIT_EXCEEDED);
-        }
-        const uniqueIds = [...new Set(args.objectiveIds)];
-        const objectives = [];
-        for (const objectiveId of uniqueIds) {
-            const objective = await ctx.db.get('objectives', objectiveId);
-            if (!objective) {
-                continue;
-            }
-            if (canReadObjectiveFromNotification(ctx, objective)) {
-                objectives.push({ _id: objective._id, title: objective.title });
-            }
-        }
-        return objectives;
-    },
-});
-export const getNotificationOverview = queryWithRLS({
+
+export const countUnreadNotifications = queryWithRLS({
     args: {},
-    returns: v.object({
-        notifications: v.array(notificationDocumentValidator),
-        unreadCount: v.number(),
-        isUnreadTruncated: v.boolean(),
-    }),
+    returns: v.number(),
     handler: async ctx => {
-        const organizationId = ctx.organizationId;
-        if (!organizationId) {
-            return { notifications: [], unreadCount: 0, isUnreadTruncated: false };
+        if (!ctx.organizationId) {
+            return 0;
         }
-        const [notifications, unreadRows] = await Promise.all([
-            ctx.db
-                .query('notifications')
-                .withIndex('by_user_organization_date', q =>
-                    q.eq('userId', ctx.userId).eq('organizationId', organizationId)
-                )
-                .order('desc')
-                .take(DEFAULT_PAGE_SIZE),
-            ctx.db
-                .query('notifications')
-                .withIndex('by_user_organization_read', q =>
-                    q
-                        .eq('userId', ctx.userId)
-                        .eq('organizationId', organizationId)
-                        .eq('read', false)
-                )
-                .take(UNREAD_BADGE_LIMIT + 1),
-        ]);
-        return {
-            notifications,
-            unreadCount: Math.min(unreadRows.length, UNREAD_BADGE_LIMIT),
-            isUnreadTruncated: unreadRows.length > UNREAD_BADGE_LIMIT,
-        };
+
+        const organizationId = ctx.organizationId;
+
+        const unread = await ctx.db
+            .query('notifications')
+            .withIndex('by_user_organization_read', q =>
+                q.eq('userId', ctx.userId).eq('organizationId', organizationId).eq('read', false)
+            )
+            .take(UNREAD_COUNT_LIMIT);
+
+        return unread.length;
     },
 });
+
 export const setNotificationRead = mutationWithRLS({
-    args: {
-        id: v.id('notifications'),
-        read: v.boolean(),
-    },
+    args: { id: v.id('notifications'), read: v.boolean() },
     returns: v.null(),
     handler: async (ctx, args) => {
-        const notification = await ctx.db.get('notifications', args.id);
-        if (!notification) {
-            throw new ConvexError(ERROR_CODES.NOT_AUTHORIZED_NOTIFICATION);
+        if (!(await ctx.db.get('notifications', args.id))) {
+            throw new ConvexError(ERROR_CODES.NOTIFICATION_NOT_FOUND);
         }
+
         await ctx.db.patch('notifications', args.id, { read: args.read });
+
         return null;
     },
 });
-export const markAllReadBatch = internalMutation({
-    returns: v.null(),
-    args: {
-        userId: v.id('user'),
-        organizationId: v.id('organization'),
-    },
-    handler: async (ctx, args) => {
-        return await markAllReadBatchJob(ctx, args);
-    },
-});
+
 export const markAllNotificationsRead = mutationWithRLS({
     args: {},
     returns: v.null(),
     handler: async ctx => {
-        if (!ctx.organizationId) {
-            throw new ConvexError(ERROR_CODES.NO_ACTIVE_ORG);
+        const organizationId = requireOrganizationId(ctx.organizationId);
+
+        if (await markReadBatch(ctx.db, ctx.userId, organizationId)) {
+            await ctx.scheduler.runAfter(0, internal.notifications.continueMarkAllRead, {
+                userId: ctx.userId,
+                organizationId,
+            });
         }
-        await ctx.scheduler.runAfter(0, internal.notifications.markAllReadBatch, {
-            userId: ctx.userId,
-            organizationId: ctx.organizationId,
-        });
+
         return null;
     },
 });
+
+export const continueMarkAllRead = internalMutation({
+    args: { userId: v.id('user'), organizationId: v.id('organization') },
+    returns: v.null(),
+    handler: async (ctx, args) => {
+        if (await markReadBatch(ctx.db, args.userId, args.organizationId)) {
+            await ctx.scheduler.runAfter(0, internal.notifications.continueMarkAllRead, args);
+        }
+
+        return null;
+    },
+});
+
 export const deleteNotification = mutationWithRLS({
-    args: {
-        id: v.id('notifications'),
-    },
+    args: { id: v.id('notifications') },
     returns: v.null(),
     handler: async (ctx, args) => {
-        const notification = await ctx.db.get('notifications', args.id);
-        if (!notification) {
-            throw new ConvexError(ERROR_CODES.NOT_AUTHORIZED_NOTIFICATION);
+        if (!(await ctx.db.get('notifications', args.id))) {
+            throw new ConvexError(ERROR_CODES.NOTIFICATION_NOT_FOUND);
         }
+
         await ctx.db.delete('notifications', args.id);
+
         return null;
     },
 });
-export const runDeadlineNotificationsCron = internalMutation({
-    returns: v.null(),
-    args: {
-        runAt: v.optional(v.number()),
-        cursor: v.optional(v.union(v.string(), v.null())),
+
+export const getNotificationPreferences = queryWithRLS({
+    args: {},
+    returns: notificationPreferencesValidator,
+    handler: async ctx => {
+        const preferences = await ctx.db
+            .query('notificationPreferences')
+            .withIndex('by_user', q => q.eq('userId', ctx.userId))
+            .unique();
+
+        if (!preferences) {
+            return DEFAULT_PREFERENCES;
+        }
+
+        const { deadline, progress, status, achievement } = preferences;
+
+        return { deadline, progress, status, achievement };
     },
+});
+
+export const updateNotificationPreferences = mutationWithRLS({
+    args: notificationPreferencesValidator.fields,
+    returns: v.null(),
     handler: async (ctx, args) => {
-        return await runDeadlineNotificationsJob(ctx, args);
+        const preferences = await ctx.db
+            .query('notificationPreferences')
+            .withIndex('by_user', q => q.eq('userId', ctx.userId))
+            .unique();
+
+        if (preferences) {
+            await ctx.db.patch('notificationPreferences', preferences._id, args);
+        } else {
+            await ctx.db.insert('notificationPreferences', { ...args, userId: ctx.userId });
+        }
+
+        return null;
+    },
+});
+
+export const notifyMembers = internalMutation({
+    args: {
+        organizationId: v.id('organization'),
+        objectiveId: v.optional(v.id('objectives')),
+        notice: noticeValidator,
+        cursor: v.union(v.string(), v.null()),
+    },
+    returns: v.null(),
+    handler: async (ctx, args) => {
+        const objective = args.objectiveId
+            ? await ctx.db.get('objectives', args.objectiveId)
+            : null;
+
+        if (args.objectiveId && (!objective || objective.deletedAt !== undefined)) {
+            return null;
+        }
+
+        const members = await ctx.db
+            .query('member')
+            .withIndex('organizationId', q => q.eq('organizationId', args.organizationId))
+            .paginate({ numItems: NOTIFICATION_BATCH_SIZE, cursor: args.cursor });
+
+        const now = Date.now();
+
+        for (const member of members.page) {
+            const actor = {
+                userId: member.userId,
+                organizationId: args.organizationId,
+                memberRole: member.role,
+            };
+
+            if (
+                (!objective || (await objectiveAccess(ctx.db, actor, objective)).canView) &&
+                (await isNotificationEnabled(ctx.db, member.userId, args.notice.notificationType))
+            ) {
+                await ctx.db.insert('notifications', {
+                    ...args.notice,
+                    userId: member.userId,
+                    organizationId: args.organizationId,
+                    objective: objective?._id,
+                    read: false,
+                    notificationDate: now,
+                });
+            }
+        }
+
+        if (!members.isDone) {
+            await ctx.scheduler.runAfter(0, internal.notifications.notifyMembers, {
+                ...args,
+                cursor: members.continueCursor,
+            });
+        }
+
+        return null;
+    },
+});
+
+export const sendDeadlineNotifications = internalMutation({
+    args: { today: v.optional(v.number()), cursor: v.optional(v.string()) },
+    returns: v.null(),
+    handler: async (ctx, args) => {
+        const today = args.today ?? startOfUtcDay(Date.now());
+
+        const objectives = await ctx.db
+            .query('objectives')
+            .withIndex('by_status_deletedAt_deadline', q =>
+                q
+                    .eq('status', 'active')
+                    .eq('deletedAt', undefined)
+                    .gte('deadline', today - DAY_MS)
+            )
+            .paginate({ numItems: NOTIFICATION_BATCH_SIZE, cursor: args.cursor ?? null });
+
+        for (const objective of objectives.page) {
+            const notice = deadlineNotice(objective, today);
+
+            if (!notice) {
+                continue;
+            }
+
+            const sentToday = await ctx.db
+                .query('notifications')
+                .withIndex('by_objective_type_date', q =>
+                    q
+                        .eq('objective', objective._id)
+                        .eq('notificationType', 'deadline')
+                        .gte('notificationDate', today)
+                )
+                .first();
+
+            if (!sentToday) {
+                await ctx.scheduler.runAfter(0, internal.notifications.notifyMembers, {
+                    organizationId: objective.organizationId,
+                    objectiveId: objective._id,
+                    notice,
+                    cursor: null,
+                });
+            }
+        }
+
+        if (!objectives.isDone) {
+            await ctx.scheduler.runAfter(0, internal.notifications.sendDeadlineNotifications, {
+                today,
+                cursor: objectives.continueCursor,
+            });
+        }
+
+        return null;
     },
 });

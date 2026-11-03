@@ -1,18 +1,13 @@
 'use client';
 
-import {
-    FieldShell,
-    getFieldError,
-    FormControl,
-    FormItem,
-    FormLabel,
-    FormMessage,
-} from '@/components/ui/form-fields';
+import { Field, FieldError, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import type { TanStackFormApi } from '@/components/forms/form-types';
+import { getFieldErrors } from '@/components/forms/form-utils';
+import type { RegisterFormValues } from '@/features/auth/schemas/register';
 
 interface RegisterFormInputFieldProps {
-    form: TanStackFormApi;
+    form: TanStackFormApi<RegisterFormValues>;
     name: 'username' | 'email' | 'password' | 'confirmPassword';
     label: string;
     placeholder: string;
@@ -30,31 +25,31 @@ export function RegisterFormInputField({
 }: RegisterFormInputFieldProps) {
     return (
         <form.Field name={name}>
-            {field => (
-                <FieldShell error={getFieldError(form, field)}>
-                    <FormItem>
-                        <FormLabel className="text-foreground">{label}</FormLabel>
-                        <FormControl>
-                            <Input
-                                name={field.name}
-                                value={
-                                    typeof field.state.value === 'string' ||
-                                    typeof field.state.value === 'number'
-                                        ? field.state.value
-                                        : ''
-                                }
-                                onChange={event => field.handleChange(event.target.value)}
-                                onBlur={field.handleBlur}
-                                type={type}
-                                placeholder={placeholder}
-                                className="focus:ring-2 focus:ring-primary/20"
-                                data-testid={testId}
-                            />
-                        </FormControl>
-                        <FormMessage />
-                    </FormItem>
-                </FieldShell>
-            )}
+            {field => {
+                const errors = getFieldErrors(form, field);
+                const isInvalid = !!errors.length;
+
+                return (
+                    <Field data-invalid={isInvalid}>
+                        <FieldLabel htmlFor={field.name} className="text-foreground">
+                            {label}
+                        </FieldLabel>
+                        <Input
+                            id={field.name}
+                            name={field.name}
+                            value={field.state.value}
+                            onChange={event => field.handleChange(event.target.value)}
+                            onBlur={field.handleBlur}
+                            type={type}
+                            placeholder={placeholder}
+                            aria-invalid={isInvalid}
+                            className="focus:ring-2 focus:ring-primary/20"
+                            data-testid={testId}
+                        />
+                        {isInvalid && <FieldError errors={errors} />}
+                    </Field>
+                );
+            }}
         </form.Field>
     );
 }

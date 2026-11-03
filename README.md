@@ -8,8 +8,9 @@ achievements.
 ## Requirements
 
 - Node `24.19.0` for reproducible verification (see `.nvmrc`)
-- pnpm `12.3.4` (`packageManager` field)
-- Docker (for the local self-hosted Convex + MySQL + MailHog stack)
+- pnpm `12.9.1` (`packageManager` field)
+- Docker (for the local self-hosted Convex + MySQL + MailDev stack), or none with
+  `convex:local:no-docker` (see [self-host.md](./self-host.md#sin-docker))
 
 ## Quick start
 
@@ -36,27 +37,28 @@ Install Playwright browsers only when you need E2E tests: `pnpm run playwright:i
 
 - `pnpm dev` — Convex + Next in dev (`convex dev` starts the frontend via `dev:front`).
 - `pnpm dev:front` / `pnpm dev:convex` — Next or Convex alone.
-- `pnpm checks` — full pre-merge gate: format, types, lint, tests, knip, translations, Convex
-  contract checks, and peer-dependency compatibility.
-- `pnpm checks:static` runs the gate without tests.
-- `pnpm ci` runs the static checks, both test suites once with coverage, the build, and E2E tests.
-- `pnpm test` runs backend and frontend suites; `pnpm test:backend` and `pnpm test:frontend` run
-  them separately.
-- `pnpm test:coverage` — Vitest with coverage thresholds.
-- `pnpm test:e2e` — Playwright against the Docker e2e stack (includes MailHog SMTP).
+- `pnpm checks` — `checks:static` then `test`.
+- `pnpm checks:static` — format, types, lint, knip, translations, and peer-dependency compatibility.
+- `pnpm run ci` — `checks:static`, `test:coverage`, `build`, and `test:e2e`. Use `run`: plain
+  `pnpm ci` is pnpm's own clean install.
+- `pnpm test` — `test:backend` then `test:frontend`.
+- `pnpm test:coverage` — both Vitest suites with coverage thresholds.
+- `pnpm test:e2e` — Playwright against the Docker e2e stack (includes MailDev SMTP).
+- `pnpm test:e2e:no-docker` — same suite against a throwaway Convex backend binary and MailDev run
+  as plain processes (Node 24 required; see [self-host.md](./self-host.md#e2e-sin-docker)).
 - `pnpm run convex:local` starts development services and preserves data. `convex:local:stop` stops
   them; only `convex:local:reset` deletes the managed local data. See
   [self-host.md](./self-host.md).
+- `pnpm run convex:local:no-docker` — same setup without Docker: the Convex CLI runs a local
+  deployment under `.convex/local/default`; then use `pnpm dev`, plus `pnpm mail:local` (MailDev,
+  `:1080`) to capture email. `convex:local:no-docker:reset` deletes that deployment's data.
 - `pnpm build` / `pnpm start` — production Next build and serve (needs a configured Convex
   deployment).
 
 ## Documentation
 
-- [Current implementation inventory](docs/estado-proyecto.md).
-- [Local operation and recovery](docs/operacion-local.md).
-
 - [`AGENTS.md`](./AGENTS.md) — project structure, coding style, and the full command reference.
-- [`self-host.md`](./self-host.md) — local Docker stack (Convex self-hosted, MySQL, MailHog) and
+- [`self-host.md`](./self-host.md) — local Docker stack (Convex self-hosted, MySQL, MailDev) and
   environment variables.
 - `convex/_generated/ai/guidelines.md` — Convex conventions (read before editing backend code).
 
@@ -75,13 +77,12 @@ against a personal/dev deployment. Use `npx convex deploy` **only** for producti
 | Variable                                                                  | Where  | Notes                                                              |
 | ------------------------------------------------------------------------- | ------ | ------------------------------------------------------------------ |
 | `SITE_URL`                                                                | Convex | Public app origin (`https://…`), no trailing slash                 |
-| `BETTER_AUTH_URL`                                                         | Convex | Usually the Convex site URL used by Better Auth                    |
+| `BETTER_AUTH_URL`                                                         | Convex | Public app origin, same as `SITE_URL`                              |
 | `BETTER_AUTH_SECRET`                                                      | Convex | Long random secret; not a `NEXT_PUBLIC_*` value                    |
 | `SETUP_SECRET`                                                            | Convex | 32–256 chars; required before first `/setup` on non-loopback hosts |
-| `EMAIL_PROVIDER`                                                          | Convex | `resend` (typical prod) or `smtp`                                  |
-| `EMAIL_FROM` / `RESEND_API_KEY`                                           | Convex | When `EMAIL_PROVIDER=resend`                                       |
-| `SMTP_HOST` / `SMTP_PORT` / `SMTP_SECURE` / `SMTP_USER` / `SMTP_PASSWORD` | Convex | When `EMAIL_PROVIDER=smtp`                                         |
-| `JWKS`                                                                    | Convex | Generate after auth secret changes (`pnpm run generate-jwks`)      |
+| `EMAIL_FROM`                                                              | Convex | Sender address for transactional email                             |
+| `SMTP_HOST` / `SMTP_PORT` / `SMTP_SECURE` / `SMTP_USER` / `SMTP_PASSWORD` | Convex | SMTP server that delivers the email (Nodemailer)                   |
+| `JWKS`                                                                    | Convex | Optional; caches Better Auth's signing keys                        |
 
 3. Deploy functions: `npx convex deploy` (or `CONVEX_DEPLOY_KEY=… npx convex deploy` in CI).
 4. Open the app URL, complete `/setup` once with `SETUP_SECRET`, then treat that secret as
@@ -103,14 +104,7 @@ against a personal/dev deployment. Use `npx convex deploy` **only** for producti
 ### 3) Sanity checks
 
 - Auth redirects and CORS: `SITE_URL` and `NEXT_PUBLIC_SITE_URL` must match the browser origin.
-- Mail: send a password-reset or invitation and confirm delivery (Resend dashboard or SMTP inbox).
-- Do **not** set `E2E_SETUP_SECRET` in a real deployment (local e2e runner flag only).
+- Mail: send a password-reset or invitation and confirm delivery (SMTP inbox).
 
-Local self-hosting remains documented in [`self-host.md`](./self-host.md); MailHog (`:8025`) is for
+Local self-hosting remains documented in [`self-host.md`](./self-host.md); MailDev (`:1080`) is for
 dev/e2e SMTP capture, not production.
-
-## Testing note
-
-The e2e stack uses `E2E_SETUP_SECRET` only as a **local-only runner flag** that permits production
-mode over a loopback HTTP URL. It also configures a separate test `SETUP_SECRET` so the global setup
-exercises the protected bootstrap request. Do not set `E2E_SETUP_SECRET` in a real deployment.
