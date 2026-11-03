@@ -132,6 +132,26 @@ export async function waitForInvitationUrl(
     return url;
 }
 
+export async function waitForVerificationUrl(
+    page: Page,
+    email: string,
+    since: number
+): Promise<string> {
+    let url = '';
+    await expect
+        .poll(
+            async () => {
+                url = await findLatestEmailUrl(page.request, email, 'verify-email', since);
+
+                return Boolean(url);
+            },
+            { timeout: 20000, intervals: [250, 500, 1000] }
+        )
+        .toBe(true);
+
+    return url;
+}
+
 export async function verifyEmailFromInvitationPage(page: Page, email: string): Promise<void> {
     const verificationRequired = page.getByTestId('invitation-verification-required');
     const acceptButton = page.getByTestId('invitation-accept-button').first();

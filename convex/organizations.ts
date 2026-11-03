@@ -16,13 +16,10 @@ import { getSession } from 'kitcn/auth';
 import { isActiveAccount } from './features/auth/users';
 import { isOrganizationAdminRole, normalizeOrganizationRole } from './features/organizations/roles';
 import { paginationOptsValidator, paginationResultValidator } from 'convex/server';
-import { internalMutation, query } from './_generated/server';
-import { normalizeRegistrationEmail } from './features/auth/users';
+import { query } from './_generated/server';
 import { queryWithRLS } from './features/authorization/wrappers';
 import { resolveActiveMembership } from './features/authorization/authContext';
 import { withNextPageCheck, withPaginationLimits } from './shared/pagination';
-import { NEW_ACCOUNT_SESSIONS } from './features/auth/sessions';
-import { insertAuditLog } from './features/audit/log';
 
 export const getPublicInvitationStatus = query({
     args: {
@@ -31,7 +28,6 @@ export const getPublicInvitationStatus = query({
     returns: v.object({
         isValid: v.boolean(),
         organizationName: v.optional(v.string()),
-        requireEmailVerification: v.optional(v.boolean()),
     }),
     handler: async (ctx, args) => {
         const serverNow = Date.now();
@@ -56,7 +52,6 @@ export const getPublicInvitationStatus = query({
         return {
             isValid: true,
             organizationName: organization.name,
-            requireEmailVerification: invitation.requireEmailVerification ?? false,
         };
     },
 });
@@ -234,7 +229,7 @@ export const getUserInvitations = queryWithRLS({
     handler: async (ctx, args) => {
         const user = await ctx.dbForIntegrityChecks.get('user', ctx.userId);
 
-        if (!user) {
+        if (!user?.emailVerified) {
             return { page: [], isDone: true, continueCursor: '' };
         }
 
@@ -251,9 +246,7 @@ export const getUserInvitations = queryWithRLS({
 
         const now = Date.now();
 
-        const isListed = (invitation: Doc<'invitation'>) =>
-            invitation.expiresAt > now &&
-            (user.emailVerified || invitation.requireEmailVerification !== true);
+        const isListed = (invitation: Doc<'invitation'>) => invitation.expiresAt > now;
 
         const live = result.page.filter(isListed);
 
@@ -275,7 +268,6 @@ export const getUserInvitations = queryWithRLS({
                     organizationId: invitation.organizationId,
                     organization: { name: organization.name },
                     inviter: inviter ? { name: inviter.name } : undefined,
-                    requireEmailVerification: invitation.requireEmailVerification ?? false,
                 };
             })
         );
@@ -423,70 +415,5 @@ export const getOrganizationPendingInvitations = queryWithRLS({
                 expiresAt: invitation.expiresAt,
             }))
         );
-    },
-});
-
-export const acceptInvitationOnRegistration = internalMutation({
-    args: { invitationId: v.string(), userId: v.string() },
-    returns: v.null(),
-    handler: async (ctx, args) => {
-        const invitationId = ctx.db.normalizeId('invitation', args.invitationId);
-        const userId = ctx.db.normalizeId('user', args.userId);
-        const invitation = invitationId && (await ctx.db.get('invitation', invitationId));
-        const user = userId && (await ctx.db.get('user', userId));
-
-        if (
-            !invitation ||
-            !user ||
-            invitation.status !== 'pending' ||
-            invitation.expiresAt <= Date.now() ||
-            invitation.requireEmailVerification === true ||
-            normalizeRegistrationEmail(invitation.email) !==
-                normalizeRegistrationEmail(user.email) ||
-            !(await ctx.db.get('organization', invitation.organizationId))
-        ) {
-            return null;
-        }
-
-        const memberId = await ctx.db.insert('member', {
-            organizationId: invitation.organizationId,
-            userId: user._id,
-            role: invitation.role ?? 'member',
-            createdAt: Date.now(),
-        });
-
-        await ctx.db.patch('invitation', invitation._id, { status: 'accepted' });
-
-        await insertAuditLog(ctx, {
-            action: 'organization_member.created',
-            resourceType: 'organization_member',
-            resourceId: memberId,
-            userId: user._id,
-            organizationId: invitation.organizationId,
-            severity: 'info',
-            metadata: { after: { role: invitation.role ?? 'member' } },
-        });
-        await insertAuditLog(ctx, {
-            action: 'invitation.accepted',
-            resourceType: 'invitation',
-            resourceId: invitation._id,
-            userId: user._id,
-            organizationId: invitation.organizationId,
-            severity: 'info',
-            metadata: { after: { status: 'accepted' } },
-        });
-
-        const sessions = await ctx.db
-            .query('session')
-            .withIndex('userId', q => q.eq('userId', user._id))
-            .take(NEW_ACCOUNT_SESSIONS);
-
-        for (const session of sessions) {
-            await ctx.db.patch('session', session._id, {
-                activeOrganizationId: invitation.organizationId,
-            });
-        }
-
-        return null;
     },
 });

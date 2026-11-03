@@ -155,23 +155,6 @@ function rejectBlankName(path: string, name: string | undefined) {
     }
 }
 
-function createUserCreateHook(ctx: GenericCtx) {
-    return {
-        after: async (user: { id: string }, endpoint?: { body?: unknown } | null) => {
-            const parsedBody = registrationRequestBodySchema.safeParse(endpoint?.body);
-            const callbackURL = parsedBody.success ? parsedBody.data.callbackURL : undefined;
-            const invitationId = callbackURL ? getInvitationIdFromCallbackPath(callbackURL) : null;
-
-            if (invitationId) {
-                await requireRunnableCtx(ctx).runMutation(
-                    internal.organizations.acceptInvitationOnRegistration,
-                    { invitationId, userId: user.id }
-                );
-            }
-        },
-    };
-}
-
 function createRegistrationHook(ctx: GenericCtx) {
     return createAuthMiddleware(async authRequest => {
         const pathsWithStrongPassword = ['/sign-up/email', '/reset-password', '/change-password'];
@@ -235,16 +218,17 @@ function createRegistrationHook(ctx: GenericCtx) {
 
 function createOrganizationPlugin(ctx: GenericCtx) {
     return organization({
-        // Whether accepting needs a verified email is decided per invitation (decision 9).
-        requireEmailVerificationOnInvitation: false,
+        // Every invitation needs a verified email: otherwise anyone could sign up with the
+        // invitee's address and join without owning that inbox.
+        requireEmailVerificationOnInvitation: true,
         schema: {
             invitation: {
                 additionalFields: {
                     requireEmailVerification: {
                         type: 'boolean',
                         required: false,
-                        defaultValue: false,
-                        input: true,
+                        defaultValue: true,
+                        input: false,
                     },
                 },
             },
@@ -351,7 +335,7 @@ function createOrganizationPlugin(ctx: GenericCtx) {
                     },
                 };
             },
-            beforeAcceptInvitation: async ({ invitation, organization, user }) => {
+            beforeAcceptInvitation: async ({ organization, user }) => {
                 if (await isProtectedDefaultOrganization(ctx, organization.id)) {
                     throw new APIError('FORBIDDEN', {
                         code: ERROR_CODES.PERSONAL_ORG_INVITE_FORBIDDEN,
@@ -359,7 +343,7 @@ function createOrganizationPlugin(ctx: GenericCtx) {
                     });
                 }
 
-                if (invitation.requireEmailVerification === true && !user.emailVerified) {
+                if (!user.emailVerified) {
                     throw new APIError('FORBIDDEN', {
                         code: 'EMAIL_VERIFICATION_REQUIRED_BEFORE_ACCEPTING_OR_REJECTING_INVITATION',
                         message: 'Verify your email before accepting this invitation.',
@@ -438,9 +422,6 @@ export function buildBetterAuthOptions(ctx: GenericCtx): AuthOptions {
         databaseHooks: {
             session: {
                 create: createSessionCreateHook(ctx),
-            },
-            user: {
-                create: createUserCreateHook(ctx),
             },
         },
         hooks: {

@@ -45,7 +45,6 @@ export const userInvitationValidator = v.object({
     organizationId: v.id('organization'),
     organization: v.object({ name: v.string() }),
     inviter: v.optional(v.object({ name: v.string() })),
-    requireEmailVerification: v.boolean(),
 });
 
 export const currentSessionValidator = v.object({

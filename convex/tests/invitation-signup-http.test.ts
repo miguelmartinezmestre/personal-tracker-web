@@ -7,7 +7,7 @@ const ORIGIN = 'http://localhost:3000';
 describe('signing up from an invitation link', () => {
     const t = initConvexTest();
 
-    test('joins the organization of the invitation @REQ-EQUIPOS-006 @INH-AUT-04', async () => {
+    test('does not join until the email is verified and the invitation accepted @REQ-EQUIPOS-006 @INH-AUT-04', async () => {
         const suffix = Math.random().toString(36).slice(2, 10);
         const email = `invited-${suffix}@example.com`;
 
@@ -40,7 +40,7 @@ describe('signing up from an invitation link', () => {
                 expiresAt: Date.now() + TIME.DAY_MS,
                 createdAt: Date.now(),
                 inviterId: inviter.docId,
-                requireEmailVerification: false,
+                requireEmailVerification: true,
             });
         });
 
@@ -57,6 +57,20 @@ describe('signing up from an invitation link', () => {
 
         expect(response.status, await response.clone().text()).toBe(200);
 
+        const cookie = response.headers.get('set-cookie')?.split(';', 1)[0] ?? '';
+
+        const accept = await t.fetch('/api/auth/organization/accept-invitation', {
+            method: 'POST',
+            headers: new Headers({
+                'content-type': 'application/json',
+                origin: ORIGIN,
+                cookie,
+            }),
+            body: JSON.stringify({ invitationId }),
+        });
+
+        expect(accept.status).toBe(403);
+
         await t.run(async ctx => {
             const user = await ctx.db
                 .query('user')
@@ -72,16 +86,8 @@ describe('signing up from an invitation link', () => {
                 .withIndex('userId', q => q.eq('userId', user._id))
                 .take(5);
 
-            expect(memberships.map(member => member.organizationId)).toContain(organizationId);
-            expect(memberships).toHaveLength(2);
-            expect((await ctx.db.get('invitation', invitationId))?.status).toBe('accepted');
-
-            const session = await ctx.db
-                .query('session')
-                .withIndex('userId', q => q.eq('userId', user._id))
-                .first();
-
-            expect(session?.activeOrganizationId).toBe(organizationId);
+            expect(memberships.map(member => member.organizationId)).not.toContain(organizationId);
+            expect((await ctx.db.get('invitation', invitationId))?.status).toBe('pending');
         });
     });
 });

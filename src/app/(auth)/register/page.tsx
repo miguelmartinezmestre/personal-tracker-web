@@ -65,7 +65,7 @@ export default async function Register({ searchParams }: RegisterProps) {
             </h1>
             <RegisterForm
                 invitationToken={params.invitation}
-                invitationRequiresVerification={invitationStatus?.requireEmailVerification ?? false}
+                invitationIsValid={invitationStatus?.isValid ?? false}
             />
         </div>
     );

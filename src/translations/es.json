@@ -611,8 +611,7 @@
             "confirmDescription": "Dejarás de ver sus objetivos. Para volver necesitarás una nueva invitación.",
             "confirm": "Abandonar",
             "success": "Has abandonado «{name}»."
-        },
-        "requireEmailVerification": "Exigir que verifique su correo antes de aceptar"
+        }
     },
     "Invitations": {
         "title": "Invitaciones",

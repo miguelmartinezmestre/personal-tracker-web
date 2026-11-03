@@ -611,8 +611,7 @@
             "confirmDescription": "You will stop seeing its objectives. To come back you'll need a new invitation.",
             "confirm": "Leave",
             "success": "You left “{name}”."
-        },
-        "requireEmailVerification": "Require a verified email before accepting"
+        }
     },
     "Invitations": {
         "title": "Invitations",

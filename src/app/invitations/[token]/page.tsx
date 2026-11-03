@@ -16,7 +16,7 @@ export default async function InvitationPage({ params }: InvitationPageProps) {
     const { token } = await params;
     const client = new ConvexHttpClient(NEXT_PUBLIC_CONVEX_URL);
 
-    const { isValid, organizationName, requireEmailVerification } = await client.query(
+    const { isValid, organizationName } = await client.query(
         api.organizations.getPublicInvitationStatus,
         { invitationId: token }
     );
@@ -26,7 +26,6 @@ export default async function InvitationPage({ params }: InvitationPageProps) {
             token={token}
             invitationValid={isValid}
             organizationName={organizationName}
-            requireEmailVerification={requireEmailVerification ?? false}
         />
     );
 }

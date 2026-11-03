@@ -5,6 +5,7 @@ import { createOrganization, createTestUser } from '../../helpers/test-helpers';
 import {
     verifyEmailFromInvitationPage,
     waitForInvitationUrl,
+    waitForVerificationUrl,
 } from '../../helpers/email-verification';
 
 async function openOrganizationDetail(page: Page, name: string): Promise<void> {
@@ -16,18 +17,9 @@ async function openOrganizationDetail(page: Page, name: string): Promise<void> {
     await page.waitForLoadState('domcontentloaded');
 }
 
-async function inviteByEmail(
-    page: Page,
-    email: string,
-    { requireEmailVerification = false } = {}
-): Promise<void> {
+async function inviteByEmail(page: Page, email: string): Promise<void> {
     await page.getByTestId('organization-member-create-open').click();
     await page.getByTestId('organization-member-email-input').fill(email);
-
-    if (requireEmailVerification) {
-        await page.getByTestId('organization-member-require-verification').check();
-    }
-
     await page.getByTestId('organization-member-save-button').click();
     await expect(page.getByTestId('organization-member-email-input')).toBeHidden({
         timeout: 15000,
@@ -53,6 +45,7 @@ test.describe('Organization Invitations', () => {
                 await inviteByEmail(page, invitee.email);
 
                 await inviteePage.goto('/dashboard/invitations', { waitUntil: 'domcontentloaded' });
+                await verifyEmailFromInvitationPage(inviteePage, invitee.email);
 
                 const invitationRow = inviteePage
                     .getByTestId('table-row')
@@ -86,7 +79,7 @@ test.describe('Organization Invitations', () => {
         await expect(pendingRow).toHaveCount(0, { timeout: 15000 });
     });
     test(
-        'an invitation that asks for a verified email waits until the invitee verifies it',
+        'an invitation waits until the invitee verifies their email',
         { tag: ['@REQ-EQUIPOS-002', '@REQ-EQUIPOS-006', '@INH-ORG-08', '@INH-AUT-05'] },
         async ({ page, browser }) => {
             const inviteeContext = await browser.newContext();
@@ -100,7 +93,7 @@ test.describe('Organization Invitations', () => {
                 });
 
                 await openOrganizationDetail(page, organization.name);
-                await inviteByEmail(page, invitee.email, { requireEmailVerification: true });
+                await inviteByEmail(page, invitee.email);
 
                 await inviteePage.goto('/dashboard/invitations', { waitUntil: 'domcontentloaded' });
                 await expect(
@@ -129,7 +122,7 @@ test.describe('Organization Invitations', () => {
     );
 
     test(
-        'signing up from an invitation link joins the organization straight away',
+        'signing up from an invitation link joins once the email is verified and the invitation accepted',
         { tag: ['@REQ-EQUIPOS-006', '@INH-AUT-04', '@INH-ORG-01'] },
         async ({ page, browser }) => {
             const organization = await createOrganization(page, {
@@ -157,10 +150,27 @@ test.describe('Organization Invitations', () => {
                 await inviteePage
                     .getByTestId('register-confirm-password-input')
                     .fill('Password123');
+                const registeredAt = Date.now();
                 await inviteePage.getByTestId('register-button').click();
-                await inviteePage.getByTestId('register-categories-skip').click({ timeout: 20000 });
+                await expect(inviteePage.getByTestId('register-verification-sent')).toBeVisible({
+                    timeout: 20000,
+                });
 
-                await expect(inviteePage).toHaveURL(/\/dashboard\/home(\?|$)/, { timeout: 20000 });
+                const verificationUrl = await waitForVerificationUrl(
+                    inviteePage,
+                    inviteEmail,
+                    registeredAt
+                );
+
+                await inviteePage.goto(verificationUrl, { waitUntil: 'domcontentloaded' });
+                await inviteePage.waitForURL(new RegExp(`/invitations/${token}(?:\\?|$)`), {
+                    timeout: 20000,
+                });
+                await inviteePage.getByRole('button', { name: /^(accept|aceptar)$/i }).click();
+
+                await expect(inviteePage).toHaveURL(/\/dashboard\/organizations(\?|$)/, {
+                    timeout: 20000,
+                });
                 await expect(inviteePage.getByTestId('organization-switcher')).toContainText(
                     organization.name,
                     { timeout: 20000 }

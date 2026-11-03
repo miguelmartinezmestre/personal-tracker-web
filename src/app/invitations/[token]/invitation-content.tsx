@@ -23,14 +23,12 @@ interface InvitationContentProps {
     token: string;
     invitationValid: boolean;
     organizationName?: string | undefined;
-    requireEmailVerification: boolean;
 }
 
 export default function InvitationContent({
     token,
     invitationValid,
     organizationName,
-    requireEmailVerification,
 }: InvitationContentProps) {
     const router = useRouter();
     const t = useTranslations('Invitations');
@@ -139,11 +137,7 @@ export default function InvitationContent({
         return <InvitationLoginRequired token={token} organizationName={organizationName} />;
     }
 
-    if (
-        requireEmailVerification &&
-        sessionQuery.data?.user &&
-        !sessionQuery.data.user.emailVerified
-    ) {
+    if (sessionQuery.data?.user && !sessionQuery.data.user.emailVerified) {
         return <InvitationVerificationRequired />;
     }
 

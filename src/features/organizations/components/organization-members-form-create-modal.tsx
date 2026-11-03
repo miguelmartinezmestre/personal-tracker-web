@@ -54,7 +54,6 @@ export default function CreateOrganizationMemberFormModal({
                     email: '',
                     role: 'member',
                     organizationId: organizationId,
-                    requireEmailVerification: false,
                 },
                 validators: {
                     onChange: organizationMemberSchema,
@@ -70,7 +69,6 @@ export default function CreateOrganizationMemberFormModal({
                     organizationId: organizationId,
                     email: values.email,
                     role: values.role,
-                    requireEmailVerification: values.requireEmailVerification,
                 });
             }}
             submitLabel={t('sendInvitation')}
@@ -149,24 +147,6 @@ export default function CreateOrganizationMemberFormModal({
                                 </Field>
                             );
                         }}
-                    </form.Field>
-
-                    <form.Field name="requireEmailVerification">
-                        {field => (
-                            <Field orientation="horizontal">
-                                <input
-                                    id={field.name}
-                                    type="checkbox"
-                                    className="accent-primary size-4"
-                                    checked={field.state.value}
-                                    onChange={event => field.handleChange(event.target.checked)}
-                                    data-testid="organization-member-require-verification"
-                                />
-                                <FieldLabel htmlFor={field.name} className="font-normal">
-                                    {t('requireEmailVerification')}
-                                </FieldLabel>
-                            </Field>
-                        )}
                     </form.Field>
                 </FieldGroup>
             )}

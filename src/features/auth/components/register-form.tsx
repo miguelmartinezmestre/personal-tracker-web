@@ -23,7 +23,7 @@ import { PersonalCategoriesStep } from '@/features/categories/components/persona
 
 interface RegisterFormProps {
     invitationToken?: string | null;
-    invitationRequiresVerification?: boolean;
+    invitationIsValid?: boolean;
 }
 
 type RegistrationAttempt =
@@ -32,13 +32,13 @@ type RegistrationAttempt =
 async function registerAccount({
     values,
     invitationToken,
-    invitationRequiresVerification,
+    invitationIsValid,
     hasActiveSession,
     signOut,
 }: {
     values: RegisterFormValues;
     invitationToken?: string | null;
-    invitationRequiresVerification: boolean;
+    invitationIsValid: boolean;
     hasActiveSession: boolean;
     signOut: () => Promise<void>;
 }): Promise<RegistrationAttempt> {
@@ -57,7 +57,8 @@ async function registerAccount({
         return { status: 'error', error: result.error };
     }
 
-    if (!invitationToken || !invitationRequiresVerification) {
+    // Joining needs a verified email, so an invitee is sent straight to verify it.
+    if (!invitationToken || !invitationIsValid) {
         return { status: 'dashboard' };
     }
 
@@ -75,7 +76,7 @@ async function registerAccount({
 
 export default function RegisterForm({
     invitationToken,
-    invitationRequiresVerification = false,
+    invitationIsValid = false,
 }: RegisterFormProps) {
     const hydrated = useHydrated();
     const router = useRouter();
@@ -127,7 +128,7 @@ export default function RegisterForm({
         await registerAccount({
             values,
             invitationToken,
-            invitationRequiresVerification,
+            invitationIsValid,
             hasActiveSession: Boolean(session.data?.user),
             signOut: async () => {
                 await signOutMutation.mutateAsync();
