@@ -4,6 +4,8 @@ import { isPersonalOrganizationForUser } from '../organizations/personalOrganiza
 
 const MAX_MEMBERSHIPS = 200;
 
+export type AccountDeletionBlocker = 'setupUser' | 'ownerSuccessorRequired';
+
 export async function organizationsNeedingNewOwner(db: QueryCtx['db'], userId: Id<'user'>) {
     const names: string[] = [];
 
@@ -29,10 +31,39 @@ export async function organizationsNeedingNewOwner(db: QueryCtx['db'], userId: I
                 .take(MAX_MEMBERSHIPS)
         ).filter(member => member.userId !== userId);
 
-        if (others.length > 0 && !others.some(member => member.role === 'owner')) {
+        // A member whose account is already being deleted will lose the membership, so it
+        // cannot be the successor.
+        const remaining = [];
+
+        for (const member of others) {
+            const memberUser = await db.get('user', member.userId);
+
+            if (memberUser && memberUser.deletedAt === undefined) {
+                remaining.push(member);
+            }
+        }
+
+        if (remaining.length > 0 && !remaining.some(member => member.role === 'owner')) {
             names.push(organization.name);
         }
     }
 
     return names;
+}
+
+export async function findAccountDeletionBlocker(
+    db: QueryCtx['db'],
+    userId: Id<'user'>
+): Promise<AccountDeletionBlocker | null> {
+    const settings = await db.query('platformSettings').first();
+
+    if (settings?.setupCompletedBy === userId) {
+        return 'setupUser';
+    }
+
+    if ((await organizationsNeedingNewOwner(db, userId)).length > 0) {
+        return 'ownerSuccessorRequired';
+    }
+
+    return null;
 }

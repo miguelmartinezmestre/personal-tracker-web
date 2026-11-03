@@ -13,6 +13,12 @@ export const organizationDeletionPhaseValidator = v.union(
     v.literal('finalize')
 );
 
+export const userDeletionOutcomeValidator = v.union(
+    v.literal('deleted'),
+    v.literal('setupUser'),
+    v.literal('ownerSuccessorRequired')
+);
+
 export const userDeletionPhaseValidator = v.union(
     v.literal('sessions'),
     v.literal('accounts'),

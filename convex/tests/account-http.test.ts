@@ -142,8 +142,21 @@ describe('account endpoints', () => {
         });
     });
 
-    test('waits until shared organizations have another owner @REQ-AUTENTICACION-009 @INH-AUT-14', async () => {
+    test('waits until shared organizations have another owner who is not leaving too @REQ-AUTENTICACION-009 @INH-AUT-14', async () => {
         const { user, organizationId } = await createCredentialUser();
+
+        const leavingOwner = await createTestUser(t, {
+            userId: `leaving-owner-${Math.random().toString(36).slice(2, 10)}`,
+            email: `leaving-owner-${Math.random().toString(36).slice(2, 10)}@example.com`,
+            name: 'Leaving owner',
+        });
+
+        await createTestMember(t, {
+            organizationId,
+            userId: leavingOwner.docId,
+            role: 'owner',
+        });
+        await t.run(ctx => ctx.db.patch('user', leavingOwner.docId, { deletedAt: Date.now() }));
 
         const teammate = await createTestUser(t, {
             userId: `teammate-${Math.random().toString(36).slice(2, 10)}`,

@@ -22,17 +22,27 @@ import { internal } from './_generated/api';
 import { internalMutation } from './features/objectives/stats';
 import {
     organizationDeletionPhaseValidator,
+    userDeletionOutcomeValidator,
     userDeletionPhaseValidator,
 } from './features/cascades/validators';
 import { v } from 'convex/values';
 import { insertAuditLog } from './features/audit/log';
+import { findAccountDeletionBlocker } from './features/auth/accountDeletion';
 
 export const cascadeUserDeletionInternal = internalMutation({
     args: {
         userId: v.id('user'),
     },
-    returns: v.null(),
+    returns: userDeletionOutcomeValidator,
     handler: async (ctx, args) => {
+        // Checked again inside this transaction: two owners deleting their accounts at the
+        // same time must not leave an organization without an owner.
+        const blocker = await findAccountDeletionBlocker(ctx.db, args.userId);
+
+        if (blocker) {
+            return blocker;
+        }
+
         await insertAuditLog(ctx, {
             action: 'user.deleted',
             resourceType: 'user',
@@ -46,7 +56,7 @@ export const cascadeUserDeletionInternal = internalMutation({
             phase: 'sessions',
         });
 
-        return null;
+        return 'deleted' as const;
     },
 });
 

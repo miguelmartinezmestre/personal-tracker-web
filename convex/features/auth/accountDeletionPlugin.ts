@@ -6,8 +6,23 @@ import { internal } from '../../_generated/api';
 import type { ActionCtx, MutationCtx, QueryCtx } from '../../_generated/server';
 import { ERROR_CODES } from '../../shared/errorCodes';
 import { requireRunnableCtx } from '../../shared/ctx';
+import type { AccountDeletionBlocker } from './accountDeletion';
 
 type GenericCtx = QueryCtx | MutationCtx | ActionCtx;
+
+function throwDeletionBlocked(blocker: AccountDeletionBlocker): never {
+    if (blocker === 'setupUser') {
+        throw new APIError('FORBIDDEN', {
+            code: ERROR_CODES.SETUP_USER_DELETE_FORBIDDEN,
+            message: 'The platform setup user cannot be deleted.',
+        });
+    }
+
+    throw new APIError('FORBIDDEN', {
+        code: ERROR_CODES.OWNER_SUCCESSOR_REQUIRED,
+        message: 'Choose a new owner for the organizations you own first.',
+    });
+}
 
 export function accountDeletionPlugin(ctx: GenericCtx) {
     return {
@@ -47,17 +62,11 @@ export function accountDeletionPlugin(ctx: GenericCtx) {
                     }
 
                     if (target.isSetupUser) {
-                        throw new APIError('FORBIDDEN', {
-                            code: ERROR_CODES.SETUP_USER_DELETE_FORBIDDEN,
-                            message: 'The platform setup user cannot be deleted.',
-                        });
+                        throwDeletionBlocked('setupUser');
                     }
 
                     if (target.organizationsNeedingNewOwner.length > 0) {
-                        throw new APIError('FORBIDDEN', {
-                            code: ERROR_CODES.OWNER_SUCCESSOR_REQUIRED,
-                            message: 'Choose a new owner for the organizations you own first.',
-                        });
+                        throwDeletionBlocked('ownerSuccessorRequired');
                     }
 
                     const passwordMatches =
@@ -74,9 +83,15 @@ export function accountDeletionPlugin(ctx: GenericCtx) {
                         });
                     }
 
-                    await runnableCtx.runMutation(internal.cascades.cascadeUserDeletionInternal, {
-                        userId: target.userId,
-                    });
+                    const outcome = await runnableCtx.runMutation(
+                        internal.cascades.cascadeUserDeletionInternal,
+                        { userId: target.userId }
+                    );
+
+                    if (outcome !== 'deleted') {
+                        throwDeletionBlocked(outcome);
+                    }
+
                     deleteSessionCookie(endpointCtx);
 
                     return endpointCtx.json({ success: true });
