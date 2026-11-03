@@ -15,7 +15,9 @@ import { LoadMorePagination } from './load-more-pagination';
 import type { PaginatedList } from '../hooks/use-paginated-list';
 import { dataTableFeatures, type DataTableFeatures } from '../data-table-features';
 
-interface DataTableProps<TData extends RowData> {
+type IdentifiedRow = RowData & { id: string };
+
+interface DataTableProps<TData extends IdentifiedRow> {
     columns: ColumnDef<DataTableFeatures, TData>[];
     data: TData[];
     isLoading?: boolean;
@@ -26,7 +28,7 @@ interface DataTableProps<TData extends RowData> {
     columnClassNames?: Partial<Record<string, string>>;
 }
 
-export function DataTable<TData extends RowData>({
+export function DataTable<TData extends IdentifiedRow>({
     columns,
     data,
     isLoading = false,
@@ -44,6 +46,7 @@ export function DataTable<TData extends RowData>({
         features: dataTableFeatures,
         data,
         columns,
+        getRowId: row => row.id,
         manualPagination: true,
     });
 
