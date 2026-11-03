@@ -205,7 +205,12 @@ function createRegistrationHook(ctx: GenericCtx) {
             }
         }
 
-        const passwordPolicy = validatePasswordPolicy(body?.password ?? body?.newPassword);
+        // Each route stores a different field, so only that one is checked: an extra valid field
+        // in the request cannot stand in for the password that is actually saved.
+        const submittedPassword =
+            authRequest.path === '/sign-up/email' ? body?.password : body?.newPassword;
+
+        const passwordPolicy = validatePasswordPolicy(submittedPassword);
 
         if (!passwordPolicy.ok) {
             throw new APIError('BAD_REQUEST', {
@@ -396,6 +401,14 @@ export function buildBetterAuthOptions(ctx: GenericCtx): AuthOptions {
 
     return {
         baseURL: env.BETTER_AUTH_URL,
+        // The app reads invitations and organizations through Convex queries that check the
+        // caller's role and verified email; these native routes would bypass those checks.
+        disabledPaths: [
+            '/organization/list-invitations',
+            '/organization/list-user-invitations',
+            '/organization/get-invitation',
+            '/organization/get-full-organization',
+        ],
         advanced: {
             database: {
                 generateId: false,
