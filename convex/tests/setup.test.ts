@@ -43,7 +43,7 @@ describe('convex setup', () => {
     });
 
     describe('completeSetup', () => {
-        test('fails when platform is already configured @INH-SET-03', async () => {
+        test('fails when platform is already configured @REQ-ADMIN-006 @INH-SET-03', async () => {
             const t = initConvexTest();
 
             const userId = await t.run(async ctx => {
@@ -96,7 +96,7 @@ describe('convex setup', () => {
             ).rejects.toThrow(ERROR_CODES.PLATFORM_ALREADY_CONFIGURED);
         });
 
-        test('succeeds with exactly one user and no existing settings @INH-SET-01 @REQ-CATEGORIAS-002', async () => {
+        test('succeeds with exactly one user and no existing settings @REQ-ADMIN-006 @INH-SET-01 @REQ-CATEGORIAS-002', async () => {
             const t = initConvexTest();
 
             const user = await createTestUser(t, {
@@ -174,7 +174,7 @@ describe('convex setup', () => {
             expect(settings?.setupCompletedBy).toBe(user.docId);
         });
 
-        test('creates a team organization without converting the protected personal one @INH-SET-01 @INH-ORG-02', async () => {
+        test('creates a team organization without converting the protected personal one @REQ-ADMIN-006 @INH-SET-01 @INH-ORG-02', async () => {
             const t = initConvexTest();
 
             const user = await createTestUser(t, {
