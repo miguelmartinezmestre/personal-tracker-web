@@ -1,42 +1,59 @@
-import { test, expect, type Locator, type Page } from '@playwright/test';
+import { test, expect, type BrowserContext, type Page } from '@playwright/test';
 import * as fs from 'fs';
 import * as path from 'path';
 import { verifyEmailFromInvitationPage, waitForInvitationUrl } from '../helpers/email-verification';
+import { createOrganization, createTestUser, loginUser } from '../helpers/test-helpers';
 import {
-    createOrganization,
-    createTestUser,
-    generateTestUserData,
-    hasOrganizationSelectedInUI,
-    loginUser,
-} from '../helpers/test-helpers';
+    completeSetup,
+    createObjective,
+    ENGLISH,
+    ensureSpanish,
+    GYM,
+    logProgress,
+    openObjective,
+    ORGANIZATION,
+    OWNER,
+    READING,
+    RUNNING,
+    seedHistory,
+    seedObjective,
+    spanishContext,
+    TRIP,
+    useOrganization,
+    VIEWPORT,
+    WEIGHT,
+} from './demo-data';
 
-let FIGURES_DIR: string;
+// Captures every application figure of the thesis, in Spanish, from Lucía's realistic history
+// instead of throwaway test data:
+//
+//   pnpm test:e2e:no-docker --config tests/manual/playwright.manual.config.ts setup-ui-screenshots
+//
+// Figures go to metricas-memoria/figures (or MEMORIA_FIGURES_DIR) and to artifacts/memoria.
 
-if (process.env.MEMORIA_FIGURES_DIR) {
-    FIGURES_DIR = path.resolve(process.env.MEMORIA_FIGURES_DIR);
-} else {
-    FIGURES_DIR = path.resolve(process.cwd(), '../metricas-memoria/figures');
-}
+const FIGURES_DIR = path.resolve(
+    process.env.MEMORIA_FIGURES_DIR ?? path.join(process.cwd(), 'metricas-memoria/figures')
+);
 
-const FALLBACK_DIR = path.join(process.cwd(), 'test-results/screenshots/memoria');
+const COPY_DIR = path.resolve(process.cwd(), 'artifacts/memoria');
+const MOBILE = { width: 390, height: 844 };
 
-async function isVisibleNow(locator: Locator): Promise<boolean> {
-    return locator.isVisible().catch(() => false);
-}
+const HOME = 'Casa';
+const BOOK_CLUB = 'Club de lectura';
+const ELECTRICITY = 'Bajar la factura de la luz a 60 €';
+const UKULELE = 'Aprender a tocar el ukelele';
+const COFFEE = 'Dejar el café';
+const PARTNER = 'Javier Ruiz';
+const SISTER = 'Carmen Fernández';
+const NEWCOMER = { username: 'Pablo Ortega', email: 'pablo.ortega@example.com' };
 
 async function hideTransientUi(page: Page): Promise<void> {
     await page.evaluate(() => {
-        const hide = (element: Element) => {
-            if (element instanceof HTMLElement) {
-                element.style.display = 'none';
-            }
-        };
-
-        document.querySelectorAll('[data-sonner-toaster]').forEach(hide);
-        document.querySelectorAll('[data-loading]').forEach(hide);
         document
             .querySelectorAll(
                 [
+                    '[data-sonner-toaster]',
+                    '[data-loading]',
                     '[data-nextjs-dialog]',
                     '[data-nextjs-toast]',
                     '[data-next-badge]',
@@ -45,594 +62,461 @@ async function hideTransientUi(page: Page): Promise<void> {
                     '#__next-build-watcher',
                 ].join(', ')
             )
-            .forEach(hide);
-        document
-            .querySelectorAll('[class*="error-overlay"], [class*="ErrorOverlay"]')
-            .forEach(hide);
-        document
-            .querySelectorAll('button[class*="bg-destructive"], button[class*="bg-red"]')
             .forEach(element => {
-                if (!(element instanceof HTMLElement)) {
-                    return;
-                }
-
-                const text = element.textContent || '';
-
-                if (/^\d+\s*Issues?$/i.test(text.trim()) || /^\d+$/.test(text.trim())) {
+                if (element instanceof HTMLElement) {
                     element.style.display = 'none';
                 }
             });
     });
-    await page.waitForTimeout(250);
+    await page.waitForTimeout(300);
 }
 
-async function captureFigure(
-    page: Page,
-    filename: string,
-    options?: { fullPage?: boolean }
-): Promise<void> {
-    await hideTransientUi(page);
-
-    const targets = [FIGURES_DIR, FALLBACK_DIR];
-
-    for (const dir of targets) {
-        if (!fs.existsSync(dir)) {
-            fs.mkdirSync(dir, { recursive: true });
-        }
-    }
-
-    const buffer = await page.screenshot({
-        fullPage: options?.fullPage ?? false,
-        animations: 'disabled',
-    });
-
-    for (const dir of targets) {
+function save(filename: string, buffer: Buffer): void {
+    for (const dir of [FIGURES_DIR, COPY_DIR]) {
+        fs.mkdirSync(dir, { recursive: true });
         fs.writeFileSync(path.join(dir, filename), buffer);
     }
 
     console.log(`Wrote figure: ${filename}`);
 }
 
-async function waitForDashboardReady(page: Page): Promise<void> {
-    await expect(async () => {
-        await page.goto('/dashboard/home', { waitUntil: 'domcontentloaded' });
-        await expect(page).toHaveURL(/\/dashboard\/home(\?|$)/);
-        await expect(page.getByTestId('organization-switcher')).toBeVisible();
-        expect(await hasOrganizationSelectedInUI(page)).toBe(true);
-    }).toPass({ timeout: 30_000 });
+async function capture(page: Page, filename: string, options?: { fullPage?: boolean }) {
+    await hideTransientUi(page);
+    save(
+        filename,
+        await page.screenshot({ fullPage: options?.fullPage ?? false, animations: 'disabled' })
+    );
 }
 
-async function useOrganization(page: Page, name: string): Promise<void> {
-    const switcher = page.getByTestId('organization-switcher').first();
+// The top of an objective's detail page down to its chart: header, progress, pace and evolution.
+async function captureObjectiveSummary(page: Page, filename: string): Promise<void> {
+    const chart = page.getByTestId('progress-chart');
+    await expect(chart).toBeVisible({ timeout: 15_000 });
+    await page.waitForTimeout(800);
+    await hideTransientUi(page);
+    const box = await chart.boundingBox();
 
-    if ((await switcher.textContent())?.includes(name)) {
-        return;
+    if (!box) {
+        throw new Error(`No chart to frame in ${filename}`);
     }
 
-    await switcher.click();
-    await page.locator('[data-testid^="organization-option-"]').filter({ hasText: name }).click();
-    await expect(switcher).toContainText(name, { timeout: 15_000 });
+    // A full-page capture leaves the fixed sidebar blank, so frame the main column only.
+    const main = await page.getByRole('main').boundingBox();
+    const left = Math.floor(main?.x ?? 0);
+    const scrollY = await page.evaluate(() => window.scrollY);
+    const height = Math.ceil(box.y + scrollY + box.height + 24);
+    save(
+        filename,
+        await page.screenshot({
+            fullPage: true,
+            animations: 'disabled',
+            clip: { x: left, y: 0, width: VIEWPORT.width - left, height },
+        })
+    );
+}
+
+async function settle(page: Page, url: string): Promise<void> {
+    await page.goto(url, { waitUntil: 'domcontentloaded' });
+    await page.waitForLoadState('networkidle');
+    await page.waitForTimeout(700);
+}
+
+async function scrollTo(page: Page, testId: string, margin = 16): Promise<void> {
+    await page
+        .getByTestId(testId)
+        .first()
+        .evaluate(element => element.scrollIntoView({ block: 'start' }));
+    await page.evaluate(offset => window.scrollBy(0, -offset), margin);
+    await page.waitForTimeout(400);
+}
+
+async function openOrganization(page: Page, name: string): Promise<void> {
+    await page.goto('/dashboard/organizations', { waitUntil: 'domcontentloaded' });
+    await page
+        .getByTestId('table-row')
+        .filter({ hasText: name })
+        .first()
+        .getByTestId('organization-detail-link')
+        .click();
+    await page.waitForURL(/\/dashboard\/organizations\/[^/?]+/, { timeout: 15_000 });
     await page.waitForLoadState('networkidle');
 }
 
-const ADMIN = generateTestUserData({ customUsername: 'Ana Martínez' });
-
-test.describe('Memoria setup + UI screenshots', () => {
-    test.describe.configure({ mode: 'serial' });
-    test.setTimeout(240_000);
-
-    test('Capture setup wizard and refresh main UI figures', async ({ page }) => {
-        await page.setViewportSize({ width: 1440, height: 900 });
-        const userData = ADMIN;
-        const setupSecret = process.env.SETUP_SECRET;
-
-        console.log(`Figures directory: ${FIGURES_DIR}`);
-
-        await page.goto('/setup', { waitUntil: 'domcontentloaded' });
-        await page.waitForLoadState('networkidle');
-        const platformName = page.getByTestId('setup-platform-name');
-        await expect(platformName).toBeVisible({ timeout: 20_000 });
-        await platformName.click();
-        await platformName.fill('');
-        await platformName.pressSequentially('Metrics App', { delay: 15 });
-        await platformName.blur();
-        await expect(page.getByTestId('setup-next-button')).toBeEnabled({ timeout: 10_000 });
-        await captureFigure(page, 'setup-platform.png');
-        await page.getByTestId('setup-next-button').click();
-
-        await expect(page.getByTestId('setup-username')).toBeVisible({ timeout: 10_000 });
-        await page.getByTestId('setup-username').fill(userData.username);
-        await page.getByTestId('setup-email').fill(userData.email);
-        await page.getByTestId('setup-password').fill(userData.password);
-        await page.getByTestId('setup-confirm-password').fill(userData.password);
-
-        if (setupSecret) {
-            const secretInput = page.getByTestId('setup-secret');
-            await expect(secretInput).toBeVisible({ timeout: 5_000 });
-            await secretInput.fill(setupSecret);
-        }
-
-        await expect(page.getByTestId('setup-next-button')).toBeEnabled({ timeout: 10_000 });
-        await captureFigure(page, 'setup-admin.png');
-        await page.getByTestId('setup-next-button').click();
-
-        await expect(page.getByTestId('setup-org-name')).toBeVisible({ timeout: 10_000 });
-        await page.getByTestId('setup-org-name').click();
-        await page.getByTestId('setup-org-name').fill('');
-        await page.getByTestId('setup-org-name').pressSequentially('Product Team', { delay: 15 });
-        await page.getByTestId('setup-org-name').blur();
-        await expect(page.getByTestId('setup-next-button')).toBeEnabled({ timeout: 10_000 });
-        await captureFigure(page, 'setup-org.png');
-        await page.getByTestId('setup-next-button').click();
-
-        await expect(page.getByTestId('setup-next-button')).toBeEnabled({ timeout: 10_000 });
-        await page.waitForTimeout(400);
-        await captureFigure(page, 'setup-categories.png');
-        await page.getByTestId('setup-next-button').click();
-
-        await expect(page.locator('#policy-open')).toBeVisible({ timeout: 10_000 });
-        await page.locator('label[for="policy-open"]').click();
-        await expect(page.locator('#policy-open')).toBeChecked();
-        await expect(page.getByTestId('setup-next-button')).toBeEnabled({ timeout: 10_000 });
-        await captureFigure(page, 'setup-registration-policy.png');
-        await page.getByTestId('setup-next-button').click();
-
-        await expect(page.getByTestId('setup-complete-button')).toBeVisible({ timeout: 10_000 });
-        await page.waitForTimeout(400);
-        await captureFigure(page, 'setup-summary.png');
-
-        await page.getByTestId('setup-complete-button').click();
-        await page.waitForURL(/\/dashboard\/home(\?|$)/, { timeout: 45_000 });
-        await waitForDashboardReady(page);
-
-        await page.goto('/');
-        await page.waitForLoadState('networkidle');
-        await captureFigure(page, 'landing-page-hero.png');
-
-        await page.goto('/login');
-        await page.waitForLoadState('networkidle');
-        await captureFigure(page, 'captura_pantalla_login_desktop.png');
-        await page.getByTestId('login-button').click();
-        await page.waitForTimeout(400);
-        await captureFigure(page, 'validacion-error.png');
-
-        await page.getByTestId('email-input').fill(userData.email);
-        await page.getByTestId('password-input').fill(userData.password);
-        await page.getByTestId('login-button').click();
-        await page.waitForURL(/\/dashboard/, { timeout: 30_000 });
-        await waitForDashboardReady(page);
-        await captureFigure(page, 'captura_pantalla_inicial_desktop.png');
-
-        const sidebar = page.getByTestId('app-sidebar');
-
-        if (await sidebar.isVisible().catch(() => false)) {
-            await sidebar.screenshot({
-                path: path.join(FIGURES_DIR, 'navegacion-sidebar.png'),
-                animations: 'disabled',
-            });
-            fs.copyFileSync(
-                path.join(FIGURES_DIR, 'navegacion-sidebar.png'),
-                path.join(FALLBACK_DIR, 'navegacion-sidebar.png')
-            );
-            console.log('Wrote figure: navegacion-sidebar.png');
-        }
-
-        await page.goto('/dashboard/organizations');
-        await page.waitForLoadState('networkidle');
-        await page.waitForTimeout(800);
-        await captureFigure(page, 'organizaciones-lista.png');
-
-        const orgLink = page.locator('a[href*="/dashboard/organizations/"]').first();
-
-        if (await isVisibleNow(orgLink)) {
-            await orgLink.click();
-            await page.waitForLoadState('networkidle');
-            await page.waitForTimeout(800);
-            await captureFigure(page, 'organizaciones-miembros.png');
-        }
-
-        await page.goto('/dashboard/invitations');
-        await page.waitForLoadState('networkidle');
-        await page.waitForTimeout(600);
-        await captureFigure(page, 'invitaciones-lista.png');
-
-        await page.setViewportSize({ width: 390, height: 844 });
-        await page.goto('/login');
-        await page.waitForLoadState('networkidle');
-        await captureFigure(page, 'captura_pantalla_login_mobile.png');
-
-        await page.goto('/dashboard/home');
-        await page.waitForLoadState('networkidle');
-        await page.waitForTimeout(600);
-        await captureFigure(page, 'captura_pantalla_inicial_mobile.png');
-
-        await page.goto('/dashboard/organizations');
-        await page.waitForLoadState('networkidle');
-        await page.waitForTimeout(600);
-        await captureFigure(page, 'organizaciones-mobile.png');
-
-        console.log(`Setup + UI figures written to ${FIGURES_DIR}`);
+async function invite(page: Page, organization: string, email: string): Promise<void> {
+    await openOrganization(page, organization);
+    await page.getByTestId('organization-member-create-open').click();
+    await page.getByTestId('organization-member-email-input').fill(email);
+    await page.getByTestId('organization-member-save-button').click();
+    await expect(page.getByTestId('organization-member-email-input')).toBeHidden({
+        timeout: 20_000,
     });
+}
 
-    test('Capture collaboration, account, notification and admin figures', async ({
-        browser,
-        page,
-    }) => {
-        await page.setViewportSize({ width: 1440, height: 900 });
-        await loginUser(page, ADMIN.email, ADMIN.password);
-        await waitForDashboardReady(page);
-        await useOrganization(page, 'Product Team');
+async function acceptInvitations(page: Page, email: string, count: number): Promise<void> {
+    await page.goto('/dashboard/invitations', { waitUntil: 'domcontentloaded' });
+    await verifyEmailFromInvitationPage(page, email);
 
-        const objectives = [
-            { title: 'Run 200 km', unit: 'km', target: '200', progress: ['60', '60'] },
-            { title: 'Read 12 books', unit: 'books', target: '12', progress: ['5', '4'] },
-            { title: 'Publish 4 blog posts', unit: 'posts', target: '4', progress: ['2', '2'] },
-        ];
+    for (let accepted = 0; accepted < count; accepted++) {
+        await page.getByTestId('invitation-accept-button').first().click();
+        await page.getByTestId('invitation-accept-confirm-button').click();
+        await expect(page.getByTestId('invitation-accept-button')).toHaveCount(
+            count - accepted - 1,
+            { timeout: 20_000 }
+        );
+    }
+}
 
-        for (const objective of objectives) {
-            await page.goto('/dashboard/objectives', { waitUntil: 'domcontentloaded' });
-            await page.getByTestId('objective-create-open').click();
-            await page.getByTestId('objective-title-input').fill(objective.title);
-            await page.getByTestId('objective-unit-input').fill(objective.unit);
-            await page.getByTestId('objective-start-input').fill('0');
-            await page.getByTestId('objective-target-input').fill(objective.target);
-            await page.getByTestId('objective-save-button').click();
+async function trashObjective(page: Page, title: string): Promise<void> {
+    await createObjective(page, { title, unit: 'días', start: '0', target: '30' });
+    await openObjective(page, title);
+    await page.getByTestId('objective-delete-button').click();
+    await page.getByTestId('delete-confirm-button').click();
+    await expect(page).toHaveURL(/\/dashboard\/objectives(?:\?|$)/, { timeout: 15_000 });
+}
 
-            const row = page.getByTestId('objective-row-link').filter({ hasText: objective.title });
-            await expect(row).toBeVisible({ timeout: 15_000 });
-            await row.click();
-            await expect(page.getByTestId('objective-detail-title')).toHaveText(objective.title, {
-                timeout: 15_000,
-            });
+test('captures the thesis figures from a realistic history', async ({ browser }) => {
+    test.setTimeout(30 * 60_000);
+    console.log(`Figures directory: ${FIGURES_DIR}`);
 
-            for (const value of objective.progress) {
-                const entries = await page.getByTestId('progress-entry-value').count();
-                await page.getByTestId('progress-value-input').fill(value);
-                await page.getByTestId('progress-save-button').click();
-                await expect(page.getByTestId('progress-entry-value')).toHaveCount(entries + 1, {
-                    timeout: 15_000,
-                });
-            }
-        }
+    const contexts: BrowserContext[] = [];
 
+    async function newContext() {
+        const context = await spanishContext(browser, {});
+        contexts.push(context);
+
+        return context;
+    }
+
+    try {
+        // Setup wizard.
+        const page = await (await newContext()).newPage();
+        await completeSetup(page, step => capture(page, `setup-${step}.png`, { fullPage: true }));
+
+        // Public pages, seen by someone without a session.
+        const visitor = await (await newContext()).newPage();
+        await visitor.goto('/', { waitUntil: 'domcontentloaded' });
+        await ensureSpanish(visitor);
+        await settle(visitor, '/');
+        await capture(visitor, 'landing-page-hero.png');
+        await settle(visitor, '/login');
+        await capture(visitor, 'captura_pantalla_login_desktop.png');
+        await visitor.getByTestId('login-button').click();
+        await visitor.waitForTimeout(400);
+        await capture(visitor, 'validacion-error.png');
+        await settle(visitor, '/register');
+        await visitor.getByTestId('register-username-input').fill(NEWCOMER.username);
+        await visitor.getByTestId('register-email-input').fill(NEWCOMER.email);
+        await visitor.getByTestId('register-password-input').fill('Password123');
+        await visitor.getByTestId('register-confirm-password-input').fill('Password123');
+        await capture(visitor, 'registro.png');
+        await settle(visitor, '/forget-password');
+        await visitor.getByTestId('email-input').fill(NEWCOMER.email);
+        await capture(visitor, 'recuperar-contrasena.png');
+        await visitor.setViewportSize(MOBILE);
+        await settle(visitor, '/login');
+        await capture(visitor, 'captura_pantalla_login_mobile.png');
+        await visitor.setViewportSize(VIEWPORT);
+
+        // Months of history, created before any figure that shows it.
+        await seedHistory(page);
+
+        // Use case: savings. The creation form, then three contributions on different dates.
         await page.goto('/dashboard/objectives', { waitUntil: 'domcontentloaded' });
         await page.getByTestId('objective-create-open').click();
-        await page.getByTestId('objective-title-input').fill('Learn TypeScript');
+        await page.getByTestId('objective-title-input').fill(TRIP);
         await page
             .getByTestId('objective-description-input')
-            .fill('Complete the TypeScript course and build three real-world projects');
+            .fill('Vuelos, alojamiento y el Japan Rail Pass para dos semanas.');
         await page.getByTestId('objective-category-select').click();
-        await page.getByRole('option', { name: 'Education' }).click();
-        await page.getByTestId('objective-unit-input').fill('hours');
+        await page.getByRole('option', { name: /Finanzas|Finance/ }).click();
+        await page.getByTestId('objective-unit-input').fill('€');
         await page.getByTestId('objective-start-input').fill('0');
-        await page.getByTestId('objective-target-input').fill('100');
-        await page.getByTestId('objective-deadline-input').fill('in 40 days');
+        await page.getByTestId('objective-target-input').fill('3000');
+        await page.getByTestId('objective-deadline-input').fill('dentro de 6 meses');
         await page.getByTestId('objective-deadline-input').blur();
         await page.waitForTimeout(400);
 
+        // The dialog scrolls inside a 900 px viewport; grow the viewport until it fits whole.
         const dialog = page.getByRole('dialog');
-
-        await dialog.getByText(/^Fill out the form below/).click();
-
-        let viewportHeight = 900;
+        let viewportHeight = VIEWPORT.height;
 
         for (let attempt = 0; attempt < 6; attempt++) {
-            const hiddenHeight = await dialog.evaluate(element => {
-                let hidden = Math.max(0, element.scrollHeight - element.clientHeight);
+            const hidden = await dialog.evaluate(element => {
+                let overflow = Math.max(0, element.scrollHeight - element.clientHeight);
 
                 element.querySelectorAll('*').forEach(child => {
-                    hidden = Math.max(hidden, child.scrollHeight - child.clientHeight);
+                    overflow = Math.max(overflow, child.scrollHeight - child.clientHeight);
                 });
 
-                return hidden;
+                return overflow;
             });
 
-            if (hiddenHeight <= 1) {
+            if (hidden <= 1) {
                 break;
             }
 
-            viewportHeight += hiddenHeight + 40;
-            await page.setViewportSize({ width: 1440, height: viewportHeight });
+            viewportHeight += hidden + 40;
+            await page.setViewportSize({ width: VIEWPORT.width, height: viewportHeight });
             await page.waitForTimeout(400);
         }
 
-        await captureFigure(page, 'objetivos-crear-formulario.png');
+        await capture(page, 'objetivos-crear-formulario.png');
         await page.getByTestId('objective-save-button').click();
         await expect(dialog).toBeHidden({ timeout: 15_000 });
-        await page.setViewportSize({ width: 1440, height: 900 });
+        await page.setViewportSize(VIEWPORT);
+        await page.waitForLoadState('networkidle');
+        await page.waitForTimeout(600);
+        await capture(page, 'objetivos-creado.png');
 
-        await createOrganization(page, { name: 'Marketing' });
-        await page.goto('/dashboard/home', { waitUntil: 'domcontentloaded' });
-        await waitForDashboardReady(page);
-        await useOrganization(page, 'Product Team');
-
-        const carlos = generateTestUserData({ customUsername: 'Carlos López' });
-
-        const collaboratorContext = await browser.newContext({
-            viewport: { width: 1440, height: 900 },
+        await openObjective(page, TRIP);
+        await logProgress(page, {
+            amount: '450',
+            date: 'hace 2 meses',
+            comment: 'Extra de verano',
         });
+        await logProgress(page, {
+            amount: '380',
+            date: 'hace 1 mes',
+            comment: 'Ahorro de la nómina',
+        });
+        await logProgress(page, { amount: '250', comment: 'Venta de la bici antigua' });
+        await captureObjectiveSummary(page, 'caso-ahorro.png');
 
-        try {
-            const collaboratorPage = await collaboratorContext.newPage();
-            await createTestUser(collaboratorPage, { customUsername: 'Carlos López' });
-            await collaboratorPage.goto('about:blank');
+        // Use cases: gym attendance and reading time, with the session and the book of today.
+        await openObjective(page, GYM);
+        await logProgress(page, { amount: '1', comment: 'Pierna y core' });
+        await captureObjectiveSummary(page, 'caso-gimnasio.png');
 
-            const miguelContext = await browser.newContext();
-            await createTestUser(await miguelContext.newPage(), {
-                customUsername: 'Miguel García',
-            });
-            await miguelContext.close();
+        await openObjective(page, READING);
+        await logProgress(page, { amount: '2.5', comment: 'El infinito en un junco' });
+        await captureObjectiveSummary(page, 'caso-lectura.png');
+        await scrollTo(page, 'progress-list', 72);
+        await capture(page, 'caso-lectura-historial.png');
 
-            await page.goto('/dashboard/organizations', { waitUntil: 'domcontentloaded' });
-            await page
-                .getByTestId('table-row')
-                .filter({ hasText: 'Product Team' })
-                .first()
-                .getByTestId('organization-detail-link')
-                .click();
-            await page.waitForURL(/\/dashboard\/organizations\/[^/?]+/, { timeout: 15_000 });
-            await page.getByTestId('organization-member-create-open').click();
-            await page.getByTestId('organization-member-email-input').fill(carlos.email);
-            await page.getByTestId('organization-member-save-button').click();
-            await expect(page.getByTestId('organization-member-email-input')).toBeHidden({
-                timeout: 20_000,
-            });
+        await openObjective(page, WEIGHT);
+        await logProgress(page, { amount: '79.2', total: true, comment: 'Control mensual' });
+        await captureObjectiveSummary(page, 'caso-peso.png');
 
-            await collaboratorPage.goto('/dashboard/invitations');
-            await verifyEmailFromInvitationPage(collaboratorPage, carlos.email);
-            await collaboratorPage.getByTestId('invitation-accept-button').first().click();
-            await collaboratorPage.getByTestId('invitation-accept-confirm-button').click();
-            await expect(collaboratorPage.getByTestId('organization-switcher')).toContainText(
-                'Product Team',
-                { timeout: 20_000 }
-            );
+        // Progress screens, on the English course.
+        await openObjective(page, ENGLISH);
+        await page.waitForLoadState('networkidle');
+        await page.waitForTimeout(600);
+        await capture(page, 'progreso-detalle.png');
+        await page.getByTestId('progress-value-input').fill('6');
+        await page.getByTestId('progress-date-input').fill('hace 2 días');
+        await page.getByTestId('progress-comment-input').fill('Unidad 6: phrasal verbs');
+        await scrollTo(page, 'progress-value-input');
+        await page.evaluate(() => window.scrollBy(0, -140));
+        await capture(page, 'progreso-formulario.png');
+        const entries = await page.getByTestId('progress-entry-value').count();
+        await page.getByTestId('progress-save-button').click();
+        await expect(page.getByTestId('progress-entry-value')).toHaveCount(entries + 1, {
+            timeout: 15_000,
+        });
+        await scrollTo(page, 'progress-list', 72);
+        await capture(page, 'progreso-tabla.png');
 
-            await collaboratorPage.goto('/dashboard/organizations', {
-                waitUntil: 'domcontentloaded',
-            });
-            await collaboratorPage
-                .getByTestId('table-row')
-                .filter({ hasText: 'Product Team' })
-                .first()
-                .getByTestId('organization-detail-link')
-                .click();
-            await collaboratorPage.waitForURL(/\/dashboard\/organizations\/[^/?]+/, {
-                timeout: 15_000,
-            });
-            await collaboratorPage.waitForLoadState('networkidle');
-            await collaboratorPage.getByTestId('organization-leave').click();
-            await expect(collaboratorPage.getByTestId('delete-confirm-button')).toBeVisible();
-            await collaboratorPage.waitForTimeout(400);
-            await captureFigure(collaboratorPage, 'abandonar-organizacion.png');
-            await collaboratorPage.keyboard.press('Escape');
+        await openObjective(page, RUNNING);
+        await expect(page.getByTestId('progress-chart')).toBeVisible({ timeout: 15_000 });
+        await page.waitForTimeout(800);
+        await capture(page, 'progreso-timeline.png', { fullPage: true });
 
-            await page.goto('/dashboard/home', { waitUntil: 'domcontentloaded' });
-            await waitForDashboardReady(page);
-            await page.waitForLoadState('networkidle');
-            await page.getByTestId('organization-switcher').first().click();
-            await page.waitForTimeout(500);
-            await captureFigure(page, 'organizacion-selector.png');
-            await page.keyboard.press('Escape');
+        // Goals she gave up on, for the trash.
+        await trashObjective(page, UKULELE);
+        await trashObjective(page, COFFEE);
+        await page.getByTestId('objectives-trash-link').click();
+        await expect(page.getByTestId('table-row')).toHaveCount(2, { timeout: 15_000 });
+        await page.waitForLoadState('networkidle');
+        await capture(page, 'papelera.png');
 
-            await expect(page.getByTestId('notification-bell-count')).toBeVisible({
-                timeout: 20_000,
-            });
-            await page.getByTestId('notification-bell').click();
-            await expect(page.getByTestId('notification-row').first()).toBeVisible({
-                timeout: 15_000,
-            });
-            await page.waitForTimeout(500);
-            await captureFigure(page, 'notificaciones-campana.png');
-            await page.keyboard.press('Escape');
+        // Objective list, filters and dashboard.
+        await settle(page, '/dashboard/objectives');
+        await capture(page, 'objetivos-lista.png');
+        await page.getByTestId('objectives-filter-active').click();
+        await page.getByTestId('objectives-deadline-filter-week').click();
+        await page.waitForTimeout(600);
+        await page.getByTestId('objectives-category-filter').click();
+        await page.waitForTimeout(400);
+        await capture(page, 'objetivos-filtros.png');
+        await page.keyboard.press('Escape');
 
-            await page.goto('/dashboard/settings', { waitUntil: 'domcontentloaded' });
-            const currentPassword = page.getByTestId('settings-currentPassword-input');
-            await expect(currentPassword).toBeVisible({ timeout: 15_000 });
-            await currentPassword.fill(ADMIN.password);
-            await page.getByTestId('settings-newPassword-input').fill('NewPassword123');
-            await page.getByTestId('settings-confirmPassword-input').fill('NewPassword123');
-            await page.getByTestId('settings-password-save').scrollIntoViewIfNeeded();
-            await page.waitForTimeout(400);
-            await captureFigure(page, 'cambiar-contrasena.png');
+        await settle(page, '/dashboard/home');
+        await capture(page, 'captura_pantalla_inicial_desktop.png');
+        const sidebar = page.getByTestId('app-sidebar');
+        await hideTransientUi(page);
+        save('navegacion-sidebar.png', await sidebar.screenshot({ animations: 'disabled' }));
 
-            await page.goto('/dashboard/admin', { waitUntil: 'domcontentloaded' });
-            await expect(page.getByTestId('admin-users')).toBeVisible({ timeout: 15_000 });
+        await expect(page.getByTestId('command-menu-ready')).toBeAttached({ timeout: 15_000 });
+        await page.keyboard.press('Control+k');
+        await expect(page.getByRole('dialog')).toBeVisible({ timeout: 10_000 });
+        await page.waitForTimeout(400);
+        await capture(page, 'paleta-comandos.png');
+        await page.keyboard.press('Escape');
 
-            const carlosRow = page.getByTestId('table-row').filter({ hasText: carlos.email });
-            await expect(carlosRow).toHaveCount(1, { timeout: 15_000 });
-            await page.waitForLoadState('networkidle');
-            await page.waitForTimeout(600);
-            await captureFigure(page, 'admin-panel-usuarios.png');
+        // The sidebar capture scrolls the layout a few pixels; reload so the menus sit at the top.
+        await settle(page, '/dashboard/home');
+        await page.getByTestId('dashboard-theme-toggle').click();
+        await page.waitForTimeout(400);
+        await capture(page, 'tema-selector.png');
+        await page.getByTestId('theme-option-dark').click();
+        await page.waitForTimeout(800);
+        await capture(page, 'tema-oscuro-dashboard.png');
+        await page.getByTestId('language-switcher').first().click();
+        await page.waitForTimeout(400);
+        await capture(page, 'idioma-selector.png');
+        await page.keyboard.press('Escape');
+        await page.getByTestId('dashboard-theme-toggle').click();
+        await page.getByTestId('theme-option-light').click();
 
-            await carlosRow.getByTestId('admin-sessions-open').click();
-            await expect(page.getByTestId('admin-sessions-list').locator('li').first()).toBeVisible(
-                { timeout: 15_000 }
-            );
-            await page.waitForTimeout(400);
-            await captureFigure(page, 'admin-panel-sesiones.png');
-        } finally {
-            await collaboratorContext.close();
-        }
-    });
-
-    test('Capture the screens without a figure, in Spanish', async ({ browser, page }) => {
-        await page.setViewportSize({ width: 1440, height: 900 });
-        await page.goto('/', { waitUntil: 'domcontentloaded' });
+        // The same objectives with the interface in English.
         const origin = new URL(page.url()).origin;
-        const spanish = [{ name: 'locale', value: 'es', url: origin }];
-
-        async function spanishContext() {
-            const context = await browser.newContext({ viewport: { width: 1440, height: 900 } });
-            await context.addCookies(spanish);
-
-            return context;
-        }
-
-        await page.context().addCookies(spanish);
-        await loginUser(page, ADMIN.email, ADMIN.password);
-        await waitForDashboardReady(page);
-        await useOrganization(page, 'Product Team');
+        await page.context().addCookies([{ name: 'locale', value: 'en', url: origin }]);
+        await settle(page, '/dashboard/objectives');
+        await expect(page.locator('html')).toHaveAttribute('lang', 'en', { timeout: 15_000 });
+        await capture(page, 'idioma-ingles.png');
+        await page.context().addCookies([{ name: 'locale', value: 'es', url: origin }]);
+        await settle(page, '/dashboard/home');
         await expect(page.locator('html')).toHaveAttribute('lang', 'es', { timeout: 15_000 });
 
-        const anonymous = await spanishContext();
-        const carlosContext = await spanishContext();
-        const miguelContext = await spanishContext();
+        const phone = await (await newContext()).newPage();
+        await phone.setViewportSize(MOBILE);
+        await loginUser(phone, OWNER.email, OWNER.password);
+        await useOrganization(phone, ORGANIZATION);
+        await settle(phone, '/dashboard/home');
+        await capture(phone, 'captura_pantalla_inicial_mobile.png');
+        await settle(phone, '/dashboard/objectives');
+        await capture(phone, 'objetivos-mobile.png');
 
-        try {
-            const anonymousPage = await anonymous.newPage();
-            await anonymousPage.goto('/register', { waitUntil: 'networkidle' });
-            await anonymousPage.getByTestId('register-username-input').fill('Laura Sánchez');
-            await anonymousPage
-                .getByTestId('register-email-input')
-                .fill('laura.sanchez@example.com');
-            await anonymousPage.getByTestId('register-password-input').fill('Password123');
-            await anonymousPage.getByTestId('register-confirm-password-input').fill('Password123');
-            await captureFigure(anonymousPage, 'registro.png');
+        await settle(page, '/dashboard/categories');
+        await capture(page, 'categorias.png');
+        await settle(page, '/dashboard/achievements');
+        await capture(page, 'logros-overview.png');
 
-            await anonymousPage.goto('/forget-password', { waitUntil: 'networkidle' });
-            await anonymousPage.getByTestId('email-input').fill('laura.sanchez@example.com');
-            await captureFigure(anonymousPage, 'recuperar-contrasena.png');
+        // A shared household with her partner, and a book club her sister is invited to.
+        const partnerPage = await (await newContext()).newPage();
+        const partner = await createTestUser(partnerPage, { customUsername: PARTNER });
+        const sisterPage = await (await newContext()).newPage();
+        const sister = await createTestUser(sisterPage, { customUsername: SISTER });
 
-            for (const title of ['Learn guitar', 'Meditate every day']) {
-                await page.goto('/dashboard/objectives', { waitUntil: 'domcontentloaded' });
-                await page.getByTestId('objective-create-open').click();
-                await page.getByTestId('objective-title-input').fill(title);
-                await page.getByTestId('objective-target-input').fill('30');
-                await page.getByTestId('objective-save-button').click();
+        await createOrganization(page, { name: HOME });
+        await createOrganization(page, { name: BOOK_CLUB });
+        await invite(page, HOME, partner.email);
+        await acceptInvitations(partnerPage, partner.email, 1);
 
-                const row = page.getByTestId('objective-row-link').filter({ hasText: title });
-                await expect(row).toBeVisible({ timeout: 15_000 });
-                await row.click();
-                await expect(page.getByTestId('objective-detail-title')).toHaveText(title, {
-                    timeout: 15_000,
-                });
-                await page.getByTestId('objective-delete-button').click();
-                await page.getByTestId('delete-confirm-button').click();
-                await expect(page).toHaveURL(/\/dashboard\/objectives(?:\?|$)/, {
-                    timeout: 15_000,
-                });
-            }
+        await settle(page, '/dashboard/home');
+        await useOrganization(page, HOME);
+        await seedObjective(
+            page,
+            {
+                title: ELECTRICITY,
+                description: 'Media de la factura mensual de la casa.',
+                unit: '€',
+                start: '95',
+                target: '60',
+                deadline: 'dentro de 3 meses',
+                decrease: true,
+            },
+            ['88', '81', '74'].map((amount, index) => ({
+                amount,
+                total: true,
+                date: `hace ${3 - index} meses`,
+            }))
+        );
+        await page.getByTestId('objective-access-open').click();
+        await expect(page.getByRole('dialog')).toBeVisible({ timeout: 15_000 });
+        await page.getByTestId('objective-user-access-select').click();
+        await page.getByRole('option', { name: /Javier/ }).click();
+        await page.getByTestId('objective-user-access-level').click();
+        await page.getByRole('option', { name: /editar/i }).click();
+        await page.getByTestId('objective-user-access-add').click();
+        await expect(
+            page.getByTestId('objective-user-access-list').getByText(/Javier/)
+        ).toBeVisible({ timeout: 10_000 });
+        await page.waitForTimeout(600);
+        await capture(page, 'permisos-objetivo.png');
+        await page.keyboard.press('Escape');
 
-            await page.getByTestId('objectives-trash-link').click();
-            await expect(page.getByTestId('table-row')).toHaveCount(2, { timeout: 15_000 });
-            await page.waitForLoadState('networkidle');
-            await captureFigure(page, 'papelera.png');
+        await invite(page, HOME, sister.email);
+        await invite(page, BOOK_CLUB, sister.email);
+        const invitedAt = Date.now();
+        await invite(page, BOOK_CLUB, NEWCOMER.email);
+        const invitationUrl = await waitForInvitationUrl(page, NEWCOMER.email, invitedAt);
+        await settle(visitor, new URL(invitationUrl).pathname);
+        await capture(visitor, 'invitacion-publica.png');
 
-            await page.goto('/dashboard/categories', { waitUntil: 'networkidle' });
-            await page.waitForTimeout(600);
-            await captureFigure(page, 'categorias.png');
+        await sisterPage.goto('/dashboard/invitations', { waitUntil: 'domcontentloaded' });
+        await verifyEmailFromInvitationPage(sisterPage, sister.email);
+        await expect(sisterPage.getByTestId('invitation-accept-button')).toHaveCount(2, {
+            timeout: 20_000,
+        });
+        await sisterPage.waitForLoadState('networkidle');
+        await sisterPage.waitForTimeout(600);
+        await capture(sisterPage, 'invitaciones-centro.png');
 
-            await page.goto('/dashboard/objectives', { waitUntil: 'domcontentloaded' });
-            await page.getByTestId('objective-row-link').filter({ hasText: 'Run 200 km' }).click();
-            await page.getByTestId('objective-access-open').click();
-            await expect(page.getByRole('dialog')).toBeVisible({ timeout: 15_000 });
-            await page.waitForTimeout(600);
-            await captureFigure(page, 'permisos-objetivo.png');
-            await page.keyboard.press('Escape');
+        await settle(page, '/dashboard/organizations');
+        await capture(page, 'organizaciones-lista.png');
+        await openOrganization(page, HOME);
+        await page.waitForTimeout(700);
+        await capture(page, 'organizaciones-miembros.png');
 
-            const miguel = generateTestUserData({ customUsername: 'Miguel García' });
-            const laura = 'laura.sanchez@example.com';
+        await openOrganization(partnerPage, HOME);
+        await partnerPage.getByTestId('organization-leave').click();
+        await expect(partnerPage.getByTestId('delete-confirm-button')).toBeVisible();
+        await partnerPage.waitForTimeout(400);
+        await capture(partnerPage, 'abandonar-organizacion.png');
+        await partnerPage.keyboard.press('Escape');
 
-            async function invite(organization: string, email: string) {
-                await page.goto('/dashboard/organizations', { waitUntil: 'domcontentloaded' });
-                await page
-                    .getByTestId('table-row')
-                    .filter({ hasText: organization })
-                    .first()
-                    .getByTestId('organization-detail-link')
-                    .click();
-                await page.waitForURL(/\/dashboard\/organizations\/[^/?]+/, { timeout: 15_000 });
-                await page.getByTestId('organization-member-create-open').click();
-                await page.getByTestId('organization-member-email-input').fill(email);
-                await page.getByTestId('organization-member-save-button').click();
-                await expect(page.getByTestId('organization-member-email-input')).toBeHidden({
-                    timeout: 20_000,
-                });
-            }
+        await settle(page, '/dashboard/home');
+        await page.getByTestId('organization-switcher').first().click();
+        await page.waitForTimeout(500);
+        await capture(page, 'organizacion-selector.png');
+        await page.keyboard.press('Escape');
+        await useOrganization(page, ORGANIZATION);
 
-            await invite('Product Team', miguel.email);
-            await invite('Marketing', miguel.email);
+        // Notifications, account and sessions.
+        await settle(page, '/dashboard/home');
+        await expect(page.getByTestId('notification-bell-count')).toBeVisible({ timeout: 20_000 });
+        await page.getByTestId('notification-bell').click();
+        await expect(page.getByTestId('notification-row').first()).toBeVisible({
+            timeout: 15_000,
+        });
+        await page.waitForTimeout(500);
+        await capture(page, 'notificaciones-campana.png');
+        await page.keyboard.press('Escape');
+        await settle(page, '/dashboard/notifications');
+        await capture(page, 'notificaciones-lista.png');
+        await settle(page, '/dashboard/sessions');
+        await capture(page, 'sesiones-lista.png');
 
-            const invitedAt = Date.now();
-            await invite('Product Team', laura);
-            const invitationUrl = await waitForInvitationUrl(page, laura, invitedAt);
-            await anonymousPage.goto(new URL(invitationUrl).pathname, { waitUntil: 'networkidle' });
-            await anonymousPage.waitForTimeout(600);
-            await captureFigure(anonymousPage, 'invitacion-publica.png');
+        await settle(page, '/dashboard/settings');
+        await expect(page.getByTestId('settings-name-input')).toHaveValue(OWNER.username, {
+            timeout: 15_000,
+        });
+        await capture(page, 'ajustes.png', { fullPage: true });
+        await page.getByTestId('settings-currentPassword-input').fill(OWNER.password);
+        await page.getByTestId('settings-newPassword-input').fill('NuevaClave2026');
+        await page.getByTestId('settings-confirmPassword-input').fill('NuevaClave2026');
+        await page.getByTestId('settings-password-save').scrollIntoViewIfNeeded();
+        await page.waitForTimeout(400);
+        await capture(page, 'cambiar-contrasena.png');
 
-            const miguelPage = await miguelContext.newPage();
-            await loginUser(miguelPage, miguel.email, miguel.password);
-            await miguelPage.goto('/dashboard/invitations', { waitUntil: 'domcontentloaded' });
-            await verifyEmailFromInvitationPage(miguelPage, miguel.email);
-            await expect(miguelPage.getByTestId('invitation-accept-button')).toHaveCount(2, {
-                timeout: 20_000,
-            });
-            await miguelPage.waitForLoadState('networkidle');
-            await miguelPage.waitForTimeout(600);
-            await captureFigure(miguelPage, 'invitaciones-centro.png');
-
-            const carlos = generateTestUserData({ customUsername: 'Carlos López' });
-            const carlosPage = await carlosContext.newPage();
-            await loginUser(carlosPage, carlos.email, carlos.password);
-            await carlosPage.goto('/dashboard/organizations', { waitUntil: 'domcontentloaded' });
-            await carlosPage
-                .getByTestId('table-row')
-                .filter({ hasText: 'Product Team' })
-                .first()
-                .getByTestId('organization-detail-link')
-                .click();
-            await carlosPage.waitForURL(/\/dashboard\/organizations\/[^/?]+/, {
-                timeout: 15_000,
-            });
-            await carlosPage.waitForLoadState('networkidle');
-            await carlosPage.getByTestId('organization-leave').click();
-            await expect(carlosPage.getByTestId('delete-confirm-button')).toBeVisible();
-            await carlosPage.waitForTimeout(400);
-            await captureFigure(carlosPage, 'abandonar-organizacion.png');
-            await carlosPage.keyboard.press('Escape');
-
-            await page.goto('/dashboard/home', { waitUntil: 'domcontentloaded' });
-            await waitForDashboardReady(page);
-            await page.waitForLoadState('networkidle');
-            await page.getByTestId('organization-switcher').first().click();
-            await page.waitForTimeout(500);
-            await captureFigure(page, 'organizacion-selector.png');
-            await page.keyboard.press('Escape');
-
-            await expect(page.getByTestId('notification-bell-count')).toBeVisible({
-                timeout: 20_000,
-            });
-            await page.getByTestId('notification-bell').click();
-            await expect(page.getByTestId('notification-row').first()).toBeVisible({
-                timeout: 15_000,
-            });
-            await page.waitForTimeout(500);
-            await captureFigure(page, 'notificaciones-campana.png');
-            await page.keyboard.press('Escape');
-
-            await page.goto('/dashboard/home', { waitUntil: 'networkidle' });
-            await expect(page.getByTestId('command-menu-ready')).toBeAttached({ timeout: 15_000 });
-            await page.keyboard.press('Control+k');
-            await expect(page.getByRole('dialog')).toBeVisible({ timeout: 10_000 });
-            await page.waitForTimeout(400);
-            await captureFigure(page, 'paleta-comandos.png');
-            await page.keyboard.press('Escape');
-
-            await page.goto('/dashboard/settings', { waitUntil: 'networkidle' });
-            await expect(page.getByTestId('settings-name-input')).toHaveValue(ADMIN.username, {
-                timeout: 15_000,
-            });
-            await page.waitForTimeout(400);
-            await captureFigure(page, 'ajustes.png', { fullPage: true });
-
-            await page.getByTestId('settings-currentPassword-input').fill(ADMIN.password);
-            await page.getByTestId('settings-newPassword-input').fill('NewPassword123');
-            await page.getByTestId('settings-confirmPassword-input').fill('NewPassword123');
-            await page.getByTestId('settings-password-save').scrollIntoViewIfNeeded();
-            await page.waitForTimeout(400);
-            await captureFigure(page, 'cambiar-contrasena.png');
-        } finally {
-            await Promise.all([anonymous.close(), carlosContext.close(), miguelContext.close()]);
-        }
-    });
+        // Administration.
+        await settle(page, '/dashboard/admin');
+        await expect(page.getByTestId('admin-users')).toBeVisible({ timeout: 15_000 });
+        const partnerRow = page.getByTestId('table-row').filter({ hasText: partner.email });
+        await expect(partnerRow).toHaveCount(1, { timeout: 15_000 });
+        await page.waitForTimeout(600);
+        await capture(page, 'admin-panel-usuarios.png');
+        await partnerRow.getByTestId('admin-sessions-open').click();
+        await expect(page.getByTestId('admin-sessions-list').locator('li').first()).toBeVisible({
+            timeout: 15_000,
+        });
+        await page.waitForTimeout(400);
+        await capture(page, 'admin-panel-sesiones.png');
+        await page.keyboard.press('Escape');
+        await scrollTo(page, 'admin-audit');
+        await capture(page, 'admin-panel-auditoria.png');
+    } finally {
+        await Promise.all(contexts.map(context => context.close()));
+    }
 });
