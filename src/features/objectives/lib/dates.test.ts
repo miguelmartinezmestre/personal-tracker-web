@@ -25,7 +25,7 @@ test('flags active objectives only once their deadline day has passed @INH-OBJ-1
     expect(isOverdue({ status: 'active' })).toBe(false);
 });
 
-test('compares progress with the ideal pace from creation to the deadline @REQ-OBJETIVOS-010', () => {
+test('compares progress with the ideal pace from its start to the deadline @REQ-OBJETIVOS-010', () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date('2026-10-06T12:00:00Z'));
 
@@ -61,4 +61,8 @@ test('compares progress with the ideal pace from creation to the deadline @REQ-O
             currentValue: 0,
         })
     ).toBe('onTrack');
+    // Progress backdated to September starts the pace there, as the chart draws it.
+    expect(
+        objectivePace({ ...objective, firstProgressAt: Date.UTC(2026, 8, 1), currentValue: 50 })
+    ).toBe('atRisk');
 });

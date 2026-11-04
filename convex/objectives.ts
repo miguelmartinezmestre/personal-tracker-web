@@ -2,6 +2,7 @@ import { ConvexError, v } from 'convex/values';
 import { paginationOptsValidator } from 'convex/server';
 import { ERROR_CODES } from './shared/errorCodes';
 import {
+    firstProgressAt,
     measurement,
     objectiveTextFields,
     requireObjective,
@@ -103,7 +104,8 @@ export const getObjective = queryWithRLS({
         return toObjectiveSummary(
             objective,
             category?.name,
-            await objectiveAccess(ctx.db, ctx, objective)
+            await objectiveAccess(ctx.db, ctx, objective),
+            await firstProgressAt(ctx.db, objective._id)
         );
     },
 });
@@ -232,7 +234,12 @@ export const updateObjective = mutationWithRLS({
             ? await ctx.db.get('categories', updated.objective.categoryId)
             : null;
 
-        return toObjectiveSummary(updated.objective, category?.name, updated.access);
+        return toObjectiveSummary(
+            updated.objective,
+            category?.name,
+            updated.access,
+            await firstProgressAt(ctx.db, args.id)
+        );
     },
 });
 

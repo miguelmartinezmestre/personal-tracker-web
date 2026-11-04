@@ -36,6 +36,8 @@ export const objectiveSummaryValidator = v.object({
     deletedAt: v.optional(v.number()),
     progressPercent: v.number(),
     createdAt: v.number(),
+    // Earliest progress date; progress can be backdated before the objective was created.
+    firstProgressAt: v.optional(v.number()),
     updatedAt: v.number(),
     memberAccess: accessLevelValidator,
     canEdit: v.boolean(),

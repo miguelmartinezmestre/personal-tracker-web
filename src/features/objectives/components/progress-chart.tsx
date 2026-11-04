@@ -11,6 +11,7 @@ import { tooltip } from '@tanstack/charts/tooltip';
 import { api } from '@/convex/_generated/api';
 import type { Id } from '@/convex/_generated/dataModel';
 import { QueryErrorFallback } from '@/components/ui/query-error-fallback';
+import { paceStartDate } from '@/features/objectives/lib/dates';
 import { formatObjectiveValue } from '@/features/objectives/lib/format';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -24,6 +25,7 @@ type ProgressChartObjective = {
     startValue: number;
     targetValue: number;
     createdAt: number;
+    firstProgressAt?: number | undefined;
     deadline?: number;
     unit?: string;
 };
@@ -96,8 +98,6 @@ type HistoryPoint = {
 };
 
 function buildSeries(objective: ProgressChartObjective, points: readonly HistoryPoint[]) {
-    const firstDate = points[0]?.updateDate ?? objective.createdAt;
-
     const series: SeriesPoint[] = points.map(point => ({
         key: point.id,
         kind: 'update',
@@ -110,10 +110,14 @@ function buildSeries(objective: ProgressChartObjective, points: readonly History
     series.unshift({
         key: 'start',
         kind: 'start',
-        date: objective.createdAt < firstDate ? objective.createdAt : firstDate - DAY_MS,
+        // A truncated history lacks the oldest points, so prefer the objective's own first date.
+        date: paceStartDate({
+            createdAt: objective.createdAt,
+            firstProgressAt: objective.firstProgressAt ?? points[0]?.updateDate,
+        }),
         value: objective.startValue,
     });
-    const startDate = series[0]?.date ?? firstDate;
+    const startDate = series[0]?.date ?? objective.createdAt;
 
     const pace: PacePoint[] =
         objective.deadline !== undefined && objective.deadline > startDate

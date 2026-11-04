@@ -57,17 +57,24 @@ export function daysUntil(deadline: number): number {
 
 export type ObjectivePace = 'onTrack' | 'atRisk' | 'overdue';
 
-type PacedObjective = {
+type PaceStart = { createdAt: number; firstProgressAt?: number | undefined };
+
+// The ideal pace starts at creation, or the day before the first progress dated earlier.
+export function paceStartDate({ createdAt, firstProgressAt }: PaceStart): number {
+    return firstProgressAt !== undefined && firstProgressAt <= createdAt
+        ? firstProgressAt - DAY_MS
+        : createdAt;
+}
+
+type PacedObjective = PaceStart & {
     status: string;
     direction: 'increase' | 'decrease';
     deadline?: number;
-    createdAt: number;
     startValue: number;
     currentValue: number;
     targetValue: number;
 };
 
-// shortcut: ignores progress backdated before creation, which moves the chart's line start; fix if they disagree.
 export function objectivePace(objective: PacedObjective): ObjectivePace | undefined {
     if (objective.status !== 'active' || objective.deadline === undefined) {
         return undefined;
@@ -77,10 +84,10 @@ export function objectivePace(objective: PacedObjective): ObjectivePace | undefi
         return 'overdue';
     }
 
-    const span = objective.deadline - objective.createdAt;
+    const start = paceStartDate(objective);
+    const span = objective.deadline - start;
 
-    const elapsed =
-        span > 0 ? Math.min(1, Math.max(0, (todayTimestamp() - objective.createdAt) / span)) : 1;
+    const elapsed = span > 0 ? Math.min(1, Math.max(0, (todayTimestamp() - start) / span)) : 1;
 
     const expected =
         objective.startValue + (objective.targetValue - objective.startValue) * elapsed;

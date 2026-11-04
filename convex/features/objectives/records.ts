@@ -46,10 +46,23 @@ export function progressPercent(objective: {
     return Math.min(Math.max(percent, 0), 100);
 }
 
+export async function firstProgressAt(
+    db: QueryCtx['db'],
+    objectiveId: Id<'objectives'>
+): Promise<number | undefined> {
+    const first = await db
+        .query('progressUpdates')
+        .withIndex('by_objective_date', q => q.eq('objective', objectiveId))
+        .first();
+
+    return first?.updateDate;
+}
+
 export function toObjectiveSummary(
     objective: Doc<'objectives'>,
     categoryName: string | undefined,
-    access: ObjectiveAccess
+    access: ObjectiveAccess,
+    firstProgressDate: number | undefined
 ) {
     return {
         id: objective._id,
@@ -69,6 +82,7 @@ export function toObjectiveSummary(
         deletedAt: objective.deletedAt,
         progressPercent: progressPercent(objective),
         createdAt: objective.createdAt,
+        firstProgressAt: firstProgressDate,
         updatedAt: objective.updatedAt,
         memberAccess: memberAccessLevel(objective),
         canEdit: access.canEdit,
@@ -235,7 +249,8 @@ export async function toObjectiveSummaries(
             toObjectiveSummary(
                 objective,
                 objective.categoryId ? categoryNames.get(objective.categoryId) : undefined,
-                await objectiveAccess(db, actor, objective)
+                await objectiveAccess(db, actor, objective),
+                await firstProgressAt(db, objective._id)
             )
         )
     );
