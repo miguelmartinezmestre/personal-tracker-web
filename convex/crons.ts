@@ -5,7 +5,7 @@ const crons = cronJobs();
 
 crons.daily(
     'send deadline notifications',
-    { hourUTC: 6, minuteUTC: 0 },
+    { hourUTC: 6 },
     internal.notifications.sendDeadlineNotifications,
     {}
 );

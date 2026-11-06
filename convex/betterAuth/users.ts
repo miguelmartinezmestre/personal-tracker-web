@@ -1,6 +1,5 @@
 import { v } from 'convex/values';
 import { paginationOptsValidator, paginationResultValidator } from 'convex/server';
-import { doc } from 'convex-helpers/validators';
 import { query } from './_generated/server';
 import schema from './schema';
 
@@ -12,7 +11,7 @@ export const search = query({
         search: v.string(),
         paginationOpts: paginationOptsValidator,
     },
-    returns: paginationResultValidator(doc(schema, 'user')),
+    returns: paginationResultValidator(schema.doc('user')),
     handler: async (ctx, args) => {
         const users = ctx.db.query('user');
 
