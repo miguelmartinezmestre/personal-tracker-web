@@ -1,6 +1,7 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
+import { QueryErrorBoundary } from '@/components/query-error-boundary';
 import CreateOrganizationFormModal from './organization-form-create-modal';
 import OrganizationsTable from './organization-table';
 
@@ -17,7 +18,9 @@ export default function OrganizationsLayout() {
                     <CreateOrganizationFormModal />
                 </div>
             </div>
-            <OrganizationsTable />
+            <QueryErrorBoundary>
+                <OrganizationsTable />
+            </QueryErrorBoundary>
         </div>
     );
 }

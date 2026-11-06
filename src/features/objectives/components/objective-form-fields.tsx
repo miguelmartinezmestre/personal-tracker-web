@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Textarea } from '@/components/ui/textarea';
+import { QueryErrorBoundary } from '@/components/query-error-boundary';
 import type { TanStackFormApi } from '@/components/forms/form-types';
 import { getFieldErrors } from '@/components/forms/form-utils';
 import type { Id } from '@/convex/_generated/dataModel';
@@ -66,17 +67,19 @@ export function ObjectiveFormFields({
                     return (
                         <Field data-invalid={isInvalid}>
                             <FieldLabel htmlFor={field.name}>{t('category')}</FieldLabel>
-                            <CategorySelect
-                                id={field.name}
-                                value={field.state.value}
-                                onValueChange={field.handleChange}
-                                onBlur={field.handleBlur}
-                                firstOption={{ value: NONE_CATEGORY, label: t('noCategory') }}
-                                currentCategory={currentCategory}
-                                placeholder={t('selectACategory')}
-                                isInvalid={isInvalid}
-                                testId="objective-category-select"
-                            />
+                            <QueryErrorBoundary>
+                                <CategorySelect
+                                    id={field.name}
+                                    value={field.state.value}
+                                    onValueChange={field.handleChange}
+                                    onBlur={field.handleBlur}
+                                    firstOption={{ value: NONE_CATEGORY, label: t('noCategory') }}
+                                    currentCategory={currentCategory}
+                                    placeholder={t('selectACategory')}
+                                    isInvalid={isInvalid}
+                                    testId="objective-category-select"
+                                />
+                            </QueryErrorBoundary>
                             {isInvalid ? <FieldError errors={errors} /> : null}
                         </Field>
                     );

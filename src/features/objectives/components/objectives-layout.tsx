@@ -6,6 +6,7 @@ import { useSearchParams } from 'next/navigation';
 import { Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { QueryErrorBoundary } from '@/components/query-error-boundary';
 import { CategorySelect } from '@/features/objectives/components/category-select';
 import CreateObjectiveFormModal from '@/features/objectives/components/objective-form-create-modal';
 import ObjectivesTable from '@/features/objectives/components/objectives-table';
@@ -102,14 +103,19 @@ export default function ObjectivesLayout() {
                     </div>
                 </div>
                 <div className="flex flex-col gap-3 sm:flex-row lg:flex-col xl:flex-row">
-                    <CategorySelect
-                        id="objectives-category-filter"
-                        value={filters.category}
-                        onValueChange={category => selectFilters({ category })}
-                        firstOption={{ value: ALL_CATEGORIES, label: t('categoryOptions.all') }}
-                        ariaLabel={t('category')}
-                        testId="objectives-category-filter"
-                    />
+                    <QueryErrorBoundary>
+                        <CategorySelect
+                            id="objectives-category-filter"
+                            value={filters.category}
+                            onValueChange={category => selectFilters({ category })}
+                            firstOption={{
+                                value: ALL_CATEGORIES,
+                                label: t('categoryOptions.all'),
+                            }}
+                            ariaLabel={t('category')}
+                            testId="objectives-category-filter"
+                        />
+                    </QueryErrorBoundary>
                     <Input
                         type="search"
                         value={searchInput}
@@ -121,7 +127,9 @@ export default function ObjectivesLayout() {
                     />
                 </div>
             </div>
-            <ObjectivesTable filters={filters} search={search} />
+            <QueryErrorBoundary>
+                <ObjectivesTable filters={filters} search={search} />
+            </QueryErrorBoundary>
         </div>
     );
 }

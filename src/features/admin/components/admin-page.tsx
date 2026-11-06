@@ -3,6 +3,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { convexQuery } from '@convex-dev/react-query';
 import { useTranslations } from 'next-intl';
+import { QueryErrorBoundary } from '@/components/query-error-boundary';
 import { QueryErrorFallback } from '@/components/ui/query-error-fallback';
 import { Skeleton } from '@/components/ui/skeleton';
 import { api } from '@/convex/_generated/api';
@@ -37,9 +38,13 @@ export default function AdminPage() {
                 <h1 className="text-2xl font-bold">{t('title')}</h1>
                 <p className="text-muted-foreground">{t('description')}</p>
             </div>
-            <AdminUsers currentUserId={user.data._id} />
+            <QueryErrorBoundary>
+                <AdminUsers currentUserId={user.data._id} />
+            </QueryErrorBoundary>
             <AdminCategories />
-            <AdminAudit />
+            <QueryErrorBoundary>
+                <AdminAudit />
+            </QueryErrorBoundary>
         </div>
     );
 }

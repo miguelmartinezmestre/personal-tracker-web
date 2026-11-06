@@ -16,6 +16,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import { QueryErrorBoundary } from '@/components/query-error-boundary';
 import { usePaginatedList } from '@/components/data-table/hooks/use-paginated-list';
 import { api } from '@/convex/_generated/api';
 
@@ -112,10 +113,12 @@ export function AccessEditor({
                         ))}
                     </ul>
                 )}
-                <AddUser
-                    excluded={users.map(user => user.userId)}
-                    onAdd={user => onUsersChange([...users, user])}
-                />
+                <QueryErrorBoundary>
+                    <AddUser
+                        excluded={users.map(user => user.userId)}
+                        onAdd={user => onUsersChange([...users, user])}
+                    />
+                </QueryErrorBoundary>
             </div>
         </div>
     );

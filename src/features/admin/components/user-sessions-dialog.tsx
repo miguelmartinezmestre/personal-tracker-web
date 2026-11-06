@@ -14,6 +14,7 @@ import {
     DialogTitle,
     DialogTrigger,
 } from '@/components/ui/dialog';
+import { QueryErrorBoundary } from '@/components/query-error-boundary';
 import { usePaginatedList } from '@/components/data-table/hooks/use-paginated-list';
 import { LoadMorePagination } from '@/components/data-table/components/load-more-pagination';
 import { api } from '@/convex/_generated/api';
@@ -93,7 +94,11 @@ export default function UserSessionsDialog({ userId, name }: { userId: string; n
                     <DialogTitle>{t('title', { name })}</DialogTitle>
                     <DialogDescription>{t('description')}</DialogDescription>
                 </DialogHeader>
-                {open ? <SessionsList userId={userId} /> : null}
+                {open ? (
+                    <QueryErrorBoundary>
+                        <SessionsList userId={userId} />
+                    </QueryErrorBoundary>
+                ) : null}
             </DialogContent>
         </Dialog>
     );

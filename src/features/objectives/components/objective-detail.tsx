@@ -15,6 +15,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { DeleteConfirmationDialog } from '@/components/data-table/components/delete-confirmation-dialog';
 import { QueryErrorFallback } from '@/components/ui/query-error-fallback';
+import { QueryErrorBoundary } from '@/components/query-error-boundary';
 import {
     formatInstantDate,
     formatObjectiveDate,
@@ -191,7 +192,9 @@ export default function ObjectiveDetail({
             {progressContent}
             <section className="space-y-3">
                 <h2 className="text-lg font-semibold">{t('objectiveProgress')}</h2>
-                <ProgressList objective={current} />
+                <QueryErrorBoundary>
+                    <ProgressList objective={current} />
+                </QueryErrorBoundary>
             </section>
         </div>
     );

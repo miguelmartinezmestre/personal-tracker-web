@@ -12,6 +12,7 @@ import { redirect } from 'next/navigation';
 import { isPlatformSetUp } from '@/features/setup/server';
 import { getTranslations } from 'next-intl/server';
 import { SkipToContent } from '@/components/skip-to-content';
+import { QueryErrorBoundary } from '@/components/query-error-boundary';
 
 export const dynamic = 'force-dynamic';
 
@@ -47,10 +48,14 @@ export default async function Layout({ children }: { children: React.ReactNode }
                         <SidebarTrigger className="-ml-1" label={t('toggleSidebar')} />
                     </div>
                     <div className="flex min-w-0 items-center justify-end gap-1 sm:gap-2">
-                        <OrganizationSwitcher
+                        <QueryErrorBoundary
                             key={activeOrganizationId ?? 'no-active-organization'}
-                            initialActiveOrganizationId={activeOrganizationId}
-                        />
+                            className="flex-row gap-2 py-0 [&>p]:sr-only lg:[&>p]:not-sr-only"
+                        >
+                            <OrganizationSwitcher
+                                initialActiveOrganizationId={activeOrganizationId}
+                            />
+                        </QueryErrorBoundary>
                         <NotificationBell />
                         <ThemeToggle testId="dashboard-theme-toggle" />
                         <LanguageSwitcher />

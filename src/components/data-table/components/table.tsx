@@ -1,5 +1,4 @@
 import type { ReactNode } from 'react';
-import { QueryErrorFallback } from '@/components/ui/query-error-fallback';
 import { type ColumnDef, type RowData, useTable, flexRender } from '@tanstack/react-table';
 import {
     TableHeader,
@@ -21,8 +20,6 @@ interface DataTableProps<TData extends IdentifiedRow> {
     columns: ColumnDef<DataTableFeatures, TData>[];
     data: TData[];
     isLoading?: boolean;
-    isError?: boolean;
-    onRetry?: () => void;
     pagination?: PaginatedList;
     emptyMessage?: ReactNode;
     columnClassNames?: Partial<Record<string, string>>;
@@ -32,8 +29,6 @@ export function DataTable<TData extends IdentifiedRow>({
     columns,
     data,
     isLoading = false,
-    isError = false,
-    onRetry,
     pagination,
     emptyMessage,
     columnClassNames,
@@ -49,10 +44,6 @@ export function DataTable<TData extends IdentifiedRow>({
         getRowId: row => row.id,
         manualPagination: true,
     });
-
-    if (isError) {
-        return <QueryErrorFallback onRetry={onRetry} />;
-    }
 
     if (isLoading) {
         return (

@@ -10,6 +10,7 @@ import OrganizationPendingInvitations from '@/features/organizations/components/
 import OrganizationLeaveButton from '@/features/organizations/components/organization-leave-button';
 import Link from 'next/link';
 import { QueryErrorFallback } from '@/components/ui/query-error-fallback';
+import { QueryErrorBoundary } from '@/components/query-error-boundary';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useTranslations } from 'next-intl';
 import {
@@ -123,15 +124,18 @@ export default function OrganizationDetailClient({
                 <h2 id="organization-members-heading" className="text-xl font-semibold">
                     {tMembers('title')}
                 </h2>
-                <OrganizationMembersTable
-                    key={organization.id}
-                    organizationId={organization.id}
-                    actorRole={organization.role}
-                />
+                <QueryErrorBoundary key={organization.id}>
+                    <OrganizationMembersTable
+                        organizationId={organization.id}
+                        actorRole={organization.role}
+                    />
+                </QueryErrorBoundary>
             </section>
             {!organization.isPersonal && isOrganizationAdminRole(organization.role) && (
                 <div className="mt-8">
-                    <OrganizationPendingInvitations organizationId={organization.id} />
+                    <QueryErrorBoundary>
+                        <OrganizationPendingInvitations organizationId={organization.id} />
+                    </QueryErrorBoundary>
                 </div>
             )}
         </>
