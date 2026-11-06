@@ -1,6 +1,6 @@
 'use client';
 
-import { PlusCircle } from 'lucide-react';
+import { Pencil } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from '@/components/ui/field';
 import type { OrganizationMember } from '@/features/organizations/schemas/organization-member';
@@ -41,7 +41,7 @@ export default function OrganizationMemberEditFormModal({
         <FormModal<OrganizationMember>
             trigger={
                 <Button className="gap-2" data-testid="organization-member-edit-open">
-                    <PlusCircle className="h-4 w-4" />
+                    <Pencil className="h-4 w-4" aria-hidden />
                     {t('edit')}
                 </Button>
             }

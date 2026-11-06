@@ -4,7 +4,7 @@ import { translatedPageTitle } from '@/lib/page-metadata';
 
 export const generateMetadata = translatedPageTitle('HomePage', 'forgotPassword');
 
-export default async function ManageInvitationPage() {
+export default async function ForgetPasswordPage() {
     const t = await getTranslations('HomePage');
 
     return (
