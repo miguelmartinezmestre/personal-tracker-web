@@ -1,18 +1,19 @@
-import type { PaginationOptions, PaginationResult } from 'convex/server';
-import type { Doc } from '../../_generated/dataModel';
-import { withNextPageCheck, withPaginationLimits } from '../../shared/pagination';
+import type { PaginationOptions } from 'convex/server';
 import {
-    getInvitation,
-    getMembership,
-    getOrganization,
-    getUser,
+    deleteWhere,
+    findOne,
+    findPage,
+    type AuthDoc,
     type AuthReader,
     type AuthWriter,
-} from '../auth/authRecords';
+} from '../auth/authStore';
+import { getInvitation, getMembership, getOrganization, getUser } from '../auth/authRecords';
 import { normalizeRegistrationEmail } from '../auth/users';
 import { isOrganizationAdminRole } from './roles';
 
-const EMPTY_PAGE = { page: [], isDone: true, continueCursor: '' };
+// Date.now() stays out of the index range (a moving bound invalidates the cursor): rows are read
+// newest expiry first and the list ends at the first expired one.
+const LATEST_EXPIRY_FIRST = { field: 'expiresAt', direction: 'desc' } as const;
 
 export async function getInvitationPublicStatus(ctx: AuthReader, invitationId: string) {
     const invitation = await getInvitation(ctx, invitationId);
@@ -49,19 +50,6 @@ export async function invitationAllowsRegistration(
     return (await getOrganization(ctx, invitation.organizationId)) !== null;
 }
 
-/**
- * Date.now() stays out of the index range (a moving bound invalidates the cursor): rows are read
- * newest expiry first and the list ends at the first expired one.
- */
-function liveInvitations(result: PaginationResult<Doc<'invitation'>>, now: number) {
-    const live = result.page.filter(invitation => invitation.expiresAt > now);
-
-    return {
-        live,
-        result: { ...result, isDone: result.isDone || live.length < result.page.length },
-    };
-}
-
 export async function listInvitationsForUser(
     ctx: AuthReader,
     userId: string,
@@ -70,25 +58,23 @@ export async function listInvitationsForUser(
     const user = await getUser(ctx, userId);
 
     if (!user?.emailVerified) {
-        return EMPTY_PAGE;
+        return { page: [], isDone: true, continueCursor: '' };
     }
 
-    const { email } = user;
     const now = Date.now();
 
-    const { live, result } = liveInvitations(
-        await ctx.db
-            .query('invitation')
-            .withIndex('by_email_status_expiresAt', q =>
-                q.eq('email', email).eq('status', 'pending')
-            )
-            .order('desc')
-            .paginate(withPaginationLimits(paginationOpts)),
-        now
-    );
+    const result = await findPage(ctx, 'invitation', {
+        where: [
+            { field: 'email', value: user.email },
+            { field: 'status', value: 'pending' },
+        ],
+        sortBy: LATEST_EXPIRY_FIRST,
+        paginationOpts,
+        isLive: invitation => invitation.expiresAt > now,
+    });
 
     const page = await Promise.all(
-        live.map(async invitation => {
+        result.page.map(async invitation => {
             const [organization, inviter] = await Promise.all([
                 getOrganization(ctx, invitation.organizationId),
                 getUser(ctx, invitation.inviterId),
@@ -109,66 +95,40 @@ export async function listInvitationsForUser(
         })
     );
 
-    return await withNextPageCheck(
-        ctx.db,
-        {
-            table: 'invitation',
-            index: 'by_email_status_expiresAt',
-            prefix: [email, 'pending'],
-            indexKey: doc => [doc.email, doc.status, doc.expiresAt],
-            paginationOpts,
-            isLive: doc => doc.expiresAt > now,
-        },
-        result,
-        page.filter(invitation => invitation !== null)
-    );
+    return { ...result, page: page.filter(invitation => invitation !== null) };
 }
 
 export async function listPendingInvitationsForOrganization(
     ctx: AuthReader,
     args: { organizationId: string; requesterId: string; paginationOpts: PaginationOptions }
 ) {
-    const organizationId = ctx.db.normalizeId('organization', args.organizationId);
+    const membership = await getMembership(ctx, args.organizationId, args.requesterId);
 
-    const membership = organizationId
-        ? await getMembership(ctx, organizationId, args.requesterId)
-        : null;
-
-    if (!organizationId || !membership || !isOrganizationAdminRole(membership.role)) {
-        return EMPTY_PAGE;
+    if (!membership || !isOrganizationAdminRole(membership.role)) {
+        return { page: [], isDone: true, continueCursor: '' };
     }
 
     const now = Date.now();
 
-    const { live, result } = liveInvitations(
-        await ctx.db
-            .query('invitation')
-            .withIndex('by_organizationId_status_expiresAt', q =>
-                q.eq('organizationId', organizationId).eq('status', 'pending')
-            )
-            .order('desc')
-            .paginate(withPaginationLimits(args.paginationOpts)),
-        now
-    );
+    const result = await findPage(ctx, 'invitation', {
+        where: [
+            { field: 'organizationId', value: args.organizationId },
+            { field: 'status', value: 'pending' },
+        ],
+        sortBy: LATEST_EXPIRY_FIRST,
+        paginationOpts: args.paginationOpts,
+        isLive: invitation => invitation.expiresAt > now,
+    });
 
-    return await withNextPageCheck(
-        ctx.db,
-        {
-            table: 'invitation',
-            index: 'by_organizationId_status_expiresAt',
-            prefix: [organizationId, 'pending'],
-            indexKey: doc => [doc.organizationId, doc.status, doc.expiresAt],
-            paginationOpts: args.paginationOpts,
-            isLive: doc => doc.expiresAt > now,
-        },
-        result,
-        live.map(invitation => ({
+    return {
+        ...result,
+        page: result.page.map((invitation: AuthDoc<'invitation'>) => ({
             id: invitation._id,
             email: invitation.email,
             role: invitation.role || 'member',
             expiresAt: invitation.expiresAt,
-        }))
-    );
+        })),
+    };
 }
 
 export async function deleteInvitationsForOrganizationBatch(
@@ -176,35 +136,19 @@ export async function deleteInvitationsForOrganizationBatch(
     organizationId: string,
     batchSize: number
 ) {
-    const id = ctx.db.normalizeId('organization', organizationId);
+    const { count } = await deleteWhere(
+        ctx,
+        'invitation',
+        [{ field: 'organizationId', value: organizationId }],
+        batchSize
+    );
 
-    if (!id) {
-        return 0;
-    }
-
-    const rows = await ctx.db
-        .query('invitation')
-        .withIndex('organizationId', q => q.eq('organizationId', id))
-        .take(batchSize);
-
-    for (const row of rows) {
-        await ctx.db.delete('invitation', row._id);
-    }
-
-    return rows.length;
+    return count;
 }
 
 export async function hasInvitations(ctx: AuthReader, organizationId: string) {
-    const id = ctx.db.normalizeId('organization', organizationId);
-
-    if (!id) {
-        return false;
-    }
-
-    const invitation = await ctx.db
-        .query('invitation')
-        .withIndex('organizationId', q => q.eq('organizationId', id))
-        .first();
-
-    return invitation !== null;
+    return (
+        (await findOne(ctx, 'invitation', [{ field: 'organizationId', value: organizationId }])) !==
+        null
+    );
 }

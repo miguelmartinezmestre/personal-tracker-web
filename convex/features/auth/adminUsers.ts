@@ -1,15 +1,24 @@
-import { ConvexError, type Infer } from 'convex/values';
-import type { PaginationOptions } from 'convex/server';
-import type { Doc } from '../../_generated/dataModel';
+import { ConvexError } from 'convex/values';
+import type { PaginationOptions, PaginationResult } from 'convex/server';
+import { components } from '../../_generated/api';
 import { ERROR_CODES } from '../../shared/errorCodes';
-import { withPaginationLimits } from '../../shared/pagination';
-import { getUser, type AuthReader, type AuthWriter } from './authRecords';
+import { withPaginationLimits } from '../../shared/paginationLimits';
+import {
+    findMany,
+    findOne,
+    patchById,
+    type AuthDoc,
+    type AuthReader,
+    type AuthWriter,
+} from './authStore';
+import { getUser } from './authRecords';
+import type { Infer } from 'convex/values';
 import { GLOBAL_ADMIN_ROLE, USER_ROLE, isGlobalAdminRole } from './roles';
 import type { platformRoleValidator } from './validators';
 
 type PlatformRole = Infer<typeof platformRoleValidator>;
 
-function toAdminUser(user: Doc<'user'>) {
+function toAdminUser(user: AuthDoc<'user'>) {
     return {
         id: user._id,
         name: user.name,
@@ -27,30 +36,27 @@ export async function listAdminUsers(
     args: { search?: string; paginationOpts: PaginationOptions }
 ) {
     const search = args.search?.trim();
-    const users = ctx.db.query('user');
     const paginationOpts = withPaginationLimits(args.paginationOpts);
-    let result;
 
-    if (!search) {
-        result = await users.withIndex('email_name').paginate(paginationOpts);
-    } else if (search.includes('@')) {
-        result = await users
-            .withSearchIndex('search_user_email', q => q.search('email', search))
-            .paginate(paginationOpts);
-    } else {
-        result = await users
-            .withSearchIndex('search_user_name', q => q.search('name', search))
-            .paginate(paginationOpts);
-    }
+    const result = search
+        ? ((await ctx.runQuery(components.betterAuth.users.search, {
+              field: search.includes('@') ? 'email' : 'name',
+              search,
+              paginationOpts,
+          })) as PaginationResult<AuthDoc<'user'>>)
+        : await findMany(ctx, 'user', {
+              sortBy: { field: 'email', direction: 'asc' },
+              paginationOpts,
+          });
 
     return {
         ...result,
-        page: result.page.filter(user => user.deletedAt === undefined).map(toAdminUser),
+        page: result.page.filter(user => user.deletedAt == null).map(toAdminUser),
     };
 }
 
 export async function isFirstUser(ctx: AuthReader, userId: string) {
-    const firstUser = await ctx.db.query('user').order('asc').first();
+    const firstUser = await findOne(ctx, 'user', [], { field: 'createdAt', direction: 'asc' });
 
     return firstUser?._id === userId;
 }
@@ -59,7 +65,7 @@ export async function isFirstUser(ctx: AuthReader, userId: string) {
 async function requireOtherUser(ctx: AuthReader, userId: string, actorUserId: string) {
     const user = await getUser(ctx, userId);
 
-    if (!user || user.deletedAt !== undefined) {
+    if (!user || user.deletedAt != null) {
         throw new ConvexError(ERROR_CODES.USER_NOT_FOUND);
     }
 
@@ -75,7 +81,7 @@ export async function setPlatformRole(
     args: { userId: string; actorUserId: string; role: PlatformRole }
 ) {
     const user = await requireOtherUser(ctx, args.userId, args.actorUserId);
-    await ctx.db.patch('user', user._id, { role: args.role, updatedAt: Date.now() });
+    await patchById(ctx, 'user', user._id, { role: args.role, updatedAt: Date.now() });
 
     return { id: user._id, role: user.role ?? null, updatedAt: user.updatedAt };
 }
@@ -88,7 +94,7 @@ export async function grantPlatformRole(ctx: AuthWriter, userId: string, role: P
         throw new ConvexError(ERROR_CODES.USER_NOT_FOUND);
     }
 
-    await ctx.db.patch('user', user._id, { role });
+    await patchById(ctx, 'user', user._id, { role });
 }
 
 export async function banAccount(
@@ -103,7 +109,7 @@ export async function banAccount(
     const user = await requireOtherUser(ctx, args.userId, args.actorUserId);
     const banUpdatedAt = Math.max(Date.now(), user.updatedAt + 1);
 
-    await ctx.db.patch('user', user._id, {
+    await patchById(ctx, 'user', user._id, {
         banned: true,
         banReason: args.reason,
         banExpires: args.banExpires,
@@ -116,7 +122,7 @@ export async function banAccount(
 export async function unbanAccount(ctx: AuthWriter, args: { userId: string; actorUserId: string }) {
     const user = await requireOtherUser(ctx, args.userId, args.actorUserId);
 
-    await ctx.db.patch('user', user._id, {
+    await patchById(ctx, 'user', user._id, {
         banned: false,
         banReason: null,
         banExpires: null,

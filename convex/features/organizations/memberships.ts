@@ -1,15 +1,20 @@
 import { ConvexError } from 'convex/values';
 import type { PaginationOptions } from 'convex/server';
-import type { Doc } from '../../_generated/dataModel';
 import { ERROR_CODES } from '../../shared/errorCodes';
-import { withNextPageCheck, withPaginationLimits } from '../../shared/pagination';
 import {
-    getMembership,
-    getOrganization,
-    getUser,
+    create,
+    deleteById,
+    deleteWhere,
+    findAll,
+    findMany,
+    findOne,
+    findPage,
+    patchById,
+    type AuthDoc,
     type AuthReader,
     type AuthWriter,
-} from '../auth/authRecords';
+} from '../auth/authStore';
+import { getMembership, getOrganization, getUser } from '../auth/authRecords';
 import {
     DEFAULT_ORGANIZATION_NAME,
     buildDefaultOrganizationSlug,
@@ -20,28 +25,16 @@ import {
 import { normalizeOrganizationName } from './slug';
 import { normalizeOrganizationRole } from './roles';
 
-export async function listUserMemberships(ctx: AuthReader, userId: string) {
-    const id = ctx.db.normalizeId('user', userId);
+const NEWEST_FIRST = { field: 'createdAt', direction: 'desc' } as const;
 
-    if (!id) {
-        return [];
-    }
-
-    const memberships = [];
-
-    for await (const membership of ctx.db
-        .query('member')
-        .withIndex('userId', q => q.eq('userId', id))) {
-        memberships.push(membership);
-    }
-
-    return memberships;
+export function listUserMemberships(ctx: AuthReader, userId: string) {
+    return findAll(ctx, 'member', { where: [{ field: 'userId', value: userId }] });
 }
 
 async function toOrganizationSummaries(
     ctx: AuthReader,
     userId: string,
-    memberships: Doc<'member'>[]
+    memberships: AuthDoc<'member'>[]
 ) {
     const organizations = await Promise.all(
         memberships.map(async member => {
@@ -71,30 +64,13 @@ export async function listOrganizationsForUser(
     userId: string,
     paginationOpts: PaginationOptions
 ) {
-    const id = ctx.db.normalizeId('user', userId);
+    const result = await findPage(ctx, 'member', {
+        where: [{ field: 'userId', value: userId }],
+        sortBy: NEWEST_FIRST,
+        paginationOpts,
+    });
 
-    if (!id) {
-        return { page: [], isDone: true, continueCursor: '' };
-    }
-
-    const result = await ctx.db
-        .query('member')
-        .withIndex('userId', q => q.eq('userId', id))
-        .order('desc')
-        .paginate(withPaginationLimits(paginationOpts));
-
-    return await withNextPageCheck(
-        ctx.db,
-        {
-            table: 'member',
-            index: 'userId',
-            prefix: [id],
-            indexKey: doc => [doc.userId],
-            paginationOpts,
-        },
-        result,
-        await toOrganizationSummaries(ctx, userId, result.page)
-    );
+    return { ...result, page: await toOrganizationSummaries(ctx, userId, result.page) };
 }
 
 /** Every membership of the user in an existing organization, with its personal flag. */
@@ -119,13 +95,6 @@ export async function listMembershipsForUser(ctx: AuthReader, userId: string) {
     return memberships;
 }
 
-function findOrganizationBySlug(ctx: AuthReader, slug: string) {
-    return ctx.db
-        .query('organization')
-        .withIndex('slug', q => q.eq('slug', slug))
-        .first();
-}
-
 export async function findOrganizationByIdentifier(
     ctx: AuthReader,
     identifier: string,
@@ -133,7 +102,9 @@ export async function findOrganizationByIdentifier(
 ) {
     const value = identifier.trim();
 
-    const org = (await getOrganization(ctx, value)) ?? (await findOrganizationBySlug(ctx, value));
+    const org =
+        (await getOrganization(ctx, value)) ??
+        (await findOne(ctx, 'organization', [{ field: 'slug', value }]));
 
     if (!org) {
         return null;
@@ -182,7 +153,9 @@ export async function isDefaultOrganization(ctx: AuthReader, organizationId: str
 }
 
 export async function findPersonalOrganization(ctx: AuthReader, userId: string) {
-    const bySlug = await findOrganizationBySlug(ctx, buildDefaultOrganizationSlug(userId));
+    const bySlug = await findOne(ctx, 'organization', [
+        { field: 'slug', value: buildDefaultOrganizationSlug(userId) },
+    ]);
 
     if (bySlug && isPersonalOrganizationForUser({ metadata: bySlug.metadata, userId })) {
         return bySlug;
@@ -207,7 +180,7 @@ async function buildAvailablePersonalOrganizationSlug(ctx: AuthReader, userId: s
     let candidate = baseSlug;
 
     for (let attempt = 0; attempt < 5; attempt++) {
-        if (!(await findOrganizationBySlug(ctx, candidate))) {
+        if (!(await findOne(ctx, 'organization', [{ field: 'slug', value: candidate }]))) {
             return candidate;
         }
 
@@ -220,25 +193,19 @@ async function buildAvailablePersonalOrganizationSlug(ctx: AuthReader, userId: s
 async function createOwnedOrganization(
     ctx: AuthWriter,
     userId: string,
-    organization: Pick<Doc<'organization'>, 'name' | 'slug' | 'metadata' | 'logo'>
+    organization: Pick<AuthDoc<'organization'>, 'name' | 'slug' | 'metadata' | 'logo'>
 ) {
-    const ownerId = ctx.db.normalizeId('user', userId);
-
-    if (!ownerId) {
-        throw new ConvexError(ERROR_CODES.INTERNAL_ERROR);
-    }
-
     const now = Date.now();
-    const organizationId = await ctx.db.insert('organization', { ...organization, createdAt: now });
+    const created = await create(ctx, 'organization', { ...organization, createdAt: now });
 
-    await ctx.db.insert('member', {
-        organizationId,
-        userId: ownerId,
+    await create(ctx, 'member', {
+        organizationId: created._id,
+        userId,
         role: 'owner',
         createdAt: now,
     });
 
-    return organizationId;
+    return created._id;
 }
 
 export async function createPersonalOrganization(ctx: AuthWriter, userId: string) {
@@ -258,7 +225,7 @@ export async function ensureDefaultOrganizationForUser(ctx: AuthWriter, userId: 
         throw new ConvexError(ERROR_CODES.INTERNAL_ERROR);
     }
 
-    let firstOrganizationId: Doc<'organization'>['_id'] | null = null;
+    let firstOrganizationId: string | null = null;
 
     for (const membership of await listUserMemberships(ctx, user._id)) {
         const organization = await getOrganization(ctx, membership.organizationId);
@@ -294,7 +261,7 @@ export async function upsertSetupOrganization(
 
     if (reusable) {
         // An undefined patch field would erase the logo the organization already has.
-        await ctx.db.patch('organization', reusable._id, {
+        await patchById(ctx, 'organization', reusable._id, {
             name: args.name,
             ...(args.logo ? { logo: args.logo } : {}),
         });
@@ -317,7 +284,7 @@ export async function removeOrganization(ctx: AuthWriter, organizationId: string
         return false;
     }
 
-    await ctx.db.delete('organization', organization._id);
+    await deleteById(ctx, 'organization', organization._id);
 
     return true;
 }
@@ -339,47 +306,35 @@ export async function listOrganizationMembers(
     ctx: AuthReader,
     args: { organizationId: string; requesterId: string; paginationOpts: PaginationOptions }
 ) {
-    const organizationId = ctx.db.normalizeId('organization', args.organizationId);
-
-    if (!organizationId || !(await getMembership(ctx, organizationId, args.requesterId))) {
+    if (!(await getMembership(ctx, args.organizationId, args.requesterId))) {
         throw new ConvexError(ERROR_CODES.FORBIDDEN);
     }
 
-    const members = await ctx.db
-        .query('member')
-        .withIndex('organizationId', q => q.eq('organizationId', organizationId))
-        .order('desc')
-        .paginate(withPaginationLimits(args.paginationOpts));
+    const members = await findPage(ctx, 'member', {
+        where: [{ field: 'organizationId', value: args.organizationId }],
+        sortBy: NEWEST_FIRST,
+        paginationOpts: args.paginationOpts,
+    });
 
     const userIds = [...new Set(members.page.map(member => member.userId))];
     const users = await Promise.all(userIds.map(id => getUser(ctx, id)));
     const userMap = new Map(users.filter(user => user !== null).map(user => [user._id, user]));
 
-    const page = members.page.map(member => {
-        const user = userMap.get(member.userId);
+    return {
+        ...members,
+        page: members.page.map(member => {
+            const user = userMap.get(member.userId);
 
-        return {
-            id: member._id,
-            organizationId: member.organizationId,
-            userId: member.userId,
-            role: normalizeOrganizationRole(member.role),
-            createdAt: member.createdAt,
-            user: user ? { email: user.email, name: user.name, image: user.image } : null,
-        };
-    });
-
-    return await withNextPageCheck(
-        ctx.db,
-        {
-            table: 'member',
-            index: 'organizationId',
-            prefix: [organizationId],
-            indexKey: doc => [doc.organizationId],
-            paginationOpts: args.paginationOpts,
-        },
-        members,
-        page
-    );
+            return {
+                id: member._id,
+                organizationId: member.organizationId,
+                userId: member.userId,
+                role: normalizeOrganizationRole(member.role),
+                createdAt: member.createdAt,
+                user: user ? { email: user.email, name: user.name, image: user.image } : null,
+            };
+        }),
+    };
 }
 
 /** One page of an organization's members, for background fan-out. */
@@ -387,16 +342,10 @@ export async function pageMembers(
     ctx: AuthReader,
     args: { organizationId: string; numItems: number; cursor: string | null }
 ) {
-    const organizationId = ctx.db.normalizeId('organization', args.organizationId);
-
-    if (!organizationId) {
-        return { page: [], isDone: true, continueCursor: '' };
-    }
-
-    const result = await ctx.db
-        .query('member')
-        .withIndex('organizationId', q => q.eq('organizationId', organizationId))
-        .paginate({ numItems: args.numItems, cursor: args.cursor });
+    const result = await findMany(ctx, 'member', {
+        where: [{ field: 'organizationId', value: args.organizationId }],
+        paginationOpts: { numItems: args.numItems, cursor: args.cursor },
+    });
 
     return {
         page: result.page.map(member => ({ userId: member.userId, role: member.role })),
@@ -410,22 +359,14 @@ export async function deleteMembersBatch(
     organizationId: string,
     batchSize: number
 ) {
-    const id = ctx.db.normalizeId('organization', organizationId);
+    const { count } = await deleteWhere(
+        ctx,
+        'member',
+        [{ field: 'organizationId', value: organizationId }],
+        batchSize
+    );
 
-    if (!id) {
-        return 0;
-    }
-
-    const rows = await ctx.db
-        .query('member')
-        .withIndex('organizationId', q => q.eq('organizationId', id))
-        .take(batchSize);
-
-    for (const row of rows) {
-        await ctx.db.delete('member', row._id);
-    }
-
-    return rows.length;
+    return count;
 }
 
 /**
@@ -437,54 +378,41 @@ export async function deleteUserMembershipsBatch(
     userId: string,
     batchSize: number
 ) {
-    const id = ctx.db.normalizeId('user', userId);
-    const deletedOrganizationIds: Doc<'organization'>['_id'][] = [];
+    const deletedOrganizationIds: string[] = [];
 
-    if (!id) {
-        return { deleted: 0, deletedOrganizationIds };
-    }
+    const memberships = await findMany(ctx, 'member', {
+        where: [{ field: 'userId', value: userId }],
+        paginationOpts: { numItems: batchSize, cursor: null },
+    });
 
-    const memberships = await ctx.db
-        .query('member')
-        .withIndex('userId', q => q.eq('userId', id))
-        .take(batchSize);
-
-    for (const membership of memberships) {
+    for (const membership of memberships.page) {
         const organization = await getOrganization(ctx, membership.organizationId);
 
-        const members = await ctx.db
-            .query('member')
-            .withIndex('organizationId', q => q.eq('organizationId', membership.organizationId))
-            .take(2);
+        const members = await findMany(ctx, 'member', {
+            where: [{ field: 'organizationId', value: membership.organizationId }],
+            paginationOpts: { numItems: 2, cursor: null },
+        });
 
-        const isLastMember = members.every(member => member.userId === id);
+        const isLastMember = members.page.every(member => member.userId === userId);
 
         if (
             organization &&
             (isLastMember ||
                 isPersonalOrganizationForUser({ metadata: organization.metadata, userId }))
         ) {
-            await ctx.db.delete('organization', organization._id);
+            await deleteById(ctx, 'organization', organization._id);
             deletedOrganizationIds.push(organization._id);
         }
 
-        await ctx.db.delete('member', membership._id);
+        await deleteById(ctx, 'member', membership._id);
     }
 
-    return { deleted: memberships.length, deletedOrganizationIds };
+    return { deleted: memberships.page.length, deletedOrganizationIds };
 }
 
 export async function hasMembers(ctx: AuthReader, organizationId: string) {
-    const id = ctx.db.normalizeId('organization', organizationId);
-
-    if (!id) {
-        return false;
-    }
-
-    const member = await ctx.db
-        .query('member')
-        .withIndex('organizationId', q => q.eq('organizationId', id))
-        .first();
-
-    return member !== null;
+    return (
+        (await findOne(ctx, 'member', [{ field: 'organizationId', value: organizationId }])) !==
+        null
+    );
 }

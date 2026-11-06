@@ -15,7 +15,7 @@ export const userDocumentValidator = v.object({
     banned: v.optional(v.union(v.null(), v.boolean())),
     banReason: v.optional(v.union(v.null(), v.string())),
     banExpires: v.optional(v.union(v.null(), v.number())),
-    deletedAt: v.optional(v.number()),
+    deletedAt: v.optional(v.union(v.null(), v.number())),
 });
 
 export const sessionListItemValidator = v.object({
@@ -40,9 +40,3 @@ export const adminUserValidator = v.object({
     banExpires: v.union(v.number(), v.null()),
     createdAt: v.number(),
 });
-
-export const actorSessionRecoveryPhaseValidator = v.union(
-    v.literal('actor-null'),
-    v.literal('actor-unset'),
-    v.literal('actor-deleted')
-);

@@ -1,18 +1,12 @@
-import type { DatabaseReader, DatabaseWriter } from '../../_generated/server';
+import { findOne, getById, type AuthReader } from './authStore';
 import { isActiveAccount } from './users';
 
 /**
  * Reads of the Better Auth tables. Ids come in as plain strings
  */
 
-export type AuthReader = { db: DatabaseReader };
-
-export type AuthWriter = { db: DatabaseWriter };
-
-export async function getUser(ctx: AuthReader, userId: string | null | undefined) {
-    const id = userId ? ctx.db.normalizeId('user', userId) : null;
-
-    return id ? await ctx.db.get('user', id) : null;
+export function getUser(ctx: AuthReader, userId: string | null | undefined) {
+    return getById(ctx, 'user', userId);
 }
 
 export async function getActiveUser(ctx: AuthReader, userId: string | null | undefined) {
@@ -21,38 +15,23 @@ export async function getActiveUser(ctx: AuthReader, userId: string | null | und
     return user && isActiveAccount(user, Date.now()) ? user : null;
 }
 
-export async function getOrganization(ctx: AuthReader, organizationId: string | null | undefined) {
-    const id = organizationId ? ctx.db.normalizeId('organization', organizationId) : null;
-
-    return id ? await ctx.db.get('organization', id) : null;
+export function getOrganization(ctx: AuthReader, organizationId: string | null | undefined) {
+    return getById(ctx, 'organization', organizationId);
 }
 
-export async function getSession(ctx: AuthReader, sessionId: string | null | undefined) {
-    const id = sessionId ? ctx.db.normalizeId('session', sessionId) : null;
-
-    return id ? await ctx.db.get('session', id) : null;
+export function getSession(ctx: AuthReader, sessionId: string | null | undefined) {
+    return getById(ctx, 'session', sessionId);
 }
 
-export async function getInvitation(ctx: AuthReader, invitationId: string | null | undefined) {
-    const id = invitationId ? ctx.db.normalizeId('invitation', invitationId) : null;
-
-    return id ? await ctx.db.get('invitation', id) : null;
+export function getInvitation(ctx: AuthReader, invitationId: string | null | undefined) {
+    return getById(ctx, 'invitation', invitationId);
 }
 
-export async function getMembership(ctx: AuthReader, organizationId: string, userId: string) {
-    const orgId = ctx.db.normalizeId('organization', organizationId);
-    const memberUserId = ctx.db.normalizeId('user', userId);
-
-    if (!orgId || !memberUserId) {
-        return null;
-    }
-
-    return await ctx.db
-        .query('member')
-        .withIndex('by_organizationId_and_userId', q =>
-            q.eq('organizationId', orgId).eq('userId', memberUserId)
-        )
-        .first();
+export function getMembership(ctx: AuthReader, organizationId: string, userId: string) {
+    return findOne(ctx, 'member', [
+        { field: 'organizationId', value: organizationId },
+        { field: 'userId', value: userId },
+    ]);
 }
 
 /** Role of the user in an organization that still exists, or null. */
@@ -75,9 +54,5 @@ export async function getUserSummaries(ctx: AuthReader, userIds: string[]) {
 
     return users
         .filter(user => user !== null)
-        .map((user): { id: string; name: string; email: string } => ({
-            id: user._id,
-            name: user.name,
-            email: user.email,
-        }));
+        .map(user => ({ id: user._id, name: user.name, email: user.email }));
 }

@@ -1,4 +1,13 @@
-import { getOrganization, getUser, type AuthReader, type AuthWriter } from './authRecords';
+import type { QueryCtx } from '../../_generated/server';
+import {
+    deleteWhere,
+    findAll,
+    findOne,
+    patchById,
+    type AuthReader,
+    type AuthWriter,
+} from './authStore';
+import { getOrganization, getUser } from './authRecords';
 import { isPersonalOrganizationForUser } from '../organizations/personalOrganization';
 
 export type AccountDeletionBlocker = 'setupUser' | 'ownerSuccessorRequired';
@@ -7,17 +16,12 @@ const MAX_MEMBERSHIPS = 200;
 
 /** Owned organizations that would be left with members but no owner. */
 export async function organizationsNeedingNewOwner(ctx: AuthReader, userId: string) {
-    const id = ctx.db.normalizeId('user', userId);
     const names: string[] = [];
 
-    if (!id) {
-        return names;
-    }
-
-    const memberships = await ctx.db
-        .query('member')
-        .withIndex('userId', q => q.eq('userId', id))
-        .take(MAX_MEMBERSHIPS);
+    const memberships = await findAll(ctx, 'member', {
+        where: [{ field: 'userId', value: userId }],
+        limit: MAX_MEMBERSHIPS,
+    });
 
     for (const membership of memberships.filter(member => member.role === 'owner')) {
         const organization = await getOrganization(ctx, membership.organizationId);
@@ -30,11 +34,11 @@ export async function organizationsNeedingNewOwner(ctx: AuthReader, userId: stri
         }
 
         const others = (
-            await ctx.db
-                .query('member')
-                .withIndex('organizationId', q => q.eq('organizationId', organization._id))
-                .take(MAX_MEMBERSHIPS)
-        ).filter(member => member.userId !== id);
+            await findAll(ctx, 'member', {
+                where: [{ field: 'organizationId', value: organization._id }],
+                limit: MAX_MEMBERSHIPS,
+            })
+        ).filter(member => member.userId !== userId);
 
         // A member whose account is already being deleted will lose the membership, so it
         // cannot be the successor.
@@ -43,7 +47,7 @@ export async function organizationsNeedingNewOwner(ctx: AuthReader, userId: stri
         for (const member of others) {
             const memberUser = await getUser(ctx, member.userId);
 
-            if (memberUser && memberUser.deletedAt === undefined) {
+            if (memberUser && memberUser.deletedAt == null) {
                 remaining.push(member);
             }
         }
@@ -57,7 +61,7 @@ export async function organizationsNeedingNewOwner(ctx: AuthReader, userId: stri
 }
 
 export async function findAccountDeletionBlocker(
-    ctx: AuthReader,
+    ctx: Pick<QueryCtx, 'db' | 'runQuery'>,
     userId: string
 ): Promise<AccountDeletionBlocker | null> {
     const settings = await ctx.db.query('platformSettings').first();
@@ -75,16 +79,10 @@ export async function findAccountDeletionBlocker(
 
 /** The stored credential hash, read only by the account deletion endpoint to check the password. */
 export async function getPasswordHash(ctx: AuthReader, userId: string) {
-    const id = ctx.db.normalizeId('user', userId);
-
-    if (!id) {
-        return null;
-    }
-
-    const account = await ctx.db
-        .query('account')
-        .withIndex('providerId_userId', q => q.eq('providerId', 'credential').eq('userId', id))
-        .unique();
+    const account = await findOne(ctx, 'account', [
+        { field: 'providerId', value: 'credential' },
+        { field: 'userId', value: userId },
+    ]);
 
     return account?.password ?? null;
 }
@@ -92,13 +90,13 @@ export async function getPasswordHash(ctx: AuthReader, userId: string) {
 export async function anonymizeAccount(ctx: AuthWriter, userId: string) {
     const user = await getUser(ctx, userId);
 
-    if (!user || user.deletedAt !== undefined) {
+    if (!user || user.deletedAt != null) {
         return;
     }
 
     const now = Date.now();
 
-    await ctx.db.patch('user', user._id, {
+    await patchById(ctx, 'user', user._id, {
         email: `deleted-${user._id}@deleted.invalid`,
         emailVerified: false,
         image: null,
@@ -113,20 +111,12 @@ export async function anonymizeAccount(ctx: AuthWriter, userId: string) {
 }
 
 export async function deleteAccountsBatch(ctx: AuthWriter, userId: string, batchSize: number) {
-    const id = ctx.db.normalizeId('user', userId);
+    const { count } = await deleteWhere(
+        ctx,
+        'account',
+        [{ field: 'userId', value: userId }],
+        batchSize
+    );
 
-    if (!id) {
-        return 0;
-    }
-
-    const rows = await ctx.db
-        .query('account')
-        .withIndex('userId', q => q.eq('userId', id))
-        .take(batchSize);
-
-    for (const row of rows) {
-        await ctx.db.delete('account', row._id);
-    }
-
-    return rows.length;
+    return count;
 }
