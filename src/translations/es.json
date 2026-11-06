@@ -184,7 +184,9 @@
         "sessions": "Sesiones",
         "settings": "Configuración",
         "organizations": "Organizaciones",
-        "admin": "Administración"
+        "admin": "Administración",
+        "mobileTitle": "Menú de navegación",
+        "mobileDescription": "Enlaces a las secciones del panel."
     },
     "CommandMenu": {
         "placeholder": "Buscar comandos...",

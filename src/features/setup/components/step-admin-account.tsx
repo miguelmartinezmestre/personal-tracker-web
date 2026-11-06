@@ -15,12 +15,18 @@ interface StepAdminAccountProps {
 export default function StepAdminAccount({ data, onChange }: StepAdminAccountProps) {
     const t = useTranslations('Setup');
     const tCommon = useTranslations('Common');
+    const tHome = useTranslations('HomePage');
 
     const validation = createAdminAccountSchema({
         setupSecretInvalidLength: t('adminAccount.setupSecretInvalidLength', {
             min: MIN_SETUP_SECRET_LENGTH,
             max: MAX_SETUP_SECRET_LENGTH,
         }),
+        weakPassword: tHome('errors.weakPassword'),
+        passwordsDontMatch: tHome('errors.passwordsDontMatch'),
+        invalidEmail: tCommon('validation.invalidEmail'),
+        nameRequired: tCommon('validation.required'),
+        shortPassword: tCommon('validation.minimumCharacters', { count: 8 }),
     }).safeParse(data);
 
     let fieldErrors: Record<string, string>;

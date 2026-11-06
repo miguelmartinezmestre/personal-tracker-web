@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import type { CreateOrganizationMember } from '@/features/organizations/schemas/organization-member';
-import { organizationMemberSchema } from '@/features/organizations/schemas/organization-member';
+import { createOrganizationMemberSchema } from '@/features/organizations/schemas/organization-member';
 import {
     Select,
     SelectItem,
@@ -33,6 +33,10 @@ export default function CreateOrganizationMemberFormModal({
     const tCommon = useTranslationsCommon('Common');
     const createOrganizationMember = useCreateOrganizationMember();
 
+    const memberSchema = createOrganizationMemberSchema({
+        invalidEmail: tCommon('validation.invalidEmail'),
+    });
+
     const roleOptions = [
         ...(canAssignOwner ? [{ value: OrganizationRole.OWNER, label: t('roles.owner') }] : []),
         { value: OrganizationRole.ADMIN, label: t('roles.admin') },
@@ -56,8 +60,8 @@ export default function CreateOrganizationMemberFormModal({
                     organizationId: organizationId,
                 },
                 validators: {
-                    onChange: organizationMemberSchema,
-                    onSubmit: organizationMemberSchema,
+                    onChange: memberSchema,
+                    onSubmit: memberSchema,
                 },
             }}
             onSubmit={async (values: CreateOrganizationMember) => {

@@ -6,6 +6,12 @@ export const organizationMemberSchema = z.object({
     organizationId: z.string(),
 });
 
+export function createOrganizationMemberSchema(messages: { invalidEmail: string }) {
+    return organizationMemberSchema.extend({
+        email: z.email({ error: messages.invalidEmail }),
+    });
+}
+
 export const savedOrganizationMemberSchema = organizationMemberSchema.extend({
     id: z.string(),
     userId: z.string(),

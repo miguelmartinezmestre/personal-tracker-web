@@ -184,7 +184,9 @@
         "sessions": "Sessions",
         "settings": "Settings",
         "organizations": "Organizations",
-        "admin": "Administration"
+        "admin": "Administration",
+        "mobileTitle": "Navigation menu",
+        "mobileDescription": "Links to the dashboard sections."
     },
     "CommandMenu": {
         "placeholder": "Search commands...",

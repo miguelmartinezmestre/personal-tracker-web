@@ -4,6 +4,7 @@ import * as React from "react";
 import { mergeProps } from "@base-ui/react/merge-props";
 import { useRender } from "@base-ui/react/use-render";
 import { PanelLeftIcon } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -83,6 +84,7 @@ function SidebarProvider({ className, style, children, ...props }: React.Compone
 
 function Sidebar({ className, children, ...props }: React.ComponentProps<"div">) {
     const { isMobile, state, openMobile, setOpenMobile } = useSidebar();
+    const t = useTranslations("Sidebar");
 
     if (isMobile) {
         const mobileSidebarStyle: React.CSSProperties = {};
@@ -93,8 +95,8 @@ function Sidebar({ className, children, ...props }: React.ComponentProps<"div">)
         return (<Sheet open={openMobile} onOpenChange={setOpenMobile} {...props}>
         <SheetContent data-sidebar="sidebar" data-slot="sidebar" data-mobile="true" className="bg-sidebar text-sidebar-foreground w-(--sidebar-width) p-0 [&>button]:hidden" style={mobileSidebarStyle}>
           <SheetHeader className="sr-only">
-            <SheetTitle>Sidebar</SheetTitle>
-            <SheetDescription>Displays the mobile sidebar.</SheetDescription>
+            <SheetTitle>{t("mobileTitle")}</SheetTitle>
+            <SheetDescription>{t("mobileDescription")}</SheetDescription>
           </SheetHeader>
           <div className="flex h-full w-full flex-col">{children}</div>
         </SheetContent>

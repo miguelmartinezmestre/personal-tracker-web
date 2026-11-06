@@ -13,15 +13,20 @@ export const platformConfigSchema = z.object({
 
 type AdminAccountSchemaMessages = {
     setupSecretInvalidLength: string;
+    weakPassword: string;
+    passwordsDontMatch: string;
+    invalidEmail: string;
+    nameRequired: string;
+    shortPassword: string;
 };
 
 export function createAdminAccountSchema(messages?: Partial<AdminAccountSchemaMessages>) {
     return z
         .object({
-            username: z.string().trim().min(1),
-            email: z.email(),
-            password: z.string().min(8),
-            confirmPassword: z.string().min(8),
+            username: z.string().trim().min(1, { error: messages?.nameRequired }),
+            email: z.email({ error: messages?.invalidEmail }),
+            password: z.string().min(8, { error: messages?.shortPassword }),
+            confirmPassword: z.string().min(8, { error: messages?.shortPassword }),
             setupSecret: z
                 .string()
                 .max(MAX_SETUP_SECRET_LENGTH)
@@ -37,6 +42,7 @@ export function createAdminAccountSchema(messages?: Partial<AdminAccountSchemaMe
                     code: 'custom',
                     path: ['password'],
                     message:
+                        messages?.weakPassword ??
                         'Password must include at least one uppercase letter, one lowercase letter, and one number',
                 });
             }
@@ -45,7 +51,7 @@ export function createAdminAccountSchema(messages?: Partial<AdminAccountSchemaMe
                 ctx.addIssue({
                     code: 'custom',
                     path: ['confirmPassword'],
-                    message: 'Passwords do not match',
+                    message: messages?.passwordsDontMatch ?? 'Passwords do not match',
                 });
             }
         });
