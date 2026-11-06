@@ -1,24 +1,10 @@
 import './httpPolyfills';
-import { authMiddleware } from 'kitcn/auth/http';
-import { createHttpRouter, createHttpRouterFactory } from 'kitcn/server';
-import { Hono } from 'hono';
-import { cors } from 'hono/cors';
-import { getAuth } from './generated/auth';
-import { getEnvs } from './shared/env';
+import { httpRouter } from 'convex/server';
+import { authComponent, createAuth } from './auth';
 
-const app = new Hono();
-const router = createHttpRouterFactory();
+const http = httpRouter();
 
-app.use(
-    '/api/*',
-    cors({
-        origin: getEnvs().SITE_URL,
-        allowHeaders: ['Content-Type', 'Authorization', 'Better-Auth-Cookie'],
-        exposeHeaders: ['Set-Better-Auth-Cookie'],
-        credentials: true,
-    })
-);
+// The browser reaches these routes through the Next.js /api/auth proxy (same origin), so no CORS.
+authComponent.registerRoutes(http, createAuth);
 
-app.use(authMiddleware(getAuth));
-
-export default createHttpRouter(app, router({}));
+export default http;

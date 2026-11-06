@@ -1,20 +1,46 @@
+import { createClient, type AuthFunctions, type GenericCtx } from '@convex-dev/better-auth';
+import { betterAuth } from 'better-auth/minimal';
 import { ConvexError, v } from 'convex/values';
-import * as memberships from './features/organizations/memberships';
-import { invitationAllowsRegistration } from './features/organizations/invitations';
-import { ERROR_CODES } from './shared/errorCodes';
-import type { GenericCtx } from './shared/ctx';
-import { recoverActorSessionsBatch } from './features/auth/sessions';
-import { buildBetterAuthOptions } from './features/auth/options';
-import { defineAuth } from './generated/auth';
+import { components, internal } from './_generated/api';
+import type { DataModel } from './_generated/dataModel';
 import { internalMutation, internalQuery } from './_generated/server';
-import { internal } from './_generated/api';
-import { getUser } from './features/auth/authRecords';
-import { queryWithRLS } from './features/authorization/wrappers';
-import {
-    actorSessionRecoveryPhaseValidator,
-    userDocumentValidator,
-} from './features/auth/validators';
+import authSchema from './betterAuth/schema';
+import { authAuditTriggers } from './features/audit/triggers';
 import { getPasswordHash, organizationsNeedingNewOwner } from './features/auth/accountDeletion';
+import { getUser } from './features/auth/authRecords';
+import { buildBetterAuthOptions } from './features/auth/options';
+import { userDocumentValidator } from './features/auth/validators';
+import { queryWithRLS } from './features/authorization/wrappers';
+import { ERROR_CODES } from './shared/errorCodes';
+import { ensureDefaultOrganizationForUser } from './features/organizations/memberships';
+import { invitationAllowsRegistration } from './features/organizations/invitations';
+
+// Annotated to break the type cycle between these trigger functions and authComponent.
+const authFunctions: AuthFunctions = internal.auth;
+
+export const authComponent = createClient<DataModel, typeof authSchema>(components.betterAuth, {
+    local: { schema: authSchema },
+    authFunctions,
+    triggers: authAuditTriggers,
+});
+
+export const { onCreate, onUpdate, onDelete } = authComponent.triggersApi();
+
+export const createAuthOptions = (ctx: GenericCtx<DataModel>) => ({
+    ...buildBetterAuthOptions(ctx),
+    database: authComponent.adapter(ctx),
+});
+
+export const createAuth = (ctx: GenericCtx<DataModel>) => betterAuth(createAuthOptions(ctx));
+
+/** Called by the session create hook, which runs in an HTTP action: one transaction. */
+export const ensureDefaultOrganization = internalMutation({
+    args: { userId: v.string() },
+    returns: v.string(),
+    handler: async (ctx, args) => {
+        return await ensureDefaultOrganizationForUser(ctx, args.userId);
+    },
+});
 
 export const getEmailRegistrationAuthorization = internalQuery({
     args: {
@@ -34,75 +60,17 @@ export const getEmailRegistrationAuthorization = internalQuery({
             return 'allowed';
         }
 
-        const allowed =
-            args.invitationId !== null &&
-            (await invitationAllowsRegistration(ctx, {
-                email: args.email,
-                invitationId: args.invitationId,
-                now: args.now,
-            }));
-
-        return allowed ? 'allowed' : 'denied';
-    },
-});
-
-export const ensureDefaultOrganizationForUser = internalMutation({
-    returns: v.string(),
-    args: {
-        userId: v.string(),
-    },
-    handler: async (ctx, args) => {
-        return await memberships.ensureDefaultOrganizationForUser(ctx, args.userId);
-    },
-});
-
-export const recoverSessionsAfterOrganizationDeletion = internalMutation({
-    returns: v.object({
-        status: v.union(v.literal('in_progress'), v.literal('completed')),
-        phase: actorSessionRecoveryPhaseValidator,
-    }),
-    args: {
-        organizationId: v.string(),
-        actorUserId: v.string(),
-        phase: v.optional(actorSessionRecoveryPhaseValidator),
-    },
-    handler: async (ctx, args) => {
-        const phase = args.phase ?? 'actor-null';
-        const nextPhase = await recoverActorSessionsBatch(ctx, { ...args, phase });
-
-        if (!nextPhase) {
-            return { status: 'completed' as const, phase };
+        if (!args.invitationId) {
+            return 'denied';
         }
 
-        await ctx.scheduler.runAfter(0, internal.auth.recoverSessionsAfterOrganizationDeletion, {
-            organizationId: args.organizationId,
-            actorUserId: args.actorUserId,
-            phase: nextPhase,
+        const allowed = await invitationAllowsRegistration(ctx, {
+            email: args.email,
+            invitationId: args.invitationId,
+            now: args.now,
         });
 
-        return { status: 'in_progress' as const, phase: nextPhase };
-    },
-});
-
-export const userHasOrganizationNamed = internalQuery({
-    returns: v.boolean(),
-    args: {
-        userId: v.string(),
-        name: v.string(),
-        excludeOrganizationId: v.optional(v.string()),
-    },
-    handler: async (ctx, args) => {
-        return await memberships.userHasOrganizationNamed(ctx, args);
-    },
-});
-
-export const isDefaultOrganization = internalQuery({
-    returns: v.boolean(),
-    args: {
-        organizationId: v.string(),
-    },
-    handler: async (ctx, args) => {
-        return await memberships.isDefaultOrganization(ctx, args.organizationId);
+        return allowed ? 'allowed' : 'denied';
     },
 });
 
@@ -118,24 +86,22 @@ export const getAccountDeletionTarget = internalQuery({
         v.null()
     ),
     handler: async (ctx, args) => {
-        const userId = ctx.db.normalizeId('user', args.userId);
+        const user = await getUser(ctx, args.userId);
 
-        if (!userId) {
+        if (!user) {
             return null;
         }
 
         const settings = await ctx.db.query('platformSettings').first();
 
         return {
-            userId,
-            isSetupUser: settings?.setupCompletedBy === userId,
-            passwordHash: await getPasswordHash(ctx, userId),
-            organizationsNeedingNewOwner: await organizationsNeedingNewOwner(ctx, userId),
+            userId: user._id,
+            isSetupUser: settings?.setupCompletedBy === user._id,
+            passwordHash: await getPasswordHash(ctx, user._id),
+            organizationsNeedingNewOwner: await organizationsNeedingNewOwner(ctx, user._id),
         };
     },
 });
-
-export default defineAuth((ctx: GenericCtx) => buildBetterAuthOptions(ctx));
 
 export const getAccountDeletionStatus = queryWithRLS({
     args: {},

@@ -30,11 +30,12 @@ import type * as features_auth_accountDeletion from "../features/auth/accountDel
 import type * as features_auth_accountDeletionPlugin from "../features/auth/accountDeletionPlugin.js";
 import type * as features_auth_adminUsers from "../features/auth/adminUsers.js";
 import type * as features_auth_authRecords from "../features/auth/authRecords.js";
-import type * as features_auth_authSchema from "../features/auth/authSchema.js";
+import type * as features_auth_authStore from "../features/auth/authStore.js";
 import type * as features_auth_options from "../features/auth/options.js";
 import type * as features_auth_passwordPolicy from "../features/auth/passwordPolicy.js";
 import type * as features_auth_redirects from "../features/auth/redirects.js";
 import type * as features_auth_roles from "../features/auth/roles.js";
+import type * as features_auth_schemaOptions from "../features/auth/schemaOptions.js";
 import type * as features_auth_sessions from "../features/auth/sessions.js";
 import type * as features_auth_users from "../features/auth/users.js";
 import type * as features_auth_validators from "../features/auth/validators.js";
@@ -81,8 +82,6 @@ import type * as features_organizations_validators from "../features/organizatio
 import type * as features_setup_rules from "../features/setup/rules.js";
 import type * as features_setup_secret from "../features/setup/secret.js";
 import type * as features_setup_validators from "../features/setup/validators.js";
-import type * as generated_auth from "../generated/auth.js";
-import type * as generated_server from "../generated/server.js";
 import type * as http from "../http.js";
 import type * as notifications from "../notifications.js";
 import type * as objectiveAccess from "../objectiveAccess.js";
@@ -97,6 +96,7 @@ import type * as shared_env from "../shared/env.js";
 import type * as shared_errorCodes from "../shared/errorCodes.js";
 import type * as shared_pagination from "../shared/pagination.js";
 import type * as shared_paginationLimits from "../shared/paginationLimits.js";
+import type * as tests_authTesting from "../tests/authTesting.js";
 import type * as trash from "../trash.js";
 
 import type {
@@ -128,11 +128,12 @@ declare const fullApi: ApiFromModules<{
   "features/auth/accountDeletionPlugin": typeof features_auth_accountDeletionPlugin;
   "features/auth/adminUsers": typeof features_auth_adminUsers;
   "features/auth/authRecords": typeof features_auth_authRecords;
-  "features/auth/authSchema": typeof features_auth_authSchema;
+  "features/auth/authStore": typeof features_auth_authStore;
   "features/auth/options": typeof features_auth_options;
   "features/auth/passwordPolicy": typeof features_auth_passwordPolicy;
   "features/auth/redirects": typeof features_auth_redirects;
   "features/auth/roles": typeof features_auth_roles;
+  "features/auth/schemaOptions": typeof features_auth_schemaOptions;
   "features/auth/sessions": typeof features_auth_sessions;
   "features/auth/users": typeof features_auth_users;
   "features/auth/validators": typeof features_auth_validators;
@@ -179,8 +180,6 @@ declare const fullApi: ApiFromModules<{
   "features/setup/rules": typeof features_setup_rules;
   "features/setup/secret": typeof features_setup_secret;
   "features/setup/validators": typeof features_setup_validators;
-  "generated/auth": typeof generated_auth;
-  "generated/server": typeof generated_server;
   http: typeof http;
   notifications: typeof notifications;
   objectiveAccess: typeof objectiveAccess;
@@ -195,6 +194,7 @@ declare const fullApi: ApiFromModules<{
   "shared/errorCodes": typeof shared_errorCodes;
   "shared/pagination": typeof shared_pagination;
   "shared/paginationLimits": typeof shared_paginationLimits;
+  "tests/authTesting": typeof tests_authTesting;
   trash: typeof trash;
 }>;
 
@@ -225,6 +225,7 @@ export declare const internal: FilterApi<
 >;
 
 export declare const components: {
+  betterAuth: import("../betterAuth/_generated/component.js").ComponentApi<"betterAuth">;
   objectiveStats: import("@convex-dev/aggregate/_generated/component.js").ComponentApi<"objectiveStats">;
   objectiveRanking: import("@convex-dev/aggregate/_generated/component.js").ComponentApi<"objectiveRanking">;
 };

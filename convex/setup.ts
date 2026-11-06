@@ -3,18 +3,17 @@ import { ERROR_CODES } from './shared/errorCodes';
 import { GLOBAL_ADMIN_ROLE } from './features/auth/roles';
 import { buildOrganizationSlug } from './features/organizations/slug';
 import { completeSetupArgsValidator } from './features/setup/validators';
-import { getAuthUserIdentity } from 'kitcn/auth';
 import { validateSetupArgs } from './features/setup/rules';
-import { grantPlatformRole, isFirstUser } from './features/auth/adminUsers';
+import { insertAuditLog } from './features/audit/log';
+import { query } from './_generated/server';
+import { mutation } from './features/objectives/stats';
+import { normalizeCategory } from './features/categories/rules';
 import {
     listMembershipsForUser,
     upsertSetupOrganization,
 } from './features/organizations/memberships';
 import { activateOrganizationForUser } from './features/auth/sessions';
-import { insertAuditLog } from './features/audit/log';
-import { query } from './_generated/server';
-import { mutation } from './features/objectives/stats';
-import { normalizeCategory } from './features/categories/rules';
+import { grantPlatformRole, isFirstUser } from './features/auth/adminUsers';
 
 export const isPlatformSetUp = query({
     args: {},
@@ -57,8 +56,7 @@ export const completeSetup = mutation({
         organizationId: v.string(),
     }),
     handler: async (ctx, args) => {
-        const identity = await getAuthUserIdentity(ctx);
-        const userId = ctx.db.normalizeId('user', identity?.userId ?? '');
+        const userId = (await ctx.auth.getUserIdentity())?.subject;
 
         if (!userId) {
             throw new ConvexError(ERROR_CODES.SETUP_AUTH_REQUIRED);
@@ -92,11 +90,9 @@ export const completeSetup = mutation({
 
         const memberships = await listMembershipsForUser(ctx, userId);
 
-        const personalOrganizationIds = new Set(
-            memberships
-                .filter(membership => membership.isPersonal)
-                .map(membership => membership.organizationId)
-        );
+        const personalOrganizationIds = memberships
+            .filter(membership => membership.isPersonal)
+            .map(membership => membership.organizationId);
 
         const organizationId = await upsertSetupOrganization(ctx, {
             userId,
@@ -110,7 +106,7 @@ export const completeSetup = mutation({
         await activateOrganizationForUser(ctx, {
             userId,
             organizationId,
-            replaceOrganizationIds: [...personalOrganizationIds],
+            replaceOrganizationIds: personalOrganizationIds,
         });
 
         const now = Date.now();

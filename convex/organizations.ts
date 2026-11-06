@@ -1,10 +1,13 @@
 import { v } from 'convex/values';
+import { paginationOptsValidator, paginationResultValidator } from 'convex/server';
+import { query } from './_generated/server';
 import {
     currentSessionValidator,
     organizationSummaryValidator,
     paginatedOrganizationMembersValidator,
     userInvitationValidator,
 } from './features/organizations/validators';
+import { queryWithRLS } from './features/authorization/wrappers';
 import {
     findOrganizationByIdentifier,
     findPersonalOrganization,
@@ -16,11 +19,7 @@ import {
     listInvitationsForUser,
     listPendingInvitationsForOrganization,
 } from './features/organizations/invitations';
-import { getSession } from 'kitcn/auth';
 import { readCurrentSession } from './features/auth/sessions';
-import { paginationOptsValidator, paginationResultValidator } from 'convex/server';
-import { query } from './_generated/server';
-import { queryWithRLS } from './features/authorization/wrappers';
 
 export const getPublicInvitationStatus = query({
     args: {
@@ -39,9 +38,16 @@ export const getCurrentSession = query({
     args: {},
     returns: v.union(currentSessionValidator, v.null()),
     handler: async ctx => {
-        const session = await getSession(ctx);
+        const identity = await ctx.auth.getUserIdentity();
+        const sessionId = typeof identity?.sessionId === 'string' ? identity.sessionId : null;
 
-        return session ? await readCurrentSession(ctx, session._id) : null;
+        if (!identity || !sessionId) {
+            return null;
+        }
+
+        const current = await readCurrentSession(ctx, sessionId);
+
+        return current?.session.userId === identity.subject ? current : null;
     },
 });
 

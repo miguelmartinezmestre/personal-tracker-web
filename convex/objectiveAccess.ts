@@ -78,7 +78,7 @@ export const updateObjectiveAccess = mutationWithRLS({
             ...memberAccessFields(args.memberAccess),
             updatedAt: now,
         });
-        await replaceUserGrants(ctx.db, objective, args.users, ctx.userId, now);
+        await replaceUserGrants(ctx, objective, args.users, ctx.userId, now);
         await insertAuditLog(ctx, {
             action: 'objective.access_changed',
             resourceType: 'objective',

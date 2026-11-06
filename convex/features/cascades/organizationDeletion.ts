@@ -1,10 +1,10 @@
 import type { MutationCtx } from '../../_generated/server';
 import { deleteMembersBatch, hasMembers } from '../organizations/memberships';
-import { hasSessionsInOrganization } from '../auth/sessions';
 import {
     deleteInvitationsForOrganizationBatch,
     hasInvitations,
 } from '../organizations/invitations';
+import { hasSessionsInOrganization } from '../auth/sessions';
 
 export const ORGANIZATION_DELETION_BATCH_SIZE = 50;
 

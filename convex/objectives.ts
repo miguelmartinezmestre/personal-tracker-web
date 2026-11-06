@@ -164,7 +164,7 @@ export const createObjective = mutationWithRLS({
 
         if (args.users?.length) {
             const { objective } = await requireObjective(ctx.db, ctx, objectiveId);
-            await replaceUserGrants(ctx.db, objective, args.users, ctx.userId, now);
+            await replaceUserGrants(ctx, objective, args.users, ctx.userId, now);
         }
 
         return objectiveId;

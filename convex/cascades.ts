@@ -28,8 +28,8 @@ import {
 import { v } from 'convex/values';
 import { insertAuditLog } from './features/audit/log';
 import { findAccountDeletionBlocker } from './features/auth/accountDeletion';
-import { removeOrganization } from './features/organizations/memberships';
 import { recoverSessionsForDeletedOrganization } from './features/auth/sessions';
+import { removeOrganization } from './features/organizations/memberships';
 
 export const cascadeUserDeletionInternal = internalMutation({
     args: {

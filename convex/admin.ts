@@ -5,18 +5,7 @@ import { ERROR_CODES } from './shared/errorCodes';
 import { withPaginationLimits } from './shared/pagination';
 import { mutationWithRLS, queryWithRLS } from './features/authorization/wrappers';
 import { USER_ROLE, isGlobalAdminRole } from './features/auth/roles';
-import {
-    listSessionsForUser,
-    removeSession,
-    revokeBannedUserSessionsBatch,
-} from './features/auth/sessions';
-import {
-    banAccount,
-    listAdminUsers,
-    setPlatformRole,
-    unbanAccount,
-} from './features/auth/adminUsers';
-import { getUserSummaries } from './features/auth/authRecords';
+import { revokeBannedUserSessionsBatch } from './features/auth/sessions';
 import {
     adminUserValidator,
     platformRoleValidator,
@@ -24,6 +13,14 @@ import {
 } from './features/auth/validators';
 import { insertAuditLog } from './features/audit/log';
 import { auditEntryValidator } from './features/audit/validators';
+import { listSessionsForUser, removeSession } from './features/auth/sessions';
+import { getUserSummaries } from './features/auth/authRecords';
+import {
+    banAccount,
+    listAdminUsers,
+    setPlatformRole,
+    unbanAccount,
+} from './features/auth/adminUsers';
 
 function requireGlobalAdmin(ctx: { role: string }) {
     if (!isGlobalAdminRole(ctx.role)) {
@@ -165,23 +162,19 @@ export const revokeUserSession = mutationWithRLS({
     handler: async (ctx, args) => {
         requireGlobalAdmin(ctx);
 
-        const removed = await removeSession(ctx, args.sessionId);
+        const session = await removeSession(ctx, args.sessionId);
 
-        if (!removed) {
+        if (!session) {
             throw new ConvexError(ERROR_CODES.FORBIDDEN);
         }
 
-        const sessionUserId = ctx.db.normalizeId('user', removed.userId);
-
-        if (sessionUserId) {
-            await insertAuditLog(ctx, {
-                action: 'session.revoked_by_admin',
-                resourceType: 'session',
-                resourceId: removed.id,
-                userId: sessionUserId,
-                severity: 'warning',
-            });
-        }
+        await insertAuditLog(ctx, {
+            action: 'session.revoked_by_admin',
+            resourceType: 'session',
+            resourceId: session.id,
+            userId: session.userId,
+            severity: 'warning',
+        });
 
         return null;
     },
@@ -195,7 +188,9 @@ export const listAuditLogs = queryWithRLS({
     },
     returns: paginationResultValidator(auditEntryValidator),
     handler: async (ctx, args) => {
-        requireGlobalAdmin(ctx);
+        if (!isGlobalAdminRole(ctx.role)) {
+            throw new ConvexError(ERROR_CODES.FORBIDDEN);
+        }
 
         const logs = ctx.dbForIntegrityChecks.query('auditLogs');
         let query;
@@ -224,12 +219,12 @@ export const listAuditLogs = queryWithRLS({
 
         const users = await getUserSummaries(
             ctx,
-            entries
-                .flatMap(entry => [entry.userId, entry.actorUserId])
-                .filter(userId => userId !== undefined)
+            entries.flatMap(entry =>
+                entry.actorUserId ? [entry.userId, entry.actorUserId] : [entry.userId]
+            )
         );
 
-        const userNames = new Map<string, string>(users.map(user => [user.id, user.name]));
+        const userNames = new Map(users.map(user => [user.id, user.name]));
 
         const nameOf = (userId: string | undefined) =>
             userId ? (userNames.get(userId) ?? null) : null;

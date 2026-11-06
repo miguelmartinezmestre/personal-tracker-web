@@ -1,11 +1,13 @@
 import { ConvexError, v } from 'convex/values';
 import { paginationOptsValidator, paginationResultValidator } from 'convex/server';
 import { internalMutation } from './_generated/server';
+import { internal } from './_generated/api';
 import { ERROR_CODES } from './shared/errorCodes';
 import { mutationWithRLS, queryWithRLS } from './features/authorization/wrappers';
 import {
     currentSessionId,
     listSessionsForUser,
+    recoverActorSessionsBatch,
     removeSession,
     revokeOtherSessionsBatch,
 } from './features/auth/sessions';
@@ -28,16 +30,16 @@ export const revokeSession = mutationWithRLS({
     args: { sessionId: v.string() },
     returns: v.null(),
     handler: async (ctx, args) => {
-        const removed = await removeSession(ctx, args.sessionId, ctx.userId);
+        const revoked = await removeSession(ctx, args.sessionId, ctx.userId);
 
-        if (!removed) {
+        if (!revoked) {
             throw new ConvexError(ERROR_CODES.FORBIDDEN);
         }
 
         await insertAuditLog(ctx, {
             action: 'session.revoked',
             resourceType: 'session',
-            resourceId: removed.id,
+            resourceId: revoked.id,
             userId: ctx.userId,
             severity: 'warning',
         });
@@ -74,6 +76,37 @@ export const continueSessionRevocation = internalMutation({
     returns: v.null(),
     handler: async (ctx, args) => {
         await revokeOtherSessionsBatch(ctx, args);
+
+        return null;
+    },
+});
+
+/**
+ * Runs from Better Auth's afterDeleteOrganization hook: moves the actor's sessions off the deleted
+ * organization in batches, scheduling itself until the walk is done.
+ */
+export const recoverAfterOrganizationDeletion = internalMutation({
+    args: {
+        organizationId: v.string(),
+        actorUserId: v.string(),
+        phase: v.optional(v.union(v.literal('actor-cleared'), v.literal('actor-deleted'))),
+        cursor: v.optional(v.union(v.string(), v.null())),
+    },
+    returns: v.null(),
+    handler: async (ctx, args) => {
+        const next = await recoverActorSessionsBatch(ctx, {
+            organizationId: args.organizationId,
+            actorUserId: args.actorUserId,
+            step: { phase: args.phase ?? 'actor-cleared', cursor: args.cursor ?? null },
+        });
+
+        if (next) {
+            await ctx.scheduler.runAfter(0, internal.sessions.recoverAfterOrganizationDeletion, {
+                organizationId: args.organizationId,
+                actorUserId: args.actorUserId,
+                ...next,
+            });
+        }
 
         return null;
     },

@@ -8,7 +8,7 @@ import { filterMembers } from '../organizations/memberships';
 export type UserGrant = { userId: string; access: 'view' | 'edit' };
 
 export async function replaceUserGrants(
-    db: MutationCtx['db'],
+    ctx: { db: MutationCtx['db']; runQuery: MutationCtx['runQuery'] },
     objective: Doc<'objectives'>,
     grants: UserGrant[],
     addedBy: string,
@@ -20,11 +20,13 @@ export async function replaceUserGrants(
         throw new ConvexError(ERROR_CODES.VALIDATION_ERROR);
     }
 
-    const members = await filterMembers({ db }, objective.organizationId, [...userIds]);
+    const members = await filterMembers(ctx, objective.organizationId, [...userIds]);
 
     if (members.length !== userIds.size) {
         throw new ConvexError(ERROR_CODES.USER_NOT_FOUND);
     }
+
+    const { db } = ctx;
 
     const existing = await db
         .query('objectivePermissions')
