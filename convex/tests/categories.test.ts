@@ -1,6 +1,5 @@
 import { beforeEach, describe, expect, test } from 'vitest';
 import { api, internal } from '../_generated/api';
-import type { Id } from '../_generated/dataModel';
 import { initConvexTest } from './test.helper';
 import {
     createTestMember,
@@ -15,7 +14,7 @@ const health = { name: 'Health', color: '#EF4444', icon: 'heart' };
 
 describe('categories', () => {
     const t = initConvexTest();
-    let organizationId: Id<'organization'>;
+    let organizationId: string;
     let owner: TestUserData;
     let creator: TestUserData;
     let member: TestUserData;
@@ -48,7 +47,7 @@ describe('categories', () => {
         return createTestOrganization(t, { name: `Other ${suffix}`, slug: `other-${suffix}` });
     };
 
-    const categoriesOf = (id: Id<'organization'>) =>
+    const categoriesOf = (id: string) =>
         t.run(ctx =>
             ctx.db
                 .query('categories')
@@ -163,7 +162,7 @@ describe('categories', () => {
 
         expect(catalog).toEqual([{ id: catalogId, ...health }]);
 
-        await t.mutation(internal.auth.ensureDefaultOrganizationForUser, { userId: user.docId });
+        await t.mutation(internal.auth.ensureDefaultOrganization, { userId: user.docId });
         const personalId = await as(user).query(api.organizations.getPersonalOrganizationId, {});
 
         if (!personalId) {

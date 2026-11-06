@@ -3,8 +3,7 @@ import { api } from '../_generated/api';
 import { initConvexTest } from './test.helper';
 import { createTestUser, createTestOrganization, ensureTestUserAuth } from './test.helpers';
 import { TIME } from './test.helpers';
-import type { GenericMutationCtx } from 'convex/server';
-import type { DataModel } from '../_generated/dataModel';
+import { runInAuth } from './authTesting';
 
 describe('convex invitations (better-auth)', () => {
     const t = initConvexTest();
@@ -23,7 +22,7 @@ describe('convex invitations (better-auth)', () => {
             slug: `public-invitation-org-${now}`,
         });
 
-        const invitationId = await t.run(async ctx => {
+        const invitationId = await runInAuth(t, async ctx => {
             return await ctx.db.insert('invitation', {
                 organizationId,
                 email: 'private-invitee@example.com',
@@ -48,7 +47,7 @@ describe('convex invitations (better-auth)', () => {
                 invitationId: 'not-a-convex-id',
             })
         ).resolves.toEqual({ isValid: false });
-        await t.run(async ctx => {
+        await runInAuth(t, async ctx => {
             await ctx.db.patch('invitation', invitationId, { expiresAt: Date.now() - 1 });
         });
         await expect(
@@ -83,7 +82,7 @@ describe('convex invitations (better-auth)', () => {
             slug: `expired-client-time-org-${randomSuffix}`,
         });
 
-        await t.run(async (ctx: GenericMutationCtx<DataModel>) => {
+        await runInAuth(t, async ctx => {
             await ctx.db.insert('invitation', {
                 organizationId,
                 email: targetEmail,
@@ -138,7 +137,7 @@ describe('convex invitations (better-auth)', () => {
             slug: `unverified-org-${suffix}`,
         });
 
-        const invitationId = await t.run(async ctx => {
+        const invitationId = await runInAuth(t, async ctx => {
             const now = Date.now();
 
             return await ctx.db.insert('invitation', {
@@ -170,7 +169,7 @@ describe('convex invitations (better-auth)', () => {
 
         expect(await listInvitations(false)).toEqual([]);
 
-        await t.run(ctx => ctx.db.patch('user', claimant.docId, { emailVerified: true }));
+        await runInAuth(t, ctx => ctx.db.patch('user', claimant.docId, { emailVerified: true }));
 
         expect(await listInvitations(true)).toEqual([invitationId]);
     });

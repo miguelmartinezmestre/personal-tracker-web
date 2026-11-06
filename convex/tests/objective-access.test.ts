@@ -15,7 +15,7 @@ const page = { numItems: 20, cursor: null };
 
 describe('objective permissions', () => {
     const t = initConvexTest();
-    let organizationId: Id<'organization'>;
+    let organizationId: string;
     let owner: TestUserData;
     let admin: TestUserData;
     let creator: TestUserData;
@@ -55,7 +55,7 @@ describe('objective permissions', () => {
     const createObjective = (
         access: {
             memberAccess?: 'none' | 'view' | 'edit';
-            users?: { userId: Id<'user'>; access: 'view' | 'edit' }[];
+            users?: { userId: string; access: 'view' | 'edit' }[];
         } = {}
     ) =>
         as(creator).mutation(api.objectives.createObjective, {
@@ -208,7 +208,7 @@ describe('objective permissions', () => {
             role: 'user',
         });
 
-        const update = (users: { userId: Id<'user'>; access: 'view' | 'edit' }[]) =>
+        const update = (users: { userId: string; access: 'view' | 'edit' }[]) =>
             as(owner).mutation(api.objectiveAccess.updateObjectiveAccess, {
                 objectiveId,
                 memberAccess: 'view',

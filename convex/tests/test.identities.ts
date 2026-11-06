@@ -1,8 +1,7 @@
-import type { Id } from '../_generated/dataModel';
 import type { UserIdentity } from 'convex/server';
 import type { TestUserData } from './test.helpers';
 
-export function identityFor(user: TestUserData, sessionId?: Id<'session'>): Partial<UserIdentity> {
+export function identityFor(user: TestUserData, sessionId?: string): Partial<UserIdentity> {
     return {
         subject: user.docId,
         role: user.role ?? 'user',

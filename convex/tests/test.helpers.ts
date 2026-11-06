@@ -1,7 +1,7 @@
 import type { GenericSchema, SchemaDefinition } from 'convex/server';
 import type { TestConvex } from 'convex-test';
-import type { MutationCtx } from '../_generated/server';
-import type { Id } from '../_generated/dataModel';
+import type { Id } from '../betterAuth/_generated/dataModel';
+import { runInAuth } from './authTesting';
 
 const defaultTestSessionIds = new WeakMap<
     TestConvex<SchemaDefinition<GenericSchema, boolean>>,
@@ -37,7 +37,7 @@ export async function createTestUser(
 ): Promise<TestUserData> {
     const { userId, email, name, role, emailVerified } = options;
 
-    const docId = await t.run(async (ctx: MutationCtx) => {
+    const docId = await runInAuth(t, async ctx => {
         return await ctx.db.insert('user', {
             name: name,
             email: email,
@@ -73,7 +73,7 @@ export async function createTestOrganization(
 ): Promise<Id<'organization'>> {
     const now = Date.now();
 
-    return t.run(async (ctx: MutationCtx) => {
+    return runInAuth(t, async ctx => {
         return await ctx.db.insert('organization', {
             name: options.name,
             slug: options.slug,
@@ -87,14 +87,14 @@ export async function createTestOrganization(
 export async function createTestMember(
     t: TestConvex<SchemaDefinition<GenericSchema, boolean>>,
     options: {
-        organizationId: Id<'organization'>;
-        userId: Id<'user'>;
+        organizationId: string;
+        userId: string;
         role: string;
     }
 ): Promise<Id<'member'>> {
     const now = Date.now();
 
-    const memberId = await t.run(async (ctx: MutationCtx) => {
+    const memberId = await runInAuth(t, async ctx => {
         return await ctx.db.insert('member', {
             organizationId: options.organizationId,
             userId: options.userId,
@@ -107,7 +107,7 @@ export async function createTestMember(
         userId: options.userId,
         activeOrganizationId: options.organizationId,
         expiresAt: now + 60_000,
-        token: `test-member-session-${String(options.userId)}-${String(options.organizationId)}-${now}-${Math.random()
+        token: `test-member-session-${options.userId}-${options.organizationId}-${now}-${Math.random()
             .toString(36)
             .slice(2)}`,
     });
@@ -121,13 +121,13 @@ export async function createTestMember(
 
 export async function ensureTestUserAuth(
     t: TestConvex<SchemaDefinition<GenericSchema, boolean>>,
-    userId: Id<'user'>,
+    userId: string,
     options?: {
-        organizationId?: Id<'organization'>;
+        organizationId?: string;
         organizationName?: string;
         role?: string;
     }
-): Promise<{ organizationId: Id<'organization'>; sessionId: Id<'session'> }> {
+): Promise<{ organizationId: string; sessionId: Id<'session'> }> {
     let organizationId = options?.organizationId;
 
     if (!organizationId) {
@@ -156,17 +156,17 @@ export async function ensureTestUserAuth(
 export async function createTestSession(
     t: TestConvex<SchemaDefinition<GenericSchema, boolean>>,
     options: {
-        userId: Id<'user'>;
+        userId: string;
         token: string;
         expiresAt: number;
         ipAddress?: string | null;
         userAgent?: string | null;
-        activeOrganizationId?: Id<'organization'> | null;
+        activeOrganizationId?: string | null;
     }
 ): Promise<Id<'session'>> {
     const now = Date.now();
 
-    return t.run(async (ctx: MutationCtx) => {
+    return runInAuth(t, async ctx => {
         return await ctx.db.insert('session', {
             userId: options.userId,
             expiresAt: options.expiresAt,

@@ -7,6 +7,7 @@ import {
     createTestUser,
     createTestSession,
 } from './test.helpers';
+import { runInAuth } from './authTesting';
 
 describe('organization deletion cascade', () => {
     const t = initConvexTest();
@@ -94,8 +95,8 @@ describe('organization deletion cascade', () => {
         });
         await t.finishAllScheduledFunctions(() => vi.runAllTimers());
 
+        expect(await runInAuth(t, ctx => ctx.db.get('organization', organizationId))).toBeNull();
         await t.run(async ctx => {
-            expect(await ctx.db.get('organization', organizationId)).toBeNull();
             expect(await ctx.db.get('categories', categoryId)).toBeNull();
             expect(await ctx.db.get('objectives', objectiveId)).toBeNull();
             expect(await ctx.db.get('progressUpdates', progressId)).toBeNull();
@@ -135,16 +136,16 @@ describe('organization deletion cascade', () => {
             token: `actor-session-${suffix}`,
         });
 
-        await t.run(ctx => ctx.db.delete('organization', deletedId));
+        await runInAuth(t, ctx => ctx.db.delete('organization', deletedId));
 
-        await t.mutation(internal.auth.recoverSessionsAfterOrganizationDeletion, {
+        await t.mutation(internal.sessions.recoverAfterOrganizationDeletion, {
             organizationId: deletedId,
             actorUserId: actor.docId,
         });
         await t.finishAllScheduledFunctions(() => vi.runAllTimers());
 
         expect(
-            (await t.run(ctx => ctx.db.get('session', actorSession)))?.activeOrganizationId
+            (await runInAuth(t, ctx => ctx.db.get('session', actorSession)))?.activeOrganizationId
         ).toBe(fallbackId);
     });
 });

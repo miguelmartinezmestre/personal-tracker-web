@@ -1,6 +1,5 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import { api, internal } from '../_generated/api';
-import type { Id } from '../_generated/dataModel';
 import { GLOBAL_ADMIN_ROLE } from '../features/auth/roles';
 import { initConvexTest } from './test.helper';
 import {
@@ -11,6 +10,7 @@ import {
     type TestUserData,
 } from './test.helpers';
 import { identityFor } from './test.identities';
+import { runInAuth } from './authTesting';
 
 const page = { numItems: 20, cursor: null };
 
@@ -18,7 +18,7 @@ describe('global administration', () => {
     const t = initConvexTest();
     let admin: TestUserData;
     let user: TestUserData;
-    let organizationId: Id<'organization'>;
+    let organizationId: string;
 
     const as = (account: TestUserData) => t.withIdentity(identityFor(account));
 
@@ -72,10 +72,12 @@ describe('global administration', () => {
             userId: user.docId,
             role: GLOBAL_ADMIN_ROLE,
         });
-        expect((await t.run(ctx => ctx.db.get('user', user.docId)))?.role).toBe(GLOBAL_ADMIN_ROLE);
+        expect((await runInAuth(t, ctx => ctx.db.get('user', user.docId)))?.role).toBe(
+            GLOBAL_ADMIN_ROLE
+        );
 
         await as(admin).mutation(api.admin.setUserRole, { userId: user.docId, role: 'user' });
-        expect((await t.run(ctx => ctx.db.get('user', user.docId)))?.role).toBe('user');
+        expect((await runInAuth(t, ctx => ctx.db.get('user', user.docId)))?.role).toBe('user');
 
         await expect(
             as(admin).mutation(api.admin.setUserRole, { userId: admin.docId, role: 'user' })
@@ -105,7 +107,7 @@ describe('global administration', () => {
 
         await t.finishAllScheduledFunctions(() => vi.runAllTimers());
 
-        const sessions = await t.run(ctx =>
+        const sessions = await runInAuth(t, ctx =>
             ctx.db
                 .query('session')
                 .withIndex('userId', q => q.eq('userId', user.docId))
@@ -115,7 +117,7 @@ describe('global administration', () => {
         expect(sessions).toEqual([]);
 
         await as(admin).mutation(api.admin.unbanUser, { userId: user.docId });
-        expect(await t.run(ctx => ctx.db.get('user', user.docId))).toMatchObject({
+        expect(await runInAuth(t, ctx => ctx.db.get('user', user.docId))).toMatchObject({
             banned: false,
             banReason: null,
             banExpires: null,

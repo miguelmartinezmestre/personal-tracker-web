@@ -7,13 +7,13 @@ import {
     createTestUser,
     ensureTestUserAuth,
 } from './test.helpers';
-import type { Id } from '../_generated/dataModel';
+import { runInAuth } from './authTesting';
 
 describe('convex organizations', () => {
     const t = initConvexTest();
     let userIdentity: ReturnType<typeof t.withIdentity>;
-    let organizationId: Id<'organization'>;
-    let memberUserId: Id<'user'>;
+    let organizationId: string;
+    let memberUserId: string;
     beforeEach(async () => {
         const randomSuffix = Math.random().toString(36).substring(2, 15);
 
@@ -66,7 +66,7 @@ describe('convex organizations', () => {
         const now = Date.now();
 
         const insertInvitation = (email: string, status: string, expiresAt: number) =>
-            t.run(async ctx =>
+            runInAuth(t, async ctx =>
                 ctx.db.insert('invitation', {
                     organizationId,
                     email,

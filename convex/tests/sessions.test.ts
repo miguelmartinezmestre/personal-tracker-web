@@ -1,6 +1,5 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import { api } from '../_generated/api';
-import type { Id } from '../_generated/dataModel';
 import { initConvexTest } from './test.helper';
 import {
     createTestMember,
@@ -10,12 +9,13 @@ import {
     type TestUserData,
 } from './test.helpers';
 import { identityFor } from './test.identities';
+import { runInAuth } from './authTesting';
 
 describe('own sessions', () => {
     const t = initConvexTest();
     let user: TestUserData;
     let other: TestUserData;
-    let organizationId: Id<'organization'>;
+    let organizationId: string;
 
     beforeEach(async () => {
         vi.useFakeTimers();
@@ -60,7 +60,8 @@ describe('own sessions', () => {
         );
 
     const sessionCount = (owner: TestUserData) =>
-        t.run(
+        runInAuth(
+            t,
             async ctx =>
                 (
                     await ctx.db

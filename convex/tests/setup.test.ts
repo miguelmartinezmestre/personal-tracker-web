@@ -4,14 +4,16 @@ import { initConvexTest } from './test.helper';
 import { createTestUser, createTestOrganization, createTestMember } from './test.helpers';
 import { ERROR_CODES } from '../shared/errorCodes';
 import { isPersonalOrganizationForUser } from '../features/organizations/personalOrganization';
+import { runInAuth } from './authTesting';
+import type { Id } from '../betterAuth/_generated/dataModel';
 
 describe('convex setup', () => {
     describe('getPublicPlatformSettings', () => {
         test('returns only public fields when settings exist @INH-SET-05', async () => {
             const t = initConvexTest();
 
-            await t.run(async ctx => {
-                const userId = await ctx.db.insert('user', {
+            const userId = await runInAuth(t, async ctx => {
+                return await ctx.db.insert('user', {
                     name: 'Admin',
                     email: 'admin@test.com',
                     role: 'globalAdmin',
@@ -24,7 +26,9 @@ describe('convex setup', () => {
                     banReason: null,
                     banned: false,
                 });
+            });
 
+            await t.run(async ctx => {
                 await ctx.db.insert('platformSettings', {
                     platformName: 'My Platform',
                     defaultLanguage: 'es',
@@ -46,8 +50,8 @@ describe('convex setup', () => {
         test('fails when platform is already configured @REQ-ADMIN-006 @INH-SET-03', async () => {
             const t = initConvexTest();
 
-            const userId = await t.run(async ctx => {
-                const id = await ctx.db.insert('user', {
+            const userId = await runInAuth(t, async ctx => {
+                return await ctx.db.insert('user', {
                     name: 'Admin',
                     email: 'admin@test.com',
                     role: null,
@@ -60,15 +64,15 @@ describe('convex setup', () => {
                     banReason: null,
                     banned: false,
                 });
+            });
 
+            await t.run(async ctx => {
                 await ctx.db.insert('platformSettings', {
                     platformName: 'Existing',
                     defaultLanguage: 'en',
                     registrationPolicy: 'open',
-                    setupCompletedBy: id,
+                    setupCompletedBy: userId,
                 });
-
-                return id;
             });
 
             const asUser = t.withIdentity({
@@ -141,7 +145,7 @@ describe('convex setup', () => {
                 ],
             });
 
-            const updatedUser = await t.run(async ctx => {
+            const updatedUser = await runInAuth(t, async ctx => {
                 return await ctx.db.get('user', user.docId);
             });
 
@@ -149,8 +153,11 @@ describe('convex setup', () => {
 
             expect(result.organizationId).toBe(orgId);
 
-            const organization = await t.run(async ctx => {
-                return await ctx.db.get('organization', result.organizationId);
+            const organization = await runInAuth(t, async ctx => {
+                return await ctx.db.get(
+                    'organization',
+                    result.organizationId as Id<'organization'>
+                );
             });
 
             expect(organization?.name).toBe('My Company');
@@ -218,9 +225,14 @@ describe('convex setup', () => {
             });
 
             expect(result.organizationId).not.toBe(personalOrganizationId);
-            await t.run(async ctx => {
+
+            await runInAuth(t, async ctx => {
                 const personal = await ctx.db.get('organization', personalOrganizationId);
-                const team = await ctx.db.get('organization', result.organizationId);
+
+                const team = await ctx.db.get(
+                    'organization',
+                    result.organizationId as Id<'organization'>
+                );
 
                 const memberships = await ctx.db
                     .query('member')
