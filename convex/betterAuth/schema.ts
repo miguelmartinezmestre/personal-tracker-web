@@ -5,8 +5,9 @@ import { tables } from './generatedSchema';
 const schema = defineSchema({
     ...tables,
     user: tables.user
-        .searchIndex('search_user_name', { searchField: 'name' })
-        .searchIndex('search_user_email', { searchField: 'email' }),
+        .index('by_deletedAt_and_email', ['deletedAt', 'email'])
+        .searchIndex('search_user_name', { searchField: 'name', filterFields: ['deletedAt'] })
+        .searchIndex('search_user_email', { searchField: 'email', filterFields: ['deletedAt'] }),
     session: tables.session.index('by_activeOrganizationId_and_userId', [
         'activeOrganizationId',
         'userId',

@@ -17,6 +17,8 @@ const page = { numItems: 20, cursor: null };
 
 type AuditPage = FunctionReturnType<typeof api.admin.listAuditLogs>;
 
+type UsersPage = FunctionReturnType<typeof api.admin.listUsers>;
+
 describe('global administration', () => {
     const t = initConvexTest();
     let admin: TestUserData;
@@ -241,5 +243,50 @@ describe('global administration', () => {
         expect(pages.map(entries => entries.length)).toEqual([2, 2, 1]);
         expect(pages.flat().every(entry => entry.organizationId === organizationId)).toBe(true);
         expect(pages.flat().every(entry => entry.resourceType === 'objective')).toBe(true);
+    });
+
+    test('the user list pages through live accounts only @REQ-ADMIN-001 @INH-ADM-01', async () => {
+        const suffix = Math.random().toString(36).slice(2, 10);
+        const live: string[] = [];
+
+        for (let index = 0; index < 6; index += 1) {
+            const account = await createTestUser(t, {
+                userId: `paged-${suffix}-${index}`,
+                email: `paged-${suffix}-${index}@example.com`,
+                name: `Paged${suffix}`,
+            });
+
+            if (index % 2 === 0) {
+                await runInAuth(t, ctx =>
+                    ctx.db.patch('user', account.docId, { deletedAt: Date.now() })
+                );
+            } else {
+                live.push(account.email);
+            }
+        }
+
+        const pages: UsersPage['page'][] = [];
+        let cursor: string | null = null;
+
+        for (;;) {
+            const result: UsersPage = await as(admin).query(api.admin.listUsers, {
+                paginationOpts: { numItems: 2, cursor },
+            });
+
+            pages.push(result.page);
+
+            if (result.isDone) {
+                break;
+            }
+
+            cursor = result.continueCursor;
+        }
+
+        const emails = pages.flat().map(entry => entry.email);
+
+        expect(pages.slice(0, -1).every(entries => entries.length === 2)).toBe(true);
+        expect(emails.filter(email => email.startsWith(`paged-${suffix}`)).sort()).toEqual(
+            live.sort()
+        );
     });
 });

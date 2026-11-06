@@ -3,14 +3,7 @@ import type { PaginationOptions, PaginationResult } from 'convex/server';
 import { components } from '../../_generated/api';
 import { ERROR_CODES } from '../../shared/errorCodes';
 import { withPaginationLimits } from '../../shared/paginationLimits';
-import {
-    findMany,
-    findOne,
-    patchById,
-    type AuthDoc,
-    type AuthReader,
-    type AuthWriter,
-} from './authStore';
+import { findOne, patchById, type AuthDoc, type AuthReader, type AuthWriter } from './authStore';
 import { getUser } from './authRecords';
 import type { Infer } from 'convex/values';
 import { GLOBAL_ADMIN_ROLE, USER_ROLE, isGlobalAdminRole } from './roles';
@@ -38,21 +31,17 @@ export async function listAdminUsers(
     const search = args.search?.trim();
     const paginationOpts = withPaginationLimits(args.paginationOpts);
 
-    const result = search
-        ? ((await ctx.runQuery(components.betterAuth.users.search, {
-              field: search.includes('@') ? 'email' : 'name',
-              search,
-              paginationOpts,
-          })) as PaginationResult<AuthDoc<'user'>>)
-        : await findMany(ctx, 'user', {
-              sortBy: { field: 'email', direction: 'asc' },
-              paginationOpts,
-          });
+    const result = (
+        search
+            ? await ctx.runQuery(components.betterAuth.users.search, {
+                  field: search.includes('@') ? 'email' : 'name',
+                  search,
+                  paginationOpts,
+              })
+            : await ctx.runQuery(components.betterAuth.users.listActive, { paginationOpts })
+    ) as PaginationResult<AuthDoc<'user'>>;
 
-    return {
-        ...result,
-        page: result.page.filter(user => user.deletedAt == null).map(toAdminUser),
-    };
+    return { ...result, page: result.page.map(toAdminUser) };
 }
 
 export async function isFirstUser(ctx: AuthReader, userId: string) {

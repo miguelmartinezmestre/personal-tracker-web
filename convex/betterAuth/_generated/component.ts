@@ -2197,6 +2197,43 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
       >;
     };
     users: {
+      listActive: FunctionReference<
+        "query",
+        "internal",
+        {
+          paginationOpts: {
+            cursor: string | null;
+            endCursor?: string | null;
+            id?: number;
+            maximumBytesRead?: number;
+            maximumRowsRead?: number;
+            numItems: number;
+          };
+        },
+        {
+          continueCursor: string;
+          isDone: boolean;
+          page: Array<{
+            _creationTime: number;
+            _id: string;
+            banExpires?: null | number;
+            banReason?: null | string;
+            banned?: null | boolean;
+            createdAt: number;
+            deletedAt?: null | number;
+            email: string;
+            emailVerified: boolean;
+            image?: null | string;
+            name: string;
+            role?: null | string;
+            updatedAt: number;
+            userId?: null | string;
+          }>;
+          pageStatus?: "SplitRecommended" | "SplitRequired" | null;
+          splitCursor?: string | null;
+        },
+        Name
+      >;
       search: FunctionReference<
         "query",
         "internal",
