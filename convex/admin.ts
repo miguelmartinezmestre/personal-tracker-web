@@ -223,7 +223,7 @@ export const listAuditLogs = queryWithRLS({
         );
 
         const users = await getUserSummaries(
-            { db: ctx.dbForIntegrityChecks },
+            ctx,
             entries
                 .flatMap(entry => [entry.userId, entry.actorUserId])
                 .filter(userId => userId !== undefined)

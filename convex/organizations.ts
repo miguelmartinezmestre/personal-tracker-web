@@ -49,9 +49,7 @@ export const getPersonalOrganizationId = queryWithRLS({
     args: {},
     returns: v.union(v.id('organization'), v.null()),
     handler: async ctx => {
-        const integrity = { db: ctx.dbForIntegrityChecks };
-
-        return (await findPersonalOrganization(integrity, ctx.userId))?._id ?? null;
+        return (await findPersonalOrganization(ctx, ctx.userId))?._id ?? null;
     },
 });
 
@@ -59,9 +57,7 @@ export const listOrganizations = queryWithRLS({
     args: { paginationOpts: paginationOptsValidator },
     returns: paginationResultValidator(organizationSummaryValidator),
     handler: async (ctx, args) => {
-        const integrity = { db: ctx.dbForIntegrityChecks };
-
-        return await listOrganizationsForUser(integrity, ctx.userId, args.paginationOpts);
+        return await listOrganizationsForUser(ctx, ctx.userId, args.paginationOpts);
     },
 });
 
@@ -69,9 +65,7 @@ export const getOrganizationByIdentifier = queryWithRLS({
     args: { identifier: v.string() },
     returns: v.union(organizationSummaryValidator, v.null()),
     handler: async (ctx, args) => {
-        const integrity = { db: ctx.dbForIntegrityChecks };
-
-        return await findOrganizationByIdentifier(integrity, args.identifier, ctx.userId);
+        return await findOrganizationByIdentifier(ctx, args.identifier, ctx.userId);
     },
 });
 
@@ -79,9 +73,7 @@ export const getUserInvitations = queryWithRLS({
     args: { paginationOpts: paginationOptsValidator },
     returns: paginationResultValidator(userInvitationValidator),
     handler: async (ctx, args) => {
-        const integrity = { db: ctx.dbForIntegrityChecks };
-
-        return await listInvitationsForUser(integrity, ctx.userId, args.paginationOpts);
+        return await listInvitationsForUser(ctx, ctx.userId, args.paginationOpts);
     },
 });
 
@@ -92,14 +84,11 @@ export const getOrganizationMembers = queryWithRLS({
     },
     returns: paginatedOrganizationMembersValidator,
     handler: async (ctx, args) => {
-        return await listOrganizationMembers(
-            { db: ctx.dbForIntegrityChecks },
-            {
-                organizationId: args.organizationId,
-                requesterId: ctx.userId,
-                paginationOpts: args.paginationOpts,
-            }
-        );
+        return await listOrganizationMembers(ctx, {
+            organizationId: args.organizationId,
+            requesterId: ctx.userId,
+            paginationOpts: args.paginationOpts,
+        });
     },
 });
 
@@ -114,13 +103,10 @@ export const getOrganizationPendingInvitations = queryWithRLS({
         })
     ),
     handler: async (ctx, args) => {
-        return await listPendingInvitationsForOrganization(
-            { db: ctx.dbForIntegrityChecks },
-            {
-                organizationId: args.organizationId,
-                requesterId: ctx.userId,
-                paginationOpts: args.paginationOpts,
-            }
-        );
+        return await listPendingInvitationsForOrganization(ctx, {
+            organizationId: args.organizationId,
+            requesterId: ctx.userId,
+            paginationOpts: args.paginationOpts,
+        });
     },
 });

@@ -148,10 +148,7 @@ export const getAccountDeletionStatus = queryWithRLS({
 
         return {
             isSetupUser: settings?.setupCompletedBy === ctx.userId,
-            organizationsNeedingNewOwner: await organizationsNeedingNewOwner(
-                { db: ctx.dbForIntegrityChecks },
-                ctx.userId
-            ),
+            organizationsNeedingNewOwner: await organizationsNeedingNewOwner(ctx, ctx.userId),
         };
     },
 });
