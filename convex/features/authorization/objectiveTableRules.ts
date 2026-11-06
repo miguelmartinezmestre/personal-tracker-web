@@ -25,11 +25,34 @@ export function objectiveTableRules(helpers: RlsHelpers) {
         return objectiveVisibility.get(objectiveId) ?? rlsDeny();
     };
 
+    const objectiveEditability = new Map<Id<'objectives'>, Promise<boolean>>();
+
+    const canEditObjectiveById = (objectiveId: Id<'objectives'>) => {
+        if (!objectiveEditability.has(objectiveId)) {
+            objectiveEditability.set(
+                objectiveId,
+                ctx.db
+                    .get('objectives', objectiveId)
+                    .then(
+                        async objective =>
+                            objective !== null &&
+                            (await objectiveAccess(ctx.db, helpers, objective)).canEdit
+                    )
+            );
+        }
+
+        return objectiveEditability.get(objectiveId) ?? rlsDeny();
+    };
+
     const canManageObjectiveById = async (objectiveId: Id<'objectives'>) => {
         const objective = await ctx.db.get('objectives', objectiveId);
 
         return objective !== null && (await objectiveAccess(ctx.db, helpers, objective)).canManage;
     };
+
+    const canWriteProgress = async (progressUpdate: RlsInsertDoc<'progressUpdates'>) =>
+        isActiveOrganization(progressUpdate.organizationId) &&
+        (await canEditObjectiveById(progressUpdate.objective));
 
     return {
         objectives: {
@@ -53,9 +76,9 @@ export function objectiveTableRules(helpers: RlsHelpers) {
             read: (_ctx: QueryLike, progressUpdate: Doc<'progressUpdates'>) =>
                 canViewObjectiveById(progressUpdate.objective),
             insert: (_ctx: QueryLike, progressUpdate: RlsInsertDoc<'progressUpdates'>) =>
-                rlsWhen(isActiveOrganization(progressUpdate.organizationId)),
+                canWriteProgress(progressUpdate),
             modify: (_ctx: QueryLike, progressUpdate: Doc<'progressUpdates'>) =>
-                rlsWhen(isActiveOrganization(progressUpdate.organizationId)),
+                canWriteProgress(progressUpdate),
         },
     };
 }
