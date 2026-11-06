@@ -1,7 +1,12 @@
 import { describe, expect, test } from 'vitest';
 import { api } from '../_generated/api';
 import { initConvexTest } from './test.helper';
-import { createTestUser, createTestOrganization, createTestMember } from './test.helpers';
+import {
+    createTestUser,
+    createTestOrganization,
+    createTestMember,
+    createTestSession,
+} from './test.helpers';
 import { ERROR_CODES } from '../shared/errorCodes';
 import { isPersonalOrganizationForUser } from '../features/organizations/personalOrganization';
 import { runInAuth } from './authTesting';
@@ -75,8 +80,15 @@ describe('convex setup', () => {
                 });
             });
 
+            const sessionId = await createTestSession(t, {
+                userId,
+                token: 'configured-platform-session',
+                expiresAt: Date.now() + 60_000,
+            });
+
             const asUser = t.withIdentity({
                 subject: userId,
+                sessionId,
                 role: null,
                 email: 'admin@test.com',
                 name: 'Admin',
@@ -98,6 +110,43 @@ describe('convex setup', () => {
                     categories: [],
                 })
             ).rejects.toThrow(ERROR_CODES.PLATFORM_ALREADY_CONFIGURED);
+        });
+
+        test('requires a live session of an active account @REQ-ADMIN-006 @INH-SET-01', async () => {
+            const t = initConvexTest();
+
+            const user = await createTestUser(t, {
+                userId: 'setup-session-user',
+                email: 'setup-session@example.com',
+                name: 'Setup Admin',
+            });
+
+            const startSession = (token: string, expiresAt: number) =>
+                createTestSession(t, { userId: user.docId, token, expiresAt });
+
+            const completeAs = (sessionId?: string) =>
+                t
+                    .withIdentity({ subject: user.docId, sessionId })
+                    .mutation(api.setup.completeSetup, {
+                        platformName: 'My Platform',
+                        defaultLanguage: 'en',
+                        registrationPolicy: 'open',
+                        organizationName: 'My Company',
+                        categories: [],
+                    });
+
+            const expired = await startSession('expired-setup-session', Date.now() - 1);
+            const live = await startSession('live-setup-session', Date.now() + 60_000);
+
+            await expect(completeAs()).rejects.toThrow(ERROR_CODES.SETUP_AUTH_REQUIRED);
+            await expect(completeAs(expired)).rejects.toThrow(ERROR_CODES.SETUP_AUTH_REQUIRED);
+
+            await runInAuth(t, async ctx => {
+                await ctx.db.patch('user', user.docId, { banned: true });
+            });
+
+            await expect(completeAs(live)).rejects.toThrow(ERROR_CODES.SETUP_AUTH_REQUIRED);
+            expect(await t.query(api.setup.isPlatformSetUp, {})).toBe(false);
         });
 
         test('succeeds with exactly one user and no existing settings @REQ-ADMIN-006 @INH-SET-01 @REQ-CATEGORIAS-002', async () => {

@@ -4,6 +4,7 @@ import { GLOBAL_ADMIN_ROLE } from './features/auth/roles';
 import { buildOrganizationSlug } from './features/organizations/slug';
 import { completeSetupArgsValidator } from './features/setup/validators';
 import { validateSetupArgs } from './features/setup/rules';
+import { requireSetupUserId } from './features/setup/actor';
 import { insertAuditLog } from './features/audit/log';
 import { query } from './_generated/server';
 import { mutation } from './features/objectives/stats';
@@ -56,12 +57,7 @@ export const completeSetup = mutation({
         organizationId: v.string(),
     }),
     handler: async (ctx, args) => {
-        const userId = (await ctx.auth.getUserIdentity())?.subject;
-
-        if (!userId) {
-            throw new ConvexError(ERROR_CODES.SETUP_AUTH_REQUIRED);
-        }
-
+        const userId = await requireSetupUserId(ctx);
         const platformSettings = await ctx.db.query('platformSettings').first();
 
         if (platformSettings) {

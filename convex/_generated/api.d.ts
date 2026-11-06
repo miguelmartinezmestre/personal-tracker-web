@@ -79,6 +79,7 @@ import type * as features_organizations_personalOrganization from "../features/o
 import type * as features_organizations_roles from "../features/organizations/roles.js";
 import type * as features_organizations_slug from "../features/organizations/slug.js";
 import type * as features_organizations_validators from "../features/organizations/validators.js";
+import type * as features_setup_actor from "../features/setup/actor.js";
 import type * as features_setup_rules from "../features/setup/rules.js";
 import type * as features_setup_secret from "../features/setup/secret.js";
 import type * as features_setup_validators from "../features/setup/validators.js";
@@ -177,6 +178,7 @@ declare const fullApi: ApiFromModules<{
   "features/organizations/roles": typeof features_organizations_roles;
   "features/organizations/slug": typeof features_organizations_slug;
   "features/organizations/validators": typeof features_organizations_validators;
+  "features/setup/actor": typeof features_setup_actor;
   "features/setup/rules": typeof features_setup_rules;
   "features/setup/secret": typeof features_setup_secret;
   "features/setup/validators": typeof features_setup_validators;
