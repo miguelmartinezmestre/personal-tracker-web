@@ -1,11 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import {
-    usePaginatedQuery,
-    type PaginatedQueryArgs,
-    type PaginatedQueryReference,
-} from 'convex/react';
+import type { PaginatedQueryArgs, PaginatedQueryReference } from 'convex/react';
+import { usePaginatedQuery } from 'convex-helpers/react';
 
 const PAGE_SIZE = 20;
 

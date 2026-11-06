@@ -94,6 +94,7 @@ import type * as shared_ctx from "../shared/ctx.js";
 import type * as shared_env from "../shared/env.js";
 import type * as shared_errorCodes from "../shared/errorCodes.js";
 import type * as shared_pagination from "../shared/pagination.js";
+import type * as shared_paginationLimits from "../shared/paginationLimits.js";
 import type * as trash from "../trash.js";
 
 import type {
@@ -189,6 +190,7 @@ declare const fullApi: ApiFromModules<{
   "shared/env": typeof shared_env;
   "shared/errorCodes": typeof shared_errorCodes;
   "shared/pagination": typeof shared_pagination;
+  "shared/paginationLimits": typeof shared_paginationLimits;
   trash: typeof trash;
 }>;
 
