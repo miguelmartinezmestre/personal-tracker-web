@@ -114,7 +114,7 @@ export const markAllNotificationsRead = mutationWithRLS({
 });
 
 export const continueMarkAllRead = internalMutation({
-    args: { userId: v.id('user'), organizationId: v.id('organization') },
+    args: { userId: v.string(), organizationId: v.string() },
     returns: v.null(),
     handler: async (ctx, args) => {
         if (await markReadBatch(ctx.db, args.userId, args.organizationId)) {
@@ -179,7 +179,7 @@ export const updateNotificationPreferences = mutationWithRLS({
 
 export const notifyMembers = internalMutation({
     args: {
-        organizationId: v.id('organization'),
+        organizationId: v.string(),
         objectiveId: v.optional(v.id('objectives')),
         notice: noticeValidator,
         cursor: v.union(v.string(), v.null()),

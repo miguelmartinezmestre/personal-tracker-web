@@ -17,10 +17,9 @@ import {
 import { usePaginatedList } from '@/components/data-table/hooks/use-paginated-list';
 import { LoadMorePagination } from '@/components/data-table/components/load-more-pagination';
 import { api } from '@/convex/_generated/api';
-import type { Id } from '@/convex/_generated/dataModel';
 import { describeUserAgent } from '@/features/sessions/lib/user-agent';
 
-function SessionsList({ userId }: { userId: Id<'user'> }) {
+function SessionsList({ userId }: { userId: string }) {
     const t = useTranslations('Admin.sessions');
     const tSessions = useTranslations('Sessions');
     const locale = useLocale();
@@ -76,7 +75,7 @@ function SessionsList({ userId }: { userId: Id<'user'> }) {
     );
 }
 
-export default function UserSessionsDialog({ userId, name }: { userId: Id<'user'>; name: string }) {
+export default function UserSessionsDialog({ userId, name }: { userId: string; name: string }) {
     const t = useTranslations('Admin.sessions');
     const [open, setOpen] = useState(false);
 

@@ -12,9 +12,7 @@ import {
 
 type ObjectiveStatus = 'active' | 'completed';
 
-export function requireOrganizationId(
-    organizationId: Id<'organization'> | null | undefined
-): Id<'organization'> {
+export function requireOrganizationId(organizationId: string | null | undefined): string {
     if (!organizationId) {
         throw new ConvexError(ERROR_CODES.NO_ACTIVE_ORG);
     }
@@ -220,7 +218,7 @@ export async function requireObjective(
 export async function validateCategory(
     db: QueryCtx['db'],
     categoryId: Id<'categories'> | undefined,
-    organizationId: Id<'organization'>
+    organizationId: string
 ) {
     if (categoryId && (await db.get('categories', categoryId))?.organizationId !== organizationId) {
         throw new ConvexError(ERROR_CODES.CATEGORY_NOT_FOUND);

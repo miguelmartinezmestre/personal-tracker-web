@@ -1,4 +1,4 @@
-import type { Doc, Id } from '../../_generated/dataModel';
+import type { Doc } from '../../_generated/dataModel';
 import type { QueryCtx } from '../../_generated/server';
 import { DAY_MS, startOfUtcDay } from '../objectives/rules';
 import { metricCap, type AchievementMetric } from './definitions';
@@ -28,8 +28,8 @@ async function countStreak(hasProgressOn: (day: number) => Promise<boolean>, cap
 
 export async function achievementMetrics(
     db: Db,
-    userId: Id<'user'>,
-    organizationId: Id<'organization'>,
+    userId: string,
+    organizationId: string,
     isEarlyBird: boolean
 ): Promise<Record<AchievementMetric, number>> {
     const [created, completed, updates, organizationCreated, organizationCompleted] =

@@ -73,8 +73,8 @@ export const getAchievements = queryWithRLS({
 
 export const evaluateAchievements = internalMutation({
     args: {
-        userId: v.id('user'),
-        organizationId: v.id('organization'),
+        userId: v.string(),
+        organizationId: v.string(),
         isEarlyBird: v.boolean(),
     },
     returns: v.null(),

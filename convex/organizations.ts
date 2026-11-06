@@ -47,7 +47,7 @@ export const getCurrentSession = query({
 
 export const getPersonalOrganizationId = queryWithRLS({
     args: {},
-    returns: v.union(v.id('organization'), v.null()),
+    returns: v.union(v.string(), v.null()),
     handler: async ctx => {
         return (await findPersonalOrganization(ctx, ctx.userId))?._id ?? null;
     },
@@ -79,7 +79,7 @@ export const getUserInvitations = queryWithRLS({
 
 export const getOrganizationMembers = queryWithRLS({
     args: {
-        organizationId: v.id('organization'),
+        organizationId: v.string(),
         paginationOpts: paginationOptsValidator,
     },
     returns: paginatedOrganizationMembersValidator,
@@ -93,10 +93,10 @@ export const getOrganizationMembers = queryWithRLS({
 });
 
 export const getOrganizationPendingInvitations = queryWithRLS({
-    args: { organizationId: v.id('organization'), paginationOpts: paginationOptsValidator },
+    args: { organizationId: v.string(), paginationOpts: paginationOptsValidator },
     returns: paginationResultValidator(
         v.object({
-            id: v.id('invitation'),
+            id: v.string(),
             email: v.string(),
             role: v.string(),
             expiresAt: v.number(),

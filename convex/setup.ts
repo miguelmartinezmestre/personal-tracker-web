@@ -54,7 +54,7 @@ export const getPublicPlatformSettings = query({
 export const completeSetup = mutation({
     args: completeSetupArgsValidator,
     returns: v.object({
-        organizationId: v.id('organization'),
+        organizationId: v.string(),
     }),
     handler: async (ctx, args) => {
         const identity = await getAuthUserIdentity(ctx);

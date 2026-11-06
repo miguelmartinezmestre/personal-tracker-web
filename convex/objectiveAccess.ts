@@ -99,7 +99,7 @@ export const updateObjectiveAccess = mutationWithRLS({
 });
 
 export const removeMemberAccess = internalMutation({
-    args: { userId: v.id('user'), organizationId: v.id('organization') },
+    args: { userId: v.string(), organizationId: v.string() },
     returns: v.null(),
     handler: async (ctx, args) => {
         const grants = await ctx.db

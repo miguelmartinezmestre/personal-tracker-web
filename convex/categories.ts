@@ -153,7 +153,7 @@ export const deleteCategory = mutationWithRLS({
 });
 
 export const addChosenCategories = mutationWithRLS({
-    args: { organizationId: v.id('organization'), categories: v.array(categoryInputValidator) },
+    args: { organizationId: v.string(), categories: v.array(categoryInputValidator) },
     returns: v.null(),
     handler: async (ctx, args) => {
         const memberRole = await getMembershipRole(ctx, args.organizationId, ctx.userId);

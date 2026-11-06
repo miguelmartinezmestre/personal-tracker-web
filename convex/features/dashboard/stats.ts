@@ -15,8 +15,8 @@ export function average(sum: number, count: number): number {
 
 export async function visiblePrivateObjectives(
     db: QueryCtx['db'],
-    organizationId: Id<'organization'>,
-    userId: Id<'user'>
+    organizationId: string,
+    userId: string
 ) {
     const objectives: Doc<'objectives'>[] = [];
 
@@ -53,8 +53,8 @@ export async function visiblePrivateObjectives(
 }
 
 export async function visibilityGroups(
-    ctx: QueryCtx & { memberRole: string | null; userId: Id<'user'> },
-    organizationId: Id<'organization'>
+    ctx: QueryCtx & { memberRole: string | null; userId: string },
+    organizationId: string
 ) {
     const isManager = isOrganizationAdminRole(ctx.memberRole);
 

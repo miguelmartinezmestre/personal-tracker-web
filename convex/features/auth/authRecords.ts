@@ -75,5 +75,9 @@ export async function getUserSummaries(ctx: AuthReader, userIds: string[]) {
 
     return users
         .filter(user => user !== null)
-        .map(user => ({ id: user._id, name: user.name, email: user.email }));
+        .map((user): { id: string; name: string; email: string } => ({
+            id: user._id,
+            name: user.name,
+            email: user.email,
+        }));
 }

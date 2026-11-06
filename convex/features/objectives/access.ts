@@ -1,5 +1,5 @@
 import type { Infer } from 'convex/values';
-import type { Doc, Id } from '../../_generated/dataModel';
+import type { Doc } from '../../_generated/dataModel';
 import type { QueryCtx } from '../../_generated/server';
 import { isOrganizationAdminRole } from '../organizations/roles';
 import type { accessLevelValidator } from './validators';
@@ -9,8 +9,8 @@ export type AccessLevel = Infer<typeof accessLevelValidator>;
 export type ObjectiveAccess = { canView: boolean; canEdit: boolean; canManage: boolean };
 
 export type AccessActor = {
-    userId: Id<'user'>;
-    organizationId?: Id<'organization'> | null;
+    userId: string;
+    organizationId?: string | null;
     memberRole?: string | null;
 };
 

@@ -20,7 +20,7 @@ import {
 } from '../achievements/triggers';
 
 export const objectiveStats = new TableAggregate<{
-    Namespace: Id<'organization'>;
+    Namespace: string;
     Key: [boolean, boolean, Doc<'objectives'>['status'], Id<'categories'> | null];
     DataModel: DataModel;
     TableName: 'objectives';
@@ -36,7 +36,7 @@ export const objectiveStats = new TableAggregate<{
 });
 
 export const objectiveRanking = new TableAggregate<{
-    Namespace: Id<'organization'>;
+    Namespace: string;
     Key: [boolean, boolean, number];
     DataModel: DataModel;
     TableName: 'objectives';

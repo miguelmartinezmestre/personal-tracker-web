@@ -2,7 +2,6 @@ import { APIError, createAuthMiddleware } from 'better-auth/api';
 import { convex, type BetterAuthOptionsWithoutDatabase } from 'kitcn/auth';
 import { admin, organization } from 'better-auth/plugins';
 import { api, internal } from '../../_generated/api';
-import type { Id } from '../../_generated/dataModel';
 import { authAuditTriggers } from '../audit/triggers';
 import authConfig from '../../auth.config';
 import { ERROR_CODES } from '../../shared/errorCodes';
@@ -274,7 +273,7 @@ function createOrganizationPlugin(ctx: GenericCtx) {
                 await runnableCtx.runMutation(
                     internal.cascades.cascadeOrganizationDeletionInternal,
                     {
-                        organizationId: organization.id as Id<'organization'>,
+                        organizationId: organization.id,
                     }
                 );
             },

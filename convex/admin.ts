@@ -42,7 +42,7 @@ export const listUsers = queryWithRLS({
 });
 
 export const setUserRole = mutationWithRLS({
-    args: { userId: v.id('user'), role: platformRoleValidator },
+    args: { userId: v.string(), role: platformRoleValidator },
     returns: v.null(),
     handler: async (ctx, args) => {
         requireGlobalAdmin(ctx);
@@ -68,7 +68,7 @@ export const setUserRole = mutationWithRLS({
 
 export const banUser = mutationWithRLS({
     args: {
-        userId: v.id('user'),
+        userId: v.string(),
         reason: v.optional(v.string()),
         durationDays: v.optional(v.number()),
     },
@@ -113,7 +113,7 @@ export const banUser = mutationWithRLS({
 });
 
 export const continueBanSessionRevocation = internalMutation({
-    args: { userId: v.id('user'), banUpdatedAt: v.number() },
+    args: { userId: v.string(), banUpdatedAt: v.number() },
     returns: v.null(),
     handler: async (ctx, args) => {
         await revokeBannedUserSessionsBatch(ctx, args);
@@ -123,7 +123,7 @@ export const continueBanSessionRevocation = internalMutation({
 });
 
 export const unbanUser = mutationWithRLS({
-    args: { userId: v.id('user') },
+    args: { userId: v.string() },
     returns: v.null(),
     handler: async (ctx, args) => {
         requireGlobalAdmin(ctx);
@@ -146,7 +146,7 @@ export const unbanUser = mutationWithRLS({
 });
 
 export const listUserSessions = queryWithRLS({
-    args: { userId: v.id('user'), paginationOpts: paginationOptsValidator },
+    args: { userId: v.string(), paginationOpts: paginationOptsValidator },
     returns: paginationResultValidator(sessionListItemValidator),
     handler: async (ctx, args) => {
         requireGlobalAdmin(ctx);
@@ -160,7 +160,7 @@ export const listUserSessions = queryWithRLS({
 });
 
 export const revokeUserSession = mutationWithRLS({
-    args: { sessionId: v.id('session') },
+    args: { sessionId: v.string() },
     returns: v.null(),
     handler: async (ctx, args) => {
         requireGlobalAdmin(ctx);
@@ -190,7 +190,7 @@ export const revokeUserSession = mutationWithRLS({
 export const listAuditLogs = queryWithRLS({
     args: {
         resourceType: v.optional(v.string()),
-        organizationId: v.optional(v.id('organization')),
+        organizationId: v.optional(v.string()),
         paginationOpts: paginationOptsValidator,
     },
     returns: paginationResultValidator(auditEntryValidator),

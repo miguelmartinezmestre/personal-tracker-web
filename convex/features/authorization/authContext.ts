@@ -1,15 +1,14 @@
 import { ConvexError } from 'convex/values';
 import { getAuthUserIdentity, getSession } from 'kitcn/auth';
-import type { Id } from '../../_generated/dataModel';
 import type { MutationCtx, QueryCtx } from '../../_generated/server';
 import { ERROR_CODES } from '../../shared/errorCodes';
 import { getActiveUser, getMembershipRole } from '../auth/authRecords';
 
 export type AuthContext = {
-    userId: Id<'user'>;
+    userId: string;
     // Null until verified: invitations are matched by email, so an unverified address proves nothing.
     email: string | null;
-    organizationId: Id<'organization'> | null;
+    organizationId: string | null;
     role: string;
     memberRole: string | null;
 };

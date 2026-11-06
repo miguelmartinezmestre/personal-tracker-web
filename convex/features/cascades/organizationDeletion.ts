@@ -1,4 +1,3 @@
-import type { Id } from '../../_generated/dataModel';
 import type { MutationCtx } from '../../_generated/server';
 import { deleteMembersBatch, hasMembers } from '../organizations/memberships';
 import { hasSessionsInOrganization } from '../auth/sessions';
@@ -28,7 +27,7 @@ export type OrganizationDeletionResult = {
 
 export async function deleteOrganizationProgressUpdatesBatch(
     ctx: MutationCtx,
-    organizationId: Id<'organization'>
+    organizationId: string
 ): Promise<number> {
     const rows = await ctx.db
         .query('progressUpdates')
@@ -44,7 +43,7 @@ export async function deleteOrganizationProgressUpdatesBatch(
 
 export async function deleteOrganizationObjectivePermissionsBatch(
     ctx: MutationCtx,
-    organizationId: Id<'organization'>
+    organizationId: string
 ): Promise<number> {
     const rows = await ctx.db
         .query('objectivePermissions')
@@ -60,7 +59,7 @@ export async function deleteOrganizationObjectivePermissionsBatch(
 
 export async function deleteOrganizationNotificationsBatch(
     ctx: MutationCtx,
-    organizationId: Id<'organization'>
+    organizationId: string
 ): Promise<number> {
     const rows = await ctx.db
         .query('notifications')
@@ -76,7 +75,7 @@ export async function deleteOrganizationNotificationsBatch(
 
 export async function deleteOrganizationAchievementsBatch(
     ctx: MutationCtx,
-    organizationId: Id<'organization'>
+    organizationId: string
 ): Promise<number> {
     const rows = await ctx.db
         .query('organizationAchievements')
@@ -92,7 +91,7 @@ export async function deleteOrganizationAchievementsBatch(
 
 export async function deleteOrganizationObjectivesBatch(
     ctx: MutationCtx,
-    organizationId: Id<'organization'>
+    organizationId: string
 ): Promise<number> {
     const rows = await ctx.db
         .query('objectives')
@@ -110,7 +109,7 @@ export async function deleteOrganizationObjectivesBatch(
 
 export async function deleteOrganizationCategoriesBatch(
     ctx: MutationCtx,
-    organizationId: Id<'organization'>
+    organizationId: string
 ): Promise<number> {
     const rows = await ctx.db
         .query('categories')
@@ -126,7 +125,7 @@ export async function deleteOrganizationCategoriesBatch(
 
 export async function deleteOrganizationInvitationsBatch(
     ctx: MutationCtx,
-    organizationId: Id<'organization'>
+    organizationId: string
 ): Promise<number> {
     return await deleteInvitationsForOrganizationBatch(
         ctx,
@@ -137,14 +136,14 @@ export async function deleteOrganizationInvitationsBatch(
 
 export async function deleteOrganizationMembershipsBatch(
     ctx: MutationCtx,
-    organizationId: Id<'organization'>
+    organizationId: string
 ): Promise<number> {
     return await deleteMembersBatch(ctx, organizationId, ORGANIZATION_DELETION_BATCH_SIZE);
 }
 
 export async function findOrganizationResiduePhase(
     ctx: MutationCtx,
-    organizationId: Id<'organization'>
+    organizationId: string
 ): Promise<OrganizationDeletionPhase | null> {
     const remaining = await Promise.all([
         hasSessionsInOrganization(ctx, organizationId),
@@ -206,10 +205,7 @@ export const ORGANIZATION_BATCH_DELETERS = {
     invitations: deleteOrganizationInvitationsBatch,
     memberships: deleteOrganizationMembershipsBatch,
 } satisfies Partial<
-    Record<
-        OrganizationDeletionPhase,
-        (ctx: MutationCtx, organizationId: Id<'organization'>) => Promise<number>
-    >
+    Record<OrganizationDeletionPhase, (ctx: MutationCtx, organizationId: string) => Promise<number>>
 >;
 
 export const ORGANIZATION_BATCH_ORDER = Object.keys(ORGANIZATION_BATCH_DELETERS) as Array<

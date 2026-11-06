@@ -33,7 +33,7 @@ import { recoverSessionsForDeletedOrganization } from './features/auth/sessions'
 
 export const cascadeUserDeletionInternal = internalMutation({
     args: {
-        userId: v.id('user'),
+        userId: v.string(),
     },
     returns: userDeletionOutcomeValidator,
     handler: async (ctx, args) => {
@@ -64,7 +64,7 @@ export const cascadeUserDeletionInternal = internalMutation({
 
 export const continueUserDeletionCascade = internalMutation({
     args: {
-        userId: v.id('user'),
+        userId: v.string(),
         phase: v.optional(userDeletionPhaseValidator),
     },
     returns: v.object({
@@ -153,7 +153,7 @@ export const continueUserDeletionCascade = internalMutation({
 
 export const cascadeOrganizationDeletionInternal = internalMutation({
     args: {
-        organizationId: v.id('organization'),
+        organizationId: v.string(),
     },
     returns: v.null(),
     handler: async (ctx, args) => {
@@ -170,7 +170,7 @@ export const cascadeOrganizationDeletionInternal = internalMutation({
 
 export const continueOrganizationDeletionCascade = internalMutation({
     args: {
-        organizationId: v.id('organization'),
+        organizationId: v.string(),
         phase: v.optional(organizationDeletionPhaseValidator),
     },
     returns: v.object({

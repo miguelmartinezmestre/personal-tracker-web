@@ -2,7 +2,7 @@ import { ConvexError } from 'convex/values';
 import type { PaginationOptions } from 'convex/server';
 import { getSession as getKitcnSession } from 'kitcn/auth';
 import { internal } from '../../_generated/api';
-import type { Doc, Id } from '../../_generated/dataModel';
+import type { Doc } from '../../_generated/dataModel';
 import type { MutationCtx, QueryCtx } from '../../_generated/server';
 import { ERROR_CODES } from '../../shared/errorCodes';
 import { withNextPageCheck, withPaginationLimits } from '../../shared/pagination';
@@ -154,7 +154,7 @@ export async function removeSessionsForUserBatch(
 
 export async function revokeOtherSessionsBatch(
     ctx: AuthWriter & Pick<MutationCtx, 'scheduler'>,
-    args: { userId: Id<'user'>; keepSessionId: Id<'session'> }
+    args: { userId: string; keepSessionId: string }
 ) {
     const { deleted, remaining } = await removeSessionsForUserBatch(ctx, {
         ...args,
@@ -170,7 +170,7 @@ export async function revokeOtherSessionsBatch(
 
 export async function revokeBannedUserSessionsBatch(
     ctx: AuthWriter & Pick<MutationCtx, 'scheduler'>,
-    args: { userId: Id<'user'>; banUpdatedAt: number }
+    args: { userId: string; banUpdatedAt: number }
 ) {
     const user = await getUser(ctx, args.userId);
 
@@ -191,7 +191,7 @@ export async function revokeBannedUserSessionsBatch(
 /** Points every session of the user that has no usable organization at `organizationId`. */
 export async function activateOrganizationForUser(
     ctx: AuthWriter,
-    args: { userId: string; organizationId: Id<'organization'>; replaceOrganizationIds: string[] }
+    args: { userId: string; organizationId: string; replaceOrganizationIds: string[] }
 ) {
     const userId = ctx.db.normalizeId('user', args.userId);
 
@@ -263,7 +263,7 @@ async function repairSessions(
     sessions: Doc<'session'>[],
     deletedOrganizationId: string
 ) {
-    const fallbackByUser = new Map<string, Id<'organization'> | null>();
+    const fallbackByUser = new Map<string, string | null>();
 
     for (const session of sessions) {
         if (session.expiresAt <= Date.now()) {
@@ -307,10 +307,7 @@ const NEXT_ACTOR_PHASE: Record<ActorSessionRecoveryPhase, ActorSessionRecoveryPh
     'actor-deleted': null,
 };
 
-function actorPhaseOrganizationId(
-    phase: ActorSessionRecoveryPhase,
-    organizationId: Id<'organization'>
-) {
+function actorPhaseOrganizationId(phase: ActorSessionRecoveryPhase, organizationId: string) {
     switch (phase) {
         case 'actor-null':
             return null;

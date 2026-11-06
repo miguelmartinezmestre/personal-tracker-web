@@ -1,7 +1,6 @@
 'use client';
 
 import { useMutation } from '@tanstack/react-query';
-import type { Id } from '@/convex/_generated/dataModel';
 import { useRouter } from 'next/navigation';
 import { usePaginatedList } from '@/components/data-table/hooks/use-paginated-list';
 import { api } from '@/convex/_generated/api';
@@ -71,7 +70,7 @@ export function useRejectInvitation() {
     });
 }
 
-export function usePendingOrganizationInvitations(organizationId: Id<'organization'>) {
+export function usePendingOrganizationInvitations(organizationId: string) {
     return usePaginatedList(api.organizations.getOrganizationPendingInvitations, {
         organizationId,
     });

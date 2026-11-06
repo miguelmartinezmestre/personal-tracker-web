@@ -47,7 +47,7 @@ export const getEmailRegistrationAuthorization = internalQuery({
 });
 
 export const ensureDefaultOrganizationForUser = internalMutation({
-    returns: v.id('organization'),
+    returns: v.string(),
     args: {
         userId: v.string(),
     },
@@ -110,7 +110,7 @@ export const getAccountDeletionTarget = internalQuery({
     args: { userId: v.string() },
     returns: v.union(
         v.object({
-            userId: v.id('user'),
+            userId: v.string(),
             isSetupUser: v.boolean(),
             passwordHash: v.union(v.string(), v.null()),
             organizationsNeedingNewOwner: v.array(v.string()),
@@ -165,7 +165,7 @@ export const getDashboardContext = queryWithRLS({
     args: {},
     returns: v.object({
         user: userDocumentValidator,
-        organizationId: v.union(v.id('organization'), v.null()),
+        organizationId: v.union(v.string(), v.null()),
     }),
     handler: async ctx => {
         const user = await getUser(ctx, ctx.userId);

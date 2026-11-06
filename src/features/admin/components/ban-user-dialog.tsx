@@ -10,7 +10,6 @@ import { Field, FieldGroup, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import FormModal from '@/components/forms/form-modal';
 import { api } from '@/convex/_generated/api';
-import type { Id } from '@/convex/_generated/dataModel';
 
 const DURATIONS = ['permanent', '1', '7', '30'] as const;
 
@@ -18,7 +17,7 @@ const banSchema = z.object({ reason: z.string(), duration: z.enum(DURATIONS) });
 
 type BanFormValues = z.infer<typeof banSchema>;
 
-export default function BanUserDialog({ userId, name }: { userId: Id<'user'>; name: string }) {
+export default function BanUserDialog({ userId, name }: { userId: string; name: string }) {
     const t = useTranslations('Admin.ban');
     const tCommon = useTranslations('Common');
     const ban = useMutation({ mutationFn: useConvexMutation(api.admin.banUser) });

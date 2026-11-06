@@ -21,7 +21,7 @@ type IndexedListing = {
 
 function newestFirst(
     db: DatabaseReader,
-    organizationId: Id<'organization'>,
+    organizationId: string,
     { status, categoryId }: ObjectiveListFilters
 ): IndexedListing {
     const objectives = db.query('objectives');
@@ -87,7 +87,7 @@ function newestFirst(
 
 function byDeadline(
     db: DatabaseReader,
-    organizationId: Id<'organization'>,
+    organizationId: string,
     { status, categoryId }: ObjectiveListFilters,
     { from, to }: { from: number; to: number }
 ): IndexedListing {
@@ -164,7 +164,7 @@ function byDeadline(
 
 export async function paginateObjectives(
     db: DatabaseReader,
-    organizationId: Id<'organization'>,
+    organizationId: string,
     filters: ObjectiveListFilters,
     paginationOpts: PaginationOptions
 ) {
@@ -197,7 +197,7 @@ export async function paginateObjectives(
 
 export async function searchObjectives(
     db: DatabaseReader,
-    organizationId: Id<'organization'>,
+    organizationId: string,
     search: string,
     { status, categoryId, deadlineRange }: ObjectiveListFilters,
     paginationOpts: PaginationOptions

@@ -25,7 +25,7 @@ export const listMySessions = queryWithRLS({
 });
 
 export const revokeSession = mutationWithRLS({
-    args: { sessionId: v.id('session') },
+    args: { sessionId: v.string() },
     returns: v.null(),
     handler: async (ctx, args) => {
         const removed = await removeSession(ctx, args.sessionId, ctx.userId);
@@ -70,7 +70,7 @@ export const revokeOtherSessions = mutationWithRLS({
 });
 
 export const continueSessionRevocation = internalMutation({
-    args: { userId: v.id('user'), keepSessionId: v.id('session') },
+    args: { userId: v.string(), keepSessionId: v.string() },
     returns: v.null(),
     handler: async (ctx, args) => {
         await revokeOtherSessionsBatch(ctx, args);

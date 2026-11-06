@@ -1,17 +1,17 @@
 import { ConvexError } from 'convex/values';
-import type { Doc, Id } from '../../_generated/dataModel';
+import type { Doc } from '../../_generated/dataModel';
 import type { MutationCtx } from '../../_generated/server';
 import { ERROR_CODES } from '../../shared/errorCodes';
 import { MAX_OBJECTIVE_GRANTS } from './constants';
 import { filterMembers } from '../organizations/memberships';
 
-export type UserGrant = { userId: Id<'user'>; access: 'view' | 'edit' };
+export type UserGrant = { userId: string; access: 'view' | 'edit' };
 
 export async function replaceUserGrants(
     db: MutationCtx['db'],
     objective: Doc<'objectives'>,
     grants: UserGrant[],
-    addedBy: Id<'user'>,
+    addedBy: string,
     now: number
 ) {
     const userIds = new Set(grants.map(grant => grant.userId));

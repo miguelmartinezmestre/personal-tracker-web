@@ -1,6 +1,5 @@
 import type { Infer } from 'convex/values';
 import { getAuthUserId } from 'kitcn/auth';
-import type { Id } from '../../_generated/dataModel';
 import type { MutationCtx } from '../../_generated/server';
 import { resolveActorUserId } from './privacy';
 import type { auditSeverityValidator } from './validators';
@@ -11,8 +10,8 @@ export type AuditEntry = {
     action: string;
     resourceType: string;
     resourceId?: string;
-    userId: Id<'user'>;
-    organizationId?: Id<'organization'>;
+    userId: string;
+    organizationId?: string;
     severity: Infer<typeof auditSeverityValidator>;
     metadata?: { before?: AuditRecord; after?: AuditRecord };
 };

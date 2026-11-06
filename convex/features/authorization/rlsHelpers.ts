@@ -1,4 +1,4 @@
-import type { Doc, Id } from '../../_generated/dataModel';
+import type { Doc } from '../../_generated/dataModel';
 import type { QueryCtx } from '../../_generated/server';
 import { isGlobalAdminRole } from '../auth/roles';
 import { getMembershipRole } from '../auth/authRecords';
@@ -25,23 +25,23 @@ export function rlsWhen(allowed: boolean): Promise<boolean> {
 }
 
 export type CreateRlsRulesArgs = {
-    userId: Id<'user'>;
+    userId: string;
     role: string;
     memberRole: string | null;
     ctx: QueryCtx;
-    organizationId?: Id<'organization'> | null;
+    organizationId?: string | null;
     email?: string | null;
 };
 
 export type RlsHelpers = {
-    userId: Id<'user'>;
+    userId: string;
     role: string;
     memberRole: string | null;
     ctx: QueryCtx;
-    organizationId?: Id<'organization'> | null;
+    organizationId?: string | null;
     isGlobalAdmin: boolean;
-    isActiveOrganization: (targetOrganizationId?: Id<'organization'> | null) => boolean;
-    hasActiveOrgAdminAccess: (targetOrganizationId?: Id<'organization'> | null) => boolean;
+    isActiveOrganization: (targetOrganizationId?: string | null) => boolean;
+    hasActiveOrgAdminAccess: (targetOrganizationId?: string | null) => boolean;
     isMemberOfOrganization: (targetOrganizationId?: string | null) => Promise<boolean>;
 };
 
@@ -52,7 +52,7 @@ export function createRlsHelpers(args: CreateRlsRulesArgs): RlsHelpers {
     const isOrgAdmin =
         Boolean(organizationId) && (memberRole === 'admin' || memberRole === 'owner');
 
-    const isActiveOrganization = (targetOrganizationId?: Id<'organization'> | null) => {
+    const isActiveOrganization = (targetOrganizationId?: string | null) => {
         return (
             Boolean(organizationId) &&
             Boolean(targetOrganizationId) &&
@@ -60,7 +60,7 @@ export function createRlsHelpers(args: CreateRlsRulesArgs): RlsHelpers {
         );
     };
 
-    const hasActiveOrgAdminAccess = (targetOrganizationId?: Id<'organization'> | null) => {
+    const hasActiveOrgAdminAccess = (targetOrganizationId?: string | null) => {
         return isOrgAdmin && isActiveOrganization(targetOrganizationId);
     };
 

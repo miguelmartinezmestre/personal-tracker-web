@@ -1,7 +1,5 @@
 'use client';
 
-import type { Id } from '@/convex/_generated/dataModel';
-
 import { useQuery } from '@tanstack/react-query';
 import { convexQuery } from '@convex-dev/react-query';
 import { DataTable } from '@/components/data-table/components/table';
@@ -29,7 +27,7 @@ type OrganizationMemberRaw = FunctionReturnType<
 >['page'][number];
 
 interface OrganizationMembersTableProps {
-    organizationId: Id<'organization'>;
+    organizationId: string;
     actorRole: OrganizationRoleValue;
 }
 

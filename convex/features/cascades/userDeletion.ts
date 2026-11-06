@@ -1,4 +1,3 @@
-import type { Id } from '../../_generated/dataModel';
 import type { MutationCtx } from '../../_generated/server';
 import { internal } from '../../_generated/api';
 import { deleteUserMembershipsBatch as deleteAuthMembershipsBatch } from '../organizations/memberships';
@@ -20,14 +19,11 @@ export type UserDeletionResult = {
     phase: UserDeletionPhase;
 };
 
-export async function anonymizeUser(ctx: MutationCtx, userId: Id<'user'>) {
+export async function anonymizeUser(ctx: MutationCtx, userId: string) {
     await anonymizeAccount(ctx, userId);
 }
 
-export async function deleteUserSessionsBatch(
-    ctx: MutationCtx,
-    userId: Id<'user'>
-): Promise<number> {
+export async function deleteUserSessionsBatch(ctx: MutationCtx, userId: string): Promise<number> {
     const { deleted } = await removeSessionsForUserBatch(ctx, {
         userId,
         batchSize: USER_DELETION_BATCH_SIZE,
@@ -36,16 +32,13 @@ export async function deleteUserSessionsBatch(
     return deleted;
 }
 
-export async function deleteUserAccountsBatch(
-    ctx: MutationCtx,
-    userId: Id<'user'>
-): Promise<number> {
+export async function deleteUserAccountsBatch(ctx: MutationCtx, userId: string): Promise<number> {
     return await deleteAccountsBatch(ctx, userId, USER_DELETION_BATCH_SIZE);
 }
 
 export async function deleteUserNotificationsBatch(
     ctx: MutationCtx,
-    userId: Id<'user'>
+    userId: string
 ): Promise<number> {
     const rows = await ctx.db
         .query('notifications')
@@ -72,7 +65,7 @@ export async function deleteUserNotificationsBatch(
 
 export async function deleteUserAchievementsBatch(
     ctx: MutationCtx,
-    userId: Id<'user'>
+    userId: string
 ): Promise<number> {
     const rows = await ctx.db
         .query('obtainedAchievements')
@@ -88,7 +81,7 @@ export async function deleteUserAchievementsBatch(
 
 export async function deleteUserObjectivePermissionsBatch(
     ctx: MutationCtx,
-    userId: Id<'user'>
+    userId: string
 ): Promise<number> {
     const rows = await ctx.db
         .query('objectivePermissions')
@@ -104,7 +97,7 @@ export async function deleteUserObjectivePermissionsBatch(
 
 export async function deleteUserMembershipsBatch(
     ctx: MutationCtx,
-    userId: Id<'user'>
+    userId: string
 ): Promise<number> {
     const { deleted, deletedOrganizationIds } = await deleteAuthMembershipsBatch(
         ctx,
