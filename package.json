@@ -17,7 +17,7 @@
         "convex:local:no-docker": "tsx scripts/run-convex-stack.ts --no-docker",
         "convex:local:no-docker:reset": "tsx scripts/run-convex-stack.ts --no-docker --reset --confirm",
         "mail:local": "maildev --ip 127.0.0.1 --web-ip 127.0.0.1 --incoming-user maildev --incoming-pass maildev",
-        "better-auth:generate": "cd convex/betterAuth && auth generate -y --config auth.ts --output generatedSchema.ts && prettier --write generatedSchema.ts",
+        "better-auth:generate": "cd convex/betterAuth && auth generate -y --config auth.ts --output generatedSchema.ts && node -e \"const fs = require('fs'); const file = 'generatedSchema.ts'; fs.writeFileSync(file, fs.readFileSync(file, 'utf8').replace(/--output \\S+/, '--output ' + file));\" && prettier --write generatedSchema.ts",
         "lint": "oxlint --deny-warnings --tsconfig tsconfig.lint.json && eslint convex --max-warnings=0",
         "lint:convex": "eslint convex --max-warnings=0",
         "lint:fix": "oxlint --fix --deny-warnings && eslint convex --fix --max-warnings=0",
