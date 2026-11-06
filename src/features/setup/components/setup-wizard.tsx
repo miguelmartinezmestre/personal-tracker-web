@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { useMutation } from '@tanstack/react-query';
 import { useConvexMutation } from '@convex-dev/react-query';
 import { useLocale, useTranslations } from 'next-intl';
@@ -24,7 +23,6 @@ export default function SetupWizard({
 }: {
     categoryProposals: CategoryProposals;
 }) {
-    const router = useRouter();
     const errorLocale = useLocale() === 'es' ? 'es' : 'en';
     const t = useTranslations('Setup');
     const [error, setError] = useState('');
@@ -114,7 +112,9 @@ export default function SetupWizard({
             }
 
             document.cookie = `locale=${data.platform.defaultLanguage};path=/;max-age=31536000;SameSite=Lax`;
-            router.push('/dashboard/home');
+            // Full reload: the client still holds the setup token and pre-setup session state,
+            // which can leave the dashboard loading after a client-side navigation.
+            window.location.assign('/dashboard/home');
         } catch (caughtError) {
             setError(resolveErrorMessage(caughtError, errorLocale, setupFailedMsg));
             setIsSubmitting(false);
