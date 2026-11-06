@@ -40,7 +40,8 @@ function truncatedLogFile(logFile: string) {
 
 function commandOptions(options: RunCommandOptions): Options {
     return {
-        env: options.env,
+        // execa 10.2 gives an empty environment when `extendEnv: false` has no `env`.
+        env: options.env ?? process.env,
         extendEnv: false,
         reject: !options.ignoreExitCode,
         ...(options.input === undefined ? { stdin: 'ignore' } : { input: options.input }),
