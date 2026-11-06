@@ -72,10 +72,10 @@ import type * as features_objectives_records from "../features/objectives/record
 import type * as features_objectives_rules from "../features/objectives/rules.js";
 import type * as features_objectives_stats from "../features/objectives/stats.js";
 import type * as features_objectives_validators from "../features/objectives/validators.js";
+import type * as features_organizations_memberships from "../features/organizations/memberships.js";
 import type * as features_organizations_personalOrganization from "../features/organizations/personalOrganization.js";
 import type * as features_organizations_roles from "../features/organizations/roles.js";
 import type * as features_organizations_slug from "../features/organizations/slug.js";
-import type * as features_organizations_summaries from "../features/organizations/summaries.js";
 import type * as features_organizations_validators from "../features/organizations/validators.js";
 import type * as features_setup_rules from "../features/setup/rules.js";
 import type * as features_setup_secret from "../features/setup/secret.js";
@@ -169,10 +169,10 @@ declare const fullApi: ApiFromModules<{
   "features/objectives/rules": typeof features_objectives_rules;
   "features/objectives/stats": typeof features_objectives_stats;
   "features/objectives/validators": typeof features_objectives_validators;
+  "features/organizations/memberships": typeof features_organizations_memberships;
   "features/organizations/personalOrganization": typeof features_organizations_personalOrganization;
   "features/organizations/roles": typeof features_organizations_roles;
   "features/organizations/slug": typeof features_organizations_slug;
-  "features/organizations/summaries": typeof features_organizations_summaries;
   "features/organizations/validators": typeof features_organizations_validators;
   "features/setup/rules": typeof features_setup_rules;
   "features/setup/secret": typeof features_setup_secret;

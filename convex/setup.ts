@@ -1,12 +1,15 @@
 import { ConvexError, v } from 'convex/values';
-import type { Doc, Id } from './_generated/dataModel';
+import type { Doc } from './_generated/dataModel';
 import { ERROR_CODES } from './shared/errorCodes';
 import { GLOBAL_ADMIN_ROLE } from './features/auth/roles';
 import { buildOrganizationSlug } from './features/organizations/slug';
 import { completeSetupArgsValidator } from './features/setup/validators';
 import { getAuthUserIdentity } from 'kitcn/auth';
 import { isFirstSetupUser, validateSetupArgs } from './features/setup/rules';
-import { isPersonalOrganizationForUser } from './features/organizations/personalOrganization';
+import {
+    listMembershipsForUser,
+    upsertSetupOrganization,
+} from './features/organizations/memberships';
 import { insertAuditLog } from './features/audit/log';
 import { query } from './_generated/server';
 import { mutation } from './features/objectives/stats';
@@ -86,53 +89,22 @@ export const completeSetup = mutation({
             metadata: { after: { role: GLOBAL_ADMIN_ROLE } },
         });
 
-        let reusableOrganizationId: Id<'organization'> | null = null;
-        const personalOrganizationIds = new Set<Id<'organization'>>();
+        const memberships = await listMembershipsForUser(ctx, userId);
 
-        for await (const membership of ctx.db
-            .query('member')
-            .withIndex('userId', q => q.eq('userId', userId))) {
-            const organization = await ctx.db.get('organization', membership.organizationId);
+        const personalOrganizationIds = new Set(
+            memberships
+                .filter(membership => membership.isPersonal)
+                .map(membership => membership.organizationId)
+        );
 
-            if (!organization) {
-                continue;
-            }
-
-            if (isPersonalOrganizationForUser({ metadata: organization.metadata, userId })) {
-                personalOrganizationIds.add(organization._id);
-            } else if (!reusableOrganizationId) {
-                reusableOrganizationId = organization._id;
-            }
-        }
-
-        let organizationId: Id<'organization'>;
-
-        if (reusableOrganizationId) {
-            organizationId = reusableOrganizationId;
-            const patch: Partial<Doc<'organization'>> = { name: args.organizationName };
-
-            // An undefined patch field would erase the logo the organization already has.
-            if (args.organizationLogo) {
-                patch.logo = args.organizationLogo;
-            }
-
-            await ctx.db.patch('organization', organizationId, patch);
-        } else {
-            const now = Date.now();
-            organizationId = await ctx.db.insert('organization', {
-                name: args.organizationName,
-                slug: buildOrganizationSlug(args.organizationName),
-                createdAt: now,
-                metadata: null,
-                logo: args.organizationLogo ?? null,
-            });
-            await ctx.db.insert('member', {
-                organizationId,
-                userId,
-                role: 'owner',
-                createdAt: now,
-            });
-        }
+        const organizationId = await upsertSetupOrganization(ctx, {
+            userId,
+            reuseOrganizationId:
+                memberships.find(membership => !membership.isPersonal)?.organizationId ?? null,
+            name: args.organizationName,
+            slug: buildOrganizationSlug(args.organizationName),
+            logo: args.organizationLogo,
+        });
 
         // Read every session before patching any, so the writes do not affect the iteration.
         const sessions: Doc<'session'>[] = [];

@@ -1,5 +1,6 @@
 import type { Id } from '../../_generated/dataModel';
 import type { MutationCtx } from '../../_generated/server';
+import { deleteMembersBatch, hasMembers } from '../organizations/memberships';
 
 export const ORGANIZATION_DELETION_BATCH_SIZE = 50;
 
@@ -138,16 +139,7 @@ export async function deleteOrganizationMembershipsBatch(
     ctx: MutationCtx,
     organizationId: Id<'organization'>
 ): Promise<number> {
-    const rows = await ctx.db
-        .query('member')
-        .withIndex('organizationId', q => q.eq('organizationId', organizationId))
-        .take(ORGANIZATION_DELETION_BATCH_SIZE);
-
-    for (const row of rows) {
-        await ctx.db.delete('member', row._id);
-    }
-
-    return rows.length;
+    return await deleteMembersBatch(ctx, organizationId, ORGANIZATION_DELETION_BATCH_SIZE);
 }
 
 export async function findOrganizationResiduePhase(
@@ -189,10 +181,7 @@ export async function findOrganizationResiduePhase(
             .query('invitation')
             .withIndex('organizationId', q => q.eq('organizationId', organizationId))
             .first(),
-        ctx.db
-            .query('member')
-            .withIndex('organizationId', q => q.eq('organizationId', organizationId))
-            .first(),
+        hasMembers(ctx, organizationId),
     ]);
 
     const phases: OrganizationDeletionPhase[] = [
@@ -207,7 +196,7 @@ export async function findOrganizationResiduePhase(
         'memberships',
     ];
 
-    const residueIndex = remaining.findIndex(row => row !== null);
+    const residueIndex = remaining.findIndex(row => row !== null && row !== false);
 
     return residueIndex < 0 ? null : (phases.at(residueIndex) ?? null);
 }

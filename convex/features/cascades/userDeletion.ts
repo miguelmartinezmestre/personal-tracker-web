@@ -1,7 +1,7 @@
 import type { Id } from '../../_generated/dataModel';
 import type { MutationCtx } from '../../_generated/server';
 import { internal } from '../../_generated/api';
-import { isPersonalOrganizationForUser } from '../organizations/personalOrganization';
+import { deleteUserMembershipsBatch as deleteAuthMembershipsBatch } from '../organizations/memberships';
 
 export const USER_DELETION_BATCH_SIZE = 50;
 
@@ -135,42 +135,18 @@ export async function deleteUserMembershipsBatch(
     ctx: MutationCtx,
     userId: Id<'user'>
 ): Promise<number> {
-    const memberships = await ctx.db
-        .query('member')
-        .withIndex('userId', q => q.eq('userId', userId))
-        .take(USER_DELETION_BATCH_SIZE);
+    const { deleted, deletedOrganizationIds } = await deleteAuthMembershipsBatch(
+        ctx,
+        userId,
+        USER_DELETION_BATCH_SIZE
+    );
 
-    for (const membership of memberships) {
-        await deleteMembership(ctx, membership, userId);
-    }
-
-    return memberships.length;
-}
-
-async function deleteMembership(
-    ctx: MutationCtx,
-    membership: { _id: Id<'member'>; organizationId: Id<'organization'> },
-    userId: Id<'user'>
-) {
-    const organization = await ctx.db.get('organization', membership.organizationId);
-
-    const members = await ctx.db
-        .query('member')
-        .withIndex('organizationId', q => q.eq('organizationId', membership.organizationId))
-        .take(2);
-
-    const isLastMember = members.every(member => member.userId === userId);
-
-    if (
-        organization &&
-        (isLastMember || isPersonalOrganizationForUser({ metadata: organization.metadata, userId }))
-    ) {
-        await ctx.db.delete('organization', organization._id);
+    for (const organizationId of deletedOrganizationIds) {
         await ctx.scheduler.runAfter(0, internal.cascades.continueOrganizationDeletionCascade, {
-            organizationId: organization._id,
+            organizationId,
             phase: 'progressUpdates',
         });
     }
 
-    await ctx.db.delete('member', membership._id);
+    return deleted;
 }

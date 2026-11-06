@@ -3,6 +3,7 @@ import type { Doc, Id } from '../../_generated/dataModel';
 import type { MutationCtx } from '../../_generated/server';
 import { ERROR_CODES } from '../../shared/errorCodes';
 import { MAX_OBJECTIVE_GRANTS } from './constants';
+import { filterMembers } from '../organizations/memberships';
 
 export type UserGrant = { userId: Id<'user'>; access: 'view' | 'edit' };
 
@@ -19,17 +20,10 @@ export async function replaceUserGrants(
         throw new ConvexError(ERROR_CODES.VALIDATION_ERROR);
     }
 
-    for (const userId of userIds) {
-        const membership = await db
-            .query('member')
-            .withIndex('by_organizationId_and_userId', q =>
-                q.eq('organizationId', objective.organizationId).eq('userId', userId)
-            )
-            .first();
+    const members = await filterMembers({ db }, objective.organizationId, [...userIds]);
 
-        if (!membership) {
-            throw new ConvexError(ERROR_CODES.USER_NOT_FOUND);
-        }
+    if (members.length !== userIds.size) {
+        throw new ConvexError(ERROR_CODES.USER_NOT_FOUND);
     }
 
     const existing = await db

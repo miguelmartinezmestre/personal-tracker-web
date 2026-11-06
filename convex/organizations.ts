@@ -1,20 +1,20 @@
-import { ConvexError, v } from 'convex/values';
+import { v } from 'convex/values';
 import type { Doc } from './_generated/dataModel';
-import { ERROR_CODES } from './shared/errorCodes';
-import {
-    buildDefaultOrganizationSlug,
-    isPersonalOrganizationForUser,
-} from './features/organizations/personalOrganization';
 import {
     currentSessionValidator,
     organizationSummaryValidator,
     paginatedOrganizationMembersValidator,
     userInvitationValidator,
 } from './features/organizations/validators';
-import { toOrganizationSummaries } from './features/organizations/summaries';
+import {
+    findOrganizationByIdentifier,
+    findPersonalOrganization,
+    listOrganizationMembers,
+    listOrganizationsForUser,
+} from './features/organizations/memberships';
 import { getSession } from 'kitcn/auth';
 import { isActiveAccount } from './features/auth/users';
-import { isOrganizationAdminRole, normalizeOrganizationRole } from './features/organizations/roles';
+import { isOrganizationAdminRole } from './features/organizations/roles';
 import { paginationOptsValidator, paginationResultValidator } from 'convex/server';
 import { query } from './_generated/server';
 import { queryWithRLS } from './features/authorization/wrappers';
@@ -113,38 +113,9 @@ export const getPersonalOrganizationId = queryWithRLS({
     args: {},
     returns: v.union(v.id('organization'), v.null()),
     handler: async ctx => {
-        const bySlug = await ctx.dbForIntegrityChecks
-            .query('organization')
-            .withIndex('slug', q => q.eq('slug', buildDefaultOrganizationSlug(ctx.userId)))
-            .first();
+        const integrity = { db: ctx.dbForIntegrityChecks };
 
-        if (
-            bySlug &&
-            isPersonalOrganizationForUser({ metadata: bySlug.metadata, userId: ctx.userId })
-        ) {
-            return bySlug._id;
-        }
-
-        for await (const membership of ctx.dbForIntegrityChecks
-            .query('member')
-            .withIndex('userId', q => q.eq('userId', ctx.userId))) {
-            const organization = await ctx.dbForIntegrityChecks.get(
-                'organization',
-                membership.organizationId
-            );
-
-            if (
-                organization &&
-                isPersonalOrganizationForUser({
-                    metadata: organization.metadata,
-                    userId: ctx.userId,
-                })
-            ) {
-                return organization._id;
-            }
-        }
-
-        return null;
+        return (await findPersonalOrganization(integrity, ctx.userId))?._id ?? null;
     },
 });
 
@@ -152,24 +123,9 @@ export const listOrganizations = queryWithRLS({
     args: { paginationOpts: paginationOptsValidator },
     returns: paginationResultValidator(organizationSummaryValidator),
     handler: async (ctx, args) => {
-        const result = await ctx.dbForIntegrityChecks
-            .query('member')
-            .withIndex('userId', q => q.eq('userId', ctx.userId))
-            .order('desc')
-            .paginate(withPaginationLimits(args.paginationOpts));
+        const integrity = { db: ctx.dbForIntegrityChecks };
 
-        return await withNextPageCheck(
-            ctx.dbForIntegrityChecks,
-            {
-                table: 'member',
-                index: 'userId',
-                prefix: [ctx.userId],
-                indexKey: doc => [doc.userId],
-                paginationOpts: args.paginationOpts,
-            },
-            result,
-            await toOrganizationSummaries(ctx, result.page)
-        );
+        return await listOrganizationsForUser(integrity, ctx.userId, args.paginationOpts);
     },
 });
 
@@ -177,46 +133,9 @@ export const getOrganizationByIdentifier = queryWithRLS({
     args: { identifier: v.string() },
     returns: v.union(organizationSummaryValidator, v.null()),
     handler: async (ctx, args) => {
-        const value = args.identifier.trim();
-        const id = ctx.db.normalizeId('organization', value);
-        let org;
+        const integrity = { db: ctx.dbForIntegrityChecks };
 
-        if (id) {
-            org = await ctx.dbForIntegrityChecks.get('organization', id);
-        } else {
-            org = await ctx.dbForIntegrityChecks
-                .query('organization')
-                .withIndex('slug', q => q.eq('slug', value))
-                .first();
-        }
-
-        if (!org) {
-            return null;
-        }
-
-        const member = await ctx.dbForIntegrityChecks
-            .query('member')
-            .withIndex('by_organizationId_and_userId', q =>
-                q.eq('organizationId', org._id).eq('userId', ctx.userId)
-            )
-            .first();
-
-        if (!member) {
-            return null;
-        }
-
-        return {
-            id: org._id,
-            name: org.name,
-            slug: org.slug,
-            logo: org.logo,
-            createdAt: org.createdAt,
-            role: normalizeOrganizationRole(member.role),
-            isPersonal: isPersonalOrganizationForUser({
-                metadata: org.metadata,
-                userId: ctx.userId,
-            }),
-        };
+        return await findOrganizationByIdentifier(integrity, args.identifier, ctx.userId);
     },
 });
 
@@ -296,66 +215,13 @@ export const getOrganizationMembers = queryWithRLS({
     },
     returns: paginatedOrganizationMembersValidator,
     handler: async (ctx, args) => {
-        const userMembership = await ctx.db
-            .query('member')
-            .withIndex('by_organizationId_and_userId', q =>
-                q.eq('organizationId', args.organizationId).eq('userId', ctx.userId)
-            )
-            .first();
-
-        if (!userMembership) {
-            throw new ConvexError(ERROR_CODES.FORBIDDEN);
-        }
-
-        const paginatedMembers = await ctx.db
-            .query('member')
-            .withIndex('organizationId', q => q.eq('organizationId', args.organizationId))
-            .order('desc')
-            .paginate(withPaginationLimits(args.paginationOpts));
-
-        const userIds = [...new Set(paginatedMembers.page.map(member => member.userId))];
-
-        const users = await Promise.all(
-            userIds.map(id => ctx.dbForIntegrityChecks.get('user', id))
-        );
-
-        const userMap = new Map(
-            users
-                .filter((user): user is NonNullable<typeof user> => user !== null)
-                .map(user => [user._id, user])
-        );
-
-        const enrichedPage = paginatedMembers.page.map(member => {
-            const user = userMap.get(member.userId);
-            let userSummary = null;
-
-            if (user) {
-                userSummary = { email: user.email, name: user.name, image: user.image };
-            } else {
-                userSummary = null;
-            }
-
-            return {
-                id: member._id,
-                organizationId: member.organizationId,
-                userId: member.userId,
-                role: normalizeOrganizationRole(member.role),
-                createdAt: member.createdAt,
-                user: userSummary,
-            };
-        });
-
-        return await withNextPageCheck(
-            ctx.db,
+        return await listOrganizationMembers(
+            { db: ctx.dbForIntegrityChecks },
             {
-                table: 'member',
-                index: 'organizationId',
-                prefix: [args.organizationId],
-                indexKey: doc => [doc.organizationId],
+                organizationId: args.organizationId,
+                requesterId: ctx.userId,
                 paginationOpts: args.paginationOpts,
-            },
-            paginatedMembers,
-            enrichedPage
+            }
         );
     },
 });

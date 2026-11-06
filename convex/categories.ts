@@ -7,6 +7,7 @@ import { isOrganizationAdminRole } from './features/organizations/roles';
 import { MAX_CHOSEN_CATEGORIES } from './features/categories/constants';
 import { canManageCategory, normalizeCategory } from './features/categories/rules';
 import { categoryInputValidator } from './features/categories/validators';
+import { getMembershipRole } from './features/auth/authRecords';
 
 export const listCategories = queryWithRLS({
     args: { paginationOpts: paginationOptsValidator },
@@ -155,14 +156,13 @@ export const addChosenCategories = mutationWithRLS({
     args: { organizationId: v.id('organization'), categories: v.array(categoryInputValidator) },
     returns: v.null(),
     handler: async (ctx, args) => {
-        const membership = await ctx.dbForIntegrityChecks
-            .query('member')
-            .withIndex('by_organizationId_and_userId', q =>
-                q.eq('organizationId', args.organizationId).eq('userId', ctx.userId)
-            )
-            .first();
+        const memberRole = await getMembershipRole(
+            { db: ctx.dbForIntegrityChecks },
+            args.organizationId,
+            ctx.userId
+        );
 
-        if (!isOrganizationAdminRole(membership?.role)) {
+        if (!isOrganizationAdminRole(memberRole)) {
             throw new ConvexError(ERROR_CODES.FORBIDDEN);
         }
 

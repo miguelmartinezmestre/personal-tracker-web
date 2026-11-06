@@ -21,6 +21,7 @@ import {
     notificationPreferencesValidator,
     notificationValidator,
 } from './features/notifications/validators';
+import { pageMembers } from './features/organizations/memberships';
 
 export const listNotifications = queryWithRLS({
     args: { paginationOpts: paginationOptsValidator },
@@ -193,10 +194,11 @@ export const notifyMembers = internalMutation({
             return null;
         }
 
-        const members = await ctx.db
-            .query('member')
-            .withIndex('organizationId', q => q.eq('organizationId', args.organizationId))
-            .paginate({ numItems: NOTIFICATION_BATCH_SIZE, cursor: args.cursor });
+        const members = await pageMembers(ctx, {
+            organizationId: args.organizationId,
+            numItems: NOTIFICATION_BATCH_SIZE,
+            cursor: args.cursor,
+        });
 
         const now = Date.now();
 

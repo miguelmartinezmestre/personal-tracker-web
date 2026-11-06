@@ -28,6 +28,7 @@ import {
 import { v } from 'convex/values';
 import { insertAuditLog } from './features/audit/log';
 import { findAccountDeletionBlocker } from './features/auth/accountDeletion';
+import { removeOrganization } from './features/organizations/memberships';
 
 export const cascadeUserDeletionInternal = internalMutation({
     args: {
@@ -155,9 +156,7 @@ export const cascadeOrganizationDeletionInternal = internalMutation({
     },
     returns: v.null(),
     handler: async (ctx, args) => {
-        if (await ctx.db.get('organization', args.organizationId)) {
-            await ctx.db.delete('organization', args.organizationId);
-        }
+        await removeOrganization(ctx, args.organizationId);
 
         await ctx.scheduler.runAfter(0, internal.cascades.continueOrganizationDeletionCascade, {
             organizationId: args.organizationId,

@@ -1,10 +1,8 @@
 import {
-    DEFAULT_ORGANIZATION_NAME,
-    buildAvailablePersonalOrganizationSlug,
     buildDefaultOrganizationSlug,
-    buildPersonalOrganizationMetadata,
     isPersonalOrganizationForUser,
 } from '../organizations/personalOrganization';
+import { createPersonalOrganization } from '../organizations/memberships';
 import type { Id } from '../../_generated/dataModel';
 import type { MutationCtx } from '../../_generated/server';
 import { internal } from '../../_generated/api';
@@ -86,25 +84,7 @@ async function findOrCreateFallbackOrganization(
         }
     }
 
-    const now = Date.now();
-    const personalSlug = await buildAvailablePersonalOrganizationSlug(ctx, userId);
-
-    const organizationId = await ctx.db.insert('organization', {
-        name: DEFAULT_ORGANIZATION_NAME,
-        slug: personalSlug,
-        createdAt: now,
-        metadata: buildPersonalOrganizationMetadata(userId),
-        logo: null,
-    });
-
-    await ctx.db.insert('member', {
-        organizationId,
-        userId,
-        role: 'owner',
-        createdAt: now,
-    });
-
-    return organizationId;
+    return await createPersonalOrganization(ctx, userId);
 }
 
 export async function repairSessionsAfterOrganizationDeletion(

@@ -1,12 +1,5 @@
 import { ConvexError, v } from 'convex/values';
-import type { Id } from './_generated/dataModel';
-import {
-    DEFAULT_ORGANIZATION_NAME,
-    buildAvailablePersonalOrganizationSlug,
-    buildPersonalOrganizationMetadata,
-    getPersonalOrganizationOwnerUserId,
-    isPersonalOrganizationForUser,
-} from './features/organizations/personalOrganization';
+import * as memberships from './features/organizations/memberships';
 import { ERROR_CODES } from './shared/errorCodes';
 import type { GenericCtx } from './shared/ctx';
 import {
@@ -20,7 +13,6 @@ import {
 import { buildBetterAuthOptions } from './features/auth/options';
 import { defineAuth } from './generated/auth';
 import { internalMutation, internalQuery } from './_generated/server';
-import { normalizeOrganizationName } from './features/organizations/slug';
 import { normalizeRegistrationEmail } from './features/auth/users';
 import { getUser } from './features/auth/authRecords';
 import { queryWithRLS } from './features/authorization/wrappers';
@@ -80,49 +72,7 @@ export const ensureDefaultOrganizationForUser = internalMutation({
         userId: v.string(),
     },
     handler: async (ctx, args) => {
-        const userId = ctx.db.normalizeId('user', args.userId);
-
-        if (!userId) {
-            throw new ConvexError(ERROR_CODES.INTERNAL_ERROR);
-        }
-
-        let firstOrganizationId: Id<'organization'> | null = null;
-
-        for await (const membership of ctx.db
-            .query('member')
-            .withIndex('userId', q => q.eq('userId', userId))) {
-            const organization = await ctx.db.get('organization', membership.organizationId);
-
-            if (!organization) {
-                continue;
-            }
-
-            if (isPersonalOrganizationForUser({ metadata: organization.metadata, userId })) {
-                return firstOrganizationId ?? organization._id;
-            }
-
-            firstOrganizationId ??= organization._id;
-        }
-
-        const now = Date.now();
-        const slug = await buildAvailablePersonalOrganizationSlug(ctx, userId);
-
-        const organizationId = await ctx.db.insert('organization', {
-            name: DEFAULT_ORGANIZATION_NAME,
-            slug,
-            createdAt: now,
-            metadata: buildPersonalOrganizationMetadata(userId),
-            logo: null,
-        });
-
-        await ctx.db.insert('member', {
-            organizationId,
-            userId,
-            role: 'owner',
-            createdAt: now,
-        });
-
-        return firstOrganizationId ?? organizationId;
+        return await memberships.ensureDefaultOrganizationForUser(ctx, args.userId);
     },
 });
 
@@ -219,29 +169,7 @@ export const userHasOrganizationNamed = internalQuery({
         excludeOrganizationId: v.optional(v.string()),
     },
     handler: async (ctx, args) => {
-        const userId = ctx.db.normalizeId('user', args.userId);
-
-        if (!userId) {
-            return false;
-        }
-
-        const wanted = normalizeOrganizationName(args.name);
-
-        for await (const membership of ctx.db
-            .query('member')
-            .withIndex('userId', q => q.eq('userId', userId))) {
-            if (membership.organizationId === args.excludeOrganizationId) {
-                continue;
-            }
-
-            const organization = await ctx.db.get('organization', membership.organizationId);
-
-            if (organization && normalizeOrganizationName(organization.name) === wanted) {
-                return true;
-            }
-        }
-
-        return false;
+        return await memberships.userHasOrganizationNamed(ctx, args);
     },
 });
 
@@ -251,38 +179,7 @@ export const isDefaultOrganization = internalQuery({
         organizationId: v.string(),
     },
     handler: async (ctx, args) => {
-        const organizationId = ctx.db.normalizeId('organization', args.organizationId);
-
-        if (!organizationId) {
-            return false;
-        }
-
-        const organization = await ctx.db.get('organization', organizationId);
-
-        if (!organization) {
-            return false;
-        }
-
-        const metadataOwnerUserId = getPersonalOrganizationOwnerUserId(organization.metadata);
-
-        if (metadataOwnerUserId) {
-            const ownerUserId = ctx.db.normalizeId('user', metadataOwnerUserId);
-
-            if (!ownerUserId) {
-                return false;
-            }
-
-            const ownerMembership = await ctx.db
-                .query('member')
-                .withIndex('by_organizationId_and_userId', q =>
-                    q.eq('organizationId', organizationId).eq('userId', ownerUserId)
-                )
-                .first();
-
-            return ownerMembership?.role === 'owner';
-        }
-
-        return false;
+        return await memberships.isDefaultOrganization(ctx, args.organizationId);
     },
 });
 

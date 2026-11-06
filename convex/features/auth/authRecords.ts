@@ -1,4 +1,4 @@
-import type { DatabaseReader } from '../../_generated/server';
+import type { DatabaseReader, DatabaseWriter } from '../../_generated/server';
 import { isActiveAccount } from './users';
 
 /**
@@ -6,6 +6,8 @@ import { isActiveAccount } from './users';
  */
 
 export type AuthReader = { db: DatabaseReader };
+
+export type AuthWriter = { db: DatabaseWriter };
 
 export async function getUser(ctx: AuthReader, userId: string | null | undefined) {
     const id = userId ? ctx.db.normalizeId('user', userId) : null;
