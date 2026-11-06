@@ -1,5 +1,4 @@
 import type { Infer } from 'convex/values';
-import { getAuthUserId } from 'kitcn/auth';
 import type { MutationCtx } from '../../_generated/server';
 import { resolveActorUserId } from './privacy';
 import type { auditSeverityValidator } from './validators';
@@ -17,8 +16,7 @@ export type AuditEntry = {
 };
 
 export async function insertAuditLog(ctx: MutationCtx, entry: AuditEntry) {
-    const rawActorUserId = await getAuthUserId(ctx);
-    const actorUserId = rawActorUserId ? ctx.db.normalizeId('user', rawActorUserId) : null;
+    const actorUserId = (await ctx.auth.getUserIdentity())?.subject ?? null;
     const { before, after } = entry.metadata ?? {};
 
     await ctx.db.insert('auditLogs', {
