@@ -14,7 +14,7 @@ import {
     actorSessionRecoveryPhaseValidator,
     userDocumentValidator,
 } from './features/auth/validators';
-import { organizationsNeedingNewOwner } from './features/auth/accountDeletion';
+import { getPasswordHash, organizationsNeedingNewOwner } from './features/auth/accountDeletion';
 
 export const getEmailRegistrationAuthorization = internalQuery({
     args: {
@@ -126,18 +126,11 @@ export const getAccountDeletionTarget = internalQuery({
 
         const settings = await ctx.db.query('platformSettings').first();
 
-        const account = await ctx.db
-            .query('account')
-            .withIndex('providerId_userId', q =>
-                q.eq('providerId', 'credential').eq('userId', userId)
-            )
-            .unique();
-
         return {
             userId,
             isSetupUser: settings?.setupCompletedBy === userId,
-            passwordHash: account?.password ?? null,
-            organizationsNeedingNewOwner: await organizationsNeedingNewOwner(ctx.db, userId),
+            passwordHash: await getPasswordHash(ctx, userId),
+            organizationsNeedingNewOwner: await organizationsNeedingNewOwner(ctx, userId),
         };
     },
 });
@@ -156,7 +149,7 @@ export const getAccountDeletionStatus = queryWithRLS({
         return {
             isSetupUser: settings?.setupCompletedBy === ctx.userId,
             organizationsNeedingNewOwner: await organizationsNeedingNewOwner(
-                ctx.dbForIntegrityChecks,
+                { db: ctx.dbForIntegrityChecks },
                 ctx.userId
             ),
         };

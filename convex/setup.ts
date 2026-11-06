@@ -4,7 +4,8 @@ import { GLOBAL_ADMIN_ROLE } from './features/auth/roles';
 import { buildOrganizationSlug } from './features/organizations/slug';
 import { completeSetupArgsValidator } from './features/setup/validators';
 import { getAuthUserIdentity } from 'kitcn/auth';
-import { isFirstSetupUser, validateSetupArgs } from './features/setup/rules';
+import { validateSetupArgs } from './features/setup/rules';
+import { grantPlatformRole, isFirstUser } from './features/auth/adminUsers';
 import {
     listMembershipsForUser,
     upsertSetupOrganization,
@@ -75,11 +76,11 @@ export const completeSetup = mutation({
             args.categories.map(normalizeCategory).map(category => [category.name, category])
         );
 
-        if (!(await isFirstSetupUser(ctx, userId))) {
+        if (!(await isFirstUser(ctx, userId))) {
             throw new ConvexError(ERROR_CODES.SETUP_USER_MISMATCH);
         }
 
-        await ctx.db.patch('user', userId, { role: GLOBAL_ADMIN_ROLE });
+        await grantPlatformRole(ctx, userId, GLOBAL_ADMIN_ROLE);
         await insertAuditLog(ctx, {
             action: 'user.role_changed',
             resourceType: 'user',

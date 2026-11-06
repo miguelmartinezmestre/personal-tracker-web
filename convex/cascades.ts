@@ -39,7 +39,7 @@ export const cascadeUserDeletionInternal = internalMutation({
     handler: async (ctx, args) => {
         // Checked again inside this transaction: two owners deleting their accounts at the
         // same time must not leave an organization without an owner.
-        const blocker = await findAccountDeletionBlocker(ctx.db, args.userId);
+        const blocker = await findAccountDeletionBlocker(ctx, args.userId);
 
         if (blocker) {
             return blocker;

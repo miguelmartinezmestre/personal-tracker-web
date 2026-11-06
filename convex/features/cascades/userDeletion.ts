@@ -3,6 +3,7 @@ import type { MutationCtx } from '../../_generated/server';
 import { internal } from '../../_generated/api';
 import { deleteUserMembershipsBatch as deleteAuthMembershipsBatch } from '../organizations/memberships';
 import { removeSessionsForUserBatch } from '../auth/sessions';
+import { anonymizeAccount, deleteAccountsBatch } from '../auth/accountDeletion';
 
 export const USER_DELETION_BATCH_SIZE = 50;
 
@@ -20,25 +21,7 @@ export type UserDeletionResult = {
 };
 
 export async function anonymizeUser(ctx: MutationCtx, userId: Id<'user'>) {
-    const user = await ctx.db.get('user', userId);
-
-    if (!user || user.deletedAt !== undefined) {
-        return;
-    }
-
-    const now = Date.now();
-    await ctx.db.patch('user', userId, {
-        email: `deleted-${String(userId)}@deleted.invalid`,
-        emailVerified: false,
-        image: null,
-        userId: null,
-        role: null,
-        banned: true,
-        banReason: 'Account deleted',
-        banExpires: null,
-        deletedAt: now,
-        updatedAt: now,
-    });
+    await anonymizeAccount(ctx, userId);
 }
 
 export async function deleteUserSessionsBatch(
@@ -57,16 +40,7 @@ export async function deleteUserAccountsBatch(
     ctx: MutationCtx,
     userId: Id<'user'>
 ): Promise<number> {
-    const rows = await ctx.db
-        .query('account')
-        .withIndex('userId', q => q.eq('userId', userId))
-        .take(USER_DELETION_BATCH_SIZE);
-
-    for (const row of rows) {
-        await ctx.db.delete('account', row._id);
-    }
-
-    return rows.length;
+    return await deleteAccountsBatch(ctx, userId, USER_DELETION_BATCH_SIZE);
 }
 
 export async function deleteUserNotificationsBatch(
