@@ -193,10 +193,13 @@ importers:
         version: 1.8.0(@date-fns/tz@1.5.0)(@types/react@19.2.18)(date-fns@4.4.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
       '@convex-dev/aggregate':
         specifier: 0.3.1
-        version: 0.3.1(@standard-schema/spec@1.1.0)(convex@1.46.0(react@19.2.8))(hono@4.13.11)(react@19.2.8)(typescript@6.0.3)(zod@4.6.7)
+        version: 0.3.1(@standard-schema/spec@1.1.0)(convex@1.48.0(react@19.2.8))(hono@4.13.11)(react@19.2.8)(typescript@6.0.3)(zod@4.6.7)
+      '@convex-dev/better-auth':
+        specifier: 0.13.0
+        version: 0.13.0(@standard-schema/spec@1.1.0)(better-auth@1.7.16(next@16.4.2(@babel/core@8.0.1)(@playwright/test@1.62.1)(@types/node@24.13.3)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(vitest@4.1.12))(convex@1.48.0(react@19.2.8))(hono@4.13.11)(react@19.2.8)(typescript@6.0.3)
       '@convex-dev/react-query':
         specifier: ^0.1.0
-        version: 0.1.0(@tanstack/react-query@5.101.4(react@19.2.8))(convex@1.46.0(react@19.2.8))
+        version: 0.1.0(@tanstack/react-query@5.101.4(react@19.2.8))(convex@1.48.0(react@19.2.8))
       '@tanstack/charts':
         specifier: 1.0.0
         version: 1.0.0(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
@@ -225,20 +228,14 @@ importers:
         specifier: ^1.1.1
         version: 1.1.1(@types/react-dom@19.2.4(@types/react@19.2.18))(@types/react@19.2.18)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
       convex:
-        specifier: 1.46.0
-        version: 1.46.0(react@19.2.8)
+        specifier: 1.48.0
+        version: 1.48.0(react@19.2.8)
       convex-helpers:
         specifier: 0.1.120
-        version: 0.1.120(@standard-schema/spec@1.1.0)(convex@1.46.0(react@19.2.8))(hono@4.13.11)(react@19.2.8)(typescript@6.0.3)(zod@4.6.7)
-      hono:
-        specifier: 4.13.11
-        version: 4.13.11
+        version: 0.1.120(@standard-schema/spec@1.1.0)(convex@1.48.0(react@19.2.8))(hono@4.13.11)(react@19.2.8)(typescript@6.0.3)(zod@4.6.7)
       js-cookie:
         specifier: 3.0.8
         version: 3.0.8
-      kitcn:
-        specifier: 0.33.11
-        version: 0.33.11(@babel/core@8.0.1)(@babel/template@8.0.0)(@tanstack/query-core@5.101.4)(@tanstack/react-query@5.101.4(react@19.2.8))(@types/react@19.2.18)(better-auth@1.7.16(next@16.4.2(@babel/core@8.0.1)(@playwright/test@1.62.1)(@types/node@24.13.3)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(vitest@4.1.12))(convex@1.46.0(react@19.2.8))(hono@4.13.11)(next@16.4.2(@babel/core@8.0.1)(@playwright/test@1.62.1)(@types/node@24.13.3)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(react@19.2.8)(zod@4.6.7)
       lucide-react:
         specifier: 1.30.0
         version: 1.30.0(react@19.2.8)
@@ -281,7 +278,7 @@ importers:
         version: 4.13.0(playwright-core@1.62.1)
       '@convex-dev/eslint-plugin':
         specifier: ^2.0.0
-        version: 2.0.0(convex@1.46.0(react@19.2.8))(eslint@10.8.1(jiti@2.7.0)(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3)
+        version: 2.0.0(convex@1.48.0(react@19.2.8))(eslint@10.8.1(jiti@2.7.0)(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3)
       '@edge-runtime/vm':
         specifier: ^5.0.0
         version: 5.0.0
@@ -329,7 +326,7 @@ importers:
         version: 1.0.0
       convex-test:
         specifier: 0.0.55
-        version: 0.0.55(convex@1.46.0(react@19.2.8))
+        version: 0.0.55(convex@1.48.0(react@19.2.8))
       eslint:
         specifier: ^10.8.1
         version: 10.8.1(jiti@2.7.0)(supports-color@7.2.0)
@@ -825,15 +822,9 @@ packages:
   '@chevrotain/utils@12.0.0':
     resolution: {integrity: sha512-lB59uJoaGIfOOL9knQqQRfhl9g7x8/wqFkp13zTdkRu1huG9kg6IJs1O8hqj9rs6h7orGxHJUKb+mX3rPbWGhA==}
 
-  '@clack/core@0.5.0':
-    resolution: {integrity: sha512-p3y0FIOwaYRUPRcMO7+dlmLh8PSRcrjuTndsiA0WAFbWES0mLZlrjVoBRZ9DzkPFJZG6KGkJmoEAY0ZcVWTkow==}
-
   '@clack/core@1.5.1':
     resolution: {integrity: sha512-iHTrHA8MtVuLl2TfZySmcKv1qO2PoyC9Z7pfSDozEuV5vtY3/wcOPKJXlqJ5Oq2Cx5DDGQGAMVx6HZfRRoVEbQ==}
     engines: {node: '>= 20.12.0'}
-
-  '@clack/prompts@0.11.0':
-    resolution: {integrity: sha512-pMN5FcrEw9hUkZA4f+zLlzivQSeQf5dRGJjSUbvVYDLvpKCdQx5OaknvKzgbtXOizhP+SJJJjqEbOe55uKKfAw==}
 
   '@clack/prompts@1.8.1':
     resolution: {integrity: sha512-dlT1m5e/0yUL0kRNcQn7yGLVThkgbB0Ga/1AmfDDC/8ik6AIiSf2QLQO2zPYvefsHP0aFgxO93cVLCCfDp7kzQ==}
@@ -848,6 +839,13 @@ packages:
     resolution: {integrity: sha512-A9mOhSqITtdF6TR9bVZjTy+eES6/r/8ZvMWnNdKsATg8EOn5JMzDplibjaHCjQ57FjVeizbuKJ8GlnMs1RWF0g==}
     peerDependencies:
       convex: ^1.43.0
+      react: ^18.3.1 || ^19.0.0
+
+  '@convex-dev/better-auth@0.13.0':
+    resolution: {integrity: sha512-U82uCij3drlk8ktHeo6sUrPP06KIPEo1FCmB2VFKnQb+Xbv10gUf05SGJYKiPH1mmCrG2ylFRfUFku3I9vnCTw==}
+    peerDependencies:
+      better-auth: '>=1.7.16 <1.8.0'
+      convex: ^1.25.0
       react: ^18.3.1 || ^19.0.0
 
   '@convex-dev/eslint-plugin@2.0.0':
@@ -3190,10 +3188,6 @@ packages:
     resolution: {integrity: sha512-csJvb+6kEiQaqo1woTdSAuOWdN0WTLIydkKrBnS+V5gZz0oqBrp4kQ35519QgK6TpBThiG3V1vNSHlIkv4AglQ==}
     engines: {node: '>=22.0.0'}
 
-  chokidar@5.0.0:
-    resolution: {integrity: sha512-TQMmc3w+5AxjpL8iIiwebF73dRDF4fBIieAqGn9RGCWaEVwQ6Fb2cGe31Yns0RRIzii5goJ1Y7xbMwo1TxMplw==}
-    engines: {node: '>= 20.19.0'}
-
   chrono-node@2.10.3:
     resolution: {integrity: sha512-MOfrzXgSMZTH4SZ5gyRKQCVwiCrCKY+uYkSJiWoRLXS88DA6WGJm8UjgS+VVEuUQeew/UUXaxrO+SeDn/WCisg==}
     engines: {node: ^12.20.0 || ^14.13.1 || >=16.0.0}
@@ -3304,13 +3298,35 @@ packages:
       zod:
         optional: true
 
+  convex-helpers@0.1.129:
+    resolution: {integrity: sha512-8QJLbym0fKsf3tYcF2ZTX37NeYt/BkOFBjBwB2LR1fXUAajeYaTLV11gi/0IVOU/jCdH2j/VseHhHid1qQcqFw==}
+    hasBin: true
+    peerDependencies:
+      '@standard-schema/spec': ^1.0.0
+      convex: ^1.46.0
+      hono: ^4.0.5
+      react: ^17.0.2 || ^18.0.0 || ^19.0.0
+      typescript: ^5.5 || ^6.0.0 || ^7.0.0
+      zod: 4.6.7
+    peerDependenciesMeta:
+      '@standard-schema/spec':
+        optional: true
+      hono:
+        optional: true
+      react:
+        optional: true
+      typescript:
+        optional: true
+      zod:
+        optional: true
+
   convex-test@0.0.55:
     resolution: {integrity: sha512-ablJ6vR3WUpyTaYrrRQf8yxInGrhHyqBEQsCFzloda3G0MDEu2RMKNGUkvlBXYWPiiEP0UIKPS7gZuLbqGnvQw==}
     peerDependencies:
       convex: ^1.43.0
 
-  convex@1.46.0:
-    resolution: {integrity: sha512-dhBwDQTZDOhi5SUGAX17EWNehCdNq6/UFrSL0eLZuGfMkdsQbCVWVRZCzbZ5CF+/pgvoGxtApbEoTSipqL4JTw==}
+  convex@1.48.0:
+    resolution: {integrity: sha512-M9jEgTvCN8ziP/VgQQUH+j0ijM7g+NmQd8tFlvETK8/HMC/aaqHZwcu4hBO30X5DV2VIyYK4mOoLQGIb1766ew==}
     engines: {node: '>=20.0.0', npm: '>=7.0.0'}
     hasBin: true
     peerDependencies:
@@ -3537,10 +3553,6 @@ packages:
   detect-node-es@1.1.0:
     resolution: {integrity: sha512-ypdmJU/TbBby2Dxibuv7ZLW3Bs1QEmM7nHjEANfohJLvE0XVujisn1qPJcZxg+qDucsr+bP6fLD1rPS3AhJ7EQ==}
 
-  diff@8.0.4:
-    resolution: {integrity: sha512-DPi0FmjiSU5EvQV0++GFDOJ9ASQUVFh5kD+OzOnYdi7n3Wpm9hWWGfB/O2blfHcMVTL5WkQXSnRiK9makhrcnw==}
-    engines: {node: '>=0.3.1'}
-
   dom-accessibility-api@0.5.16:
     resolution: {integrity: sha512-X7BJ2yElsnOJ30pZF4uIIDfBEVgF4XEBxL9Bxhy6dnrm5hkzqmsWHGTiHqRiITNhMyFLyAiWndIJP7Z1NTteDg==}
 
@@ -3717,10 +3729,6 @@ packages:
   execa@10.0.1:
     resolution: {integrity: sha512-ge98qjkRK4IB7tL7Ju/6qmm5LHoH1eEMt5FNZrz3f4UIYhF28lggX20z3FaX1sgc67msLEn0N0BscOs29iuwyw==}
     engines: {node: '>=22'}
-
-  execa@9.6.1:
-    resolution: {integrity: sha512-9Be3ZoN4LmYR90tUoVu2te2BsbzHfhJyfEiAVfz7N5/zv+jduIfLrV2xdQXOHbaD6KgpGdO9PRPM1Y4Q9QkPkA==}
-    engines: {node: ^18.19.0 || >=20.5.0}
 
   expect-type@1.4.0:
     resolution: {integrity: sha512-KfYbmpRm0VbLjEvVa9yGwCi9GI34xvi7A/HXYWQO65CSD2u3MczUJSuwXKFIxlGsgBQizV9q5J9NHj4VG0n+pA==}
@@ -4102,36 +4110,6 @@ packages:
   jose@6.2.3:
     resolution: {integrity: sha512-YYVDInQKFJfR/xa3ojUTl8c2KoTwiL1R5Wg9YCydwH0x0B9grbzlg5HC7mMjCtUJjbQ/YnGEZIhI5tCgfTb4Hw==}
 
-  jotai-x@2.3.4:
-    resolution: {integrity: sha512-FirSJ2ZwJtWXpg1EP5iTZdXZE4ilXUvHnMR6DqvSfUuDADl2LNEvFBjdenyxmUdE5Fqru6qLrArw2MMRAFFIdA==}
-    peerDependencies:
-      '@types/react': '>=17.0.0'
-      jotai: '>=2.0.0'
-      react: '>=17.0.0'
-    peerDependenciesMeta:
-      '@types/react':
-        optional: true
-      react:
-        optional: true
-
-  jotai@2.20.0:
-    resolution: {integrity: sha512-b5GAqgmXmXzB4WPaTH26ppk9Sl7AA9WSQX7yfdM+gJ1rFROiWcVbi97gFuN/yVCojOcbcvop2sfLL+fjxW0JVg==}
-    engines: {node: '>=12.20.0'}
-    peerDependencies:
-      '@babel/core': '>=7.29.1'
-      '@babel/template': '>=7.0.0'
-      '@types/react': '>=17.0.0'
-      react: '>=17.0.0'
-    peerDependenciesMeta:
-      '@babel/core':
-        optional: true
-      '@babel/template':
-        optional: true
-      '@types/react':
-        optional: true
-      react:
-        optional: true
-
   js-cookie@3.0.8:
     resolution: {integrity: sha512-yeJd4aNAdYZQjaon2bpD/Gb0B/omw7HQOsynXXcOiWVCacbBcPlgn8S/d1X6blFSaHao7ozqtW7NZW19xpCtIw==}
 
@@ -4192,39 +4170,6 @@ packages:
 
   keyv@4.5.4:
     resolution: {integrity: sha512-oxVHkHR/EJf2CNXnWxRLW6mg7JyCCUcG0DtEGmL2ctUo1PNTin1PUil+r/+4r5MpVgC/fn1kjsx7mjSujKqIpw==}
-
-  kitcn@0.33.11:
-    resolution: {integrity: sha512-JPUF6ZVWE1i6Cv7Whb+WZ+m5Tufar157okTK3/hjFc/filsr6/8zlLABhRZdiZJ41dO4mpld3s5Vfve2pplvog==}
-    hasBin: true
-    peerDependencies:
-      '@tanstack/query-core': '>=5'
-      '@tanstack/react-query': '>=5'
-      '@tanstack/react-start': '>=1'
-      '@tanstack/solid-query': '>=5'
-      better-auth: '>=1.7.0 <1.8.0'
-      convex: '>=1.42 <1.47.0'
-      hono: 4.12.9
-      next: '>=14'
-      react: '>=18'
-      solid-js: '>=1.8'
-      zod: 4.6.7
-    peerDependenciesMeta:
-      '@tanstack/react-query':
-        optional: true
-      '@tanstack/react-start':
-        optional: true
-      '@tanstack/solid-query':
-        optional: true
-      better-auth:
-        optional: true
-      hono:
-        optional: true
-      next:
-        optional: true
-      react:
-        optional: true
-      solid-js:
-        optional: true
 
   kleur@3.0.3:
     resolution: {integrity: sha512-eTIzlVOSUR+JxdDFepEYcBMtZ9Qqdef+rnzWdRZuMbOywu5tO2w2N7rqjoANZ5k9vywhL6Br1VRjUIgTQx4E8w==}
@@ -4808,19 +4753,12 @@ packages:
     resolution: {integrity: sha512-PWaYA1L/q9u2u7xYQi+Y3L3Yfnie7XyLeaJICV1MGD6LprsBxcAqGjYyr0eY3p+QdsA+x/Irkt4Qif8D63+Sbw==}
     engines: {node: '>=0.10.0'}
 
-  readdirp@5.0.0:
-    resolution: {integrity: sha512-9u/XQ1pvrQtYyMpZe7DXKv2p5CNvyVwzUB6uhLAnQwHMSgKMBR62lc7AHljaeteeHXn11XTAaLLUVZYVZyuRBQ==}
-    engines: {node: '>= 20.19.0'}
-
   real-require@1.0.0:
     resolution: {integrity: sha512-P4nbQYQfePJxRSmY+v/KINxVucm4NF3p3s7pJveMTtom52FR4YGltUQLB8idDXwDDWW+eYrWDFbuzUnjoWHF7g==}
 
   redent@3.0.0:
     resolution: {integrity: sha512-6tDA8g98We0zd0GvVeMT9arEOnTw9qM03L9cJXaCjrip1OO764RDBLBfrB4cwzNGDj5OA5ioymC9GkizgWJDUg==}
     engines: {node: '>=8'}
-
-  remeda@2.34.1:
-    resolution: {integrity: sha512-k5iIF3lHm2NQ+2bNGDvZTD5jZl/JZkCS6AQOfGjYBd7V4rbb3K5whHvab0/O7CqPI43vYzbnIVCQXQJqmOyI6w==}
 
   require-from-string@2.0.2:
     resolution: {integrity: sha512-Xf0nWe6RseziFMu+Ap9biiUbmplq6S9/p+7w7YXP/JBHhrUDDUhwa+vANyubuqfZWTveU//DYVGsDG7RKL/vEw==}
@@ -5155,8 +5093,8 @@ packages:
     resolution: {integrity: sha512-XleUoc9uwGXqjWwXaUTZAmzMcFZ5858QA2vvx1Ur5xIcixXIP+8LnFDgRplU30us6teqdlskFfu+ae4K79Ooew==}
     engines: {node: '>= 0.8.0'}
 
-  type-fest@5.6.0:
-    resolution: {integrity: sha512-8ZiHFm91orbSAe2PSAiSVBVko18pbhbiB3U9GglSzF/zCGkR+rxpHx6sEMCUm4kxY4LjDIUGgCfUMtwfZfjfUA==}
+  type-fest@5.10.0:
+    resolution: {integrity: sha512-NoSdpq/WEiAg5sjmBkmV/hfxv6HJH4NqPNrqjtSO5CwRmpsDfaf4begxW34KdJykH/l1yHtwBWQkCRdoXO8mPA==}
     engines: {node: '>=20'}
 
   type-is@2.1.0:
@@ -5169,11 +5107,6 @@ packages:
     peerDependencies:
       eslint: ^8.57.0 || ^9.0.0 || ^10.0.0
       typescript: '>=4.8.4 <6.1.0'
-
-  typescript@5.9.3:
-    resolution: {integrity: sha512-jl1vZzPDinLr9eUt3J/t7V6FgNEw9QjvBPdysz9KfQDD41fQrC2Y4vKQdiaUpFT4bXlb1RHhLpp8wtm6M5TgSw==}
-    engines: {node: '>=14.17'}
-    hasBin: true
 
   typescript@6.0.3:
     resolution: {integrity: sha512-y2TvuxSZPDyQakkFRPZHKFm+KKVqIisdg9/CZwm9ftvKXLP8NRWj38/ODjNbr43SsoXqNuAisEf1GdCxqWcdBw==}
@@ -5938,20 +5871,9 @@ snapshots:
 
   '@chevrotain/utils@12.0.0': {}
 
-  '@clack/core@0.5.0':
-    dependencies:
-      picocolors: 1.1.1
-      sisteransi: 1.0.5
-
   '@clack/core@1.5.1':
     dependencies:
       fast-wrap-ansi: 0.2.2
-      sisteransi: 1.0.5
-
-  '@clack/prompts@0.11.0':
-    dependencies:
-      '@clack/core': 0.5.0
-      picocolors: 1.1.1
       sisteransi: 1.0.5
 
   '@clack/prompts@1.8.1':
@@ -5961,11 +5883,11 @@ snapshots:
       fast-wrap-ansi: 0.2.2
       sisteransi: 1.0.5
 
-  '@convex-dev/aggregate@0.3.1(@standard-schema/spec@1.1.0)(convex@1.46.0(react@19.2.8))(hono@4.13.11)(react@19.2.8)(typescript@6.0.3)(zod@4.6.7)':
+  '@convex-dev/aggregate@0.3.1(@standard-schema/spec@1.1.0)(convex@1.48.0(react@19.2.8))(hono@4.13.11)(react@19.2.8)(typescript@6.0.3)(zod@4.6.7)':
     dependencies:
-      '@convex-dev/batch-worker': 0.3.3(@standard-schema/spec@1.1.0)(convex@1.46.0(react@19.2.8))(hono@4.13.11)(react@19.2.8)(typescript@6.0.3)(zod@4.6.7)
-      convex: 1.46.0(react@19.2.8)
-      convex-helpers: 0.1.122(@standard-schema/spec@1.1.0)(convex@1.46.0(react@19.2.8))(hono@4.13.11)(react@19.2.8)(typescript@6.0.3)(zod@4.6.7)
+      '@convex-dev/batch-worker': 0.3.3(@standard-schema/spec@1.1.0)(convex@1.48.0(react@19.2.8))(hono@4.13.11)(react@19.2.8)(typescript@6.0.3)(zod@4.6.7)
+      convex: 1.48.0(react@19.2.8)
+      convex-helpers: 0.1.122(@standard-schema/spec@1.1.0)(convex@1.48.0(react@19.2.8))(hono@4.13.11)(react@19.2.8)(typescript@6.0.3)(zod@4.6.7)
     transitivePeerDependencies:
       - '@standard-schema/spec'
       - hono
@@ -5973,10 +5895,10 @@ snapshots:
       - typescript
       - zod
 
-  '@convex-dev/batch-worker@0.3.3(@standard-schema/spec@1.1.0)(convex@1.46.0(react@19.2.8))(hono@4.13.11)(react@19.2.8)(typescript@6.0.3)(zod@4.6.7)':
+  '@convex-dev/batch-worker@0.3.3(@standard-schema/spec@1.1.0)(convex@1.48.0(react@19.2.8))(hono@4.13.11)(react@19.2.8)(typescript@6.0.3)(zod@4.6.7)':
     dependencies:
-      convex: 1.46.0(react@19.2.8)
-      convex-helpers: 0.1.120(@standard-schema/spec@1.1.0)(convex@1.46.0(react@19.2.8))(hono@4.13.11)(react@19.2.8)(typescript@6.0.3)(zod@4.6.7)
+      convex: 1.48.0(react@19.2.8)
+      convex-helpers: 0.1.120(@standard-schema/spec@1.1.0)(convex@1.48.0(react@19.2.8))(hono@4.13.11)(react@19.2.8)(typescript@6.0.3)(zod@4.6.7)
       react: 19.2.8
     transitivePeerDependencies:
       - '@standard-schema/spec'
@@ -5984,20 +5906,37 @@ snapshots:
       - typescript
       - zod
 
-  '@convex-dev/eslint-plugin@2.0.0(convex@1.46.0(react@19.2.8))(eslint@10.8.1(jiti@2.7.0)(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3)':
+  '@convex-dev/better-auth@0.13.0(@standard-schema/spec@1.1.0)(better-auth@1.7.16(next@16.4.2(@babel/core@8.0.1)(@playwright/test@1.62.1)(@types/node@24.13.3)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(vitest@4.1.12))(convex@1.48.0(react@19.2.8))(hono@4.13.11)(react@19.2.8)(typescript@6.0.3)':
+    dependencies:
+      '@better-fetch/fetch': 1.3.3
+      better-auth: 1.7.16(next@16.4.2(@babel/core@8.0.1)(@playwright/test@1.62.1)(@types/node@24.13.3)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(vitest@4.1.12)
+      common-tags: 1.8.2
+      convex: 1.48.0(react@19.2.8)
+      convex-helpers: 0.1.129(@standard-schema/spec@1.1.0)(convex@1.48.0(react@19.2.8))(hono@4.13.11)(react@19.2.8)(typescript@6.0.3)(zod@4.6.7)
+      jose: 6.2.3
+      react: 19.2.8
+      semver: 7.8.5
+      type-fest: 5.10.0
+      zod: 4.6.7
+    transitivePeerDependencies:
+      - '@standard-schema/spec'
+      - hono
+      - typescript
+
+  '@convex-dev/eslint-plugin@2.0.0(convex@1.48.0(react@19.2.8))(eslint@10.8.1(jiti@2.7.0)(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3)':
     dependencies:
       '@typescript-eslint/types': 8.58.2
       '@typescript-eslint/utils': 8.58.2(eslint@10.8.1(jiti@2.7.0)(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3)
-      convex: 1.46.0(react@19.2.8)
+      convex: 1.48.0(react@19.2.8)
     transitivePeerDependencies:
       - eslint
       - supports-color
       - typescript
 
-  '@convex-dev/react-query@0.1.0(@tanstack/react-query@5.101.4(react@19.2.8))(convex@1.46.0(react@19.2.8))':
+  '@convex-dev/react-query@0.1.0(@tanstack/react-query@5.101.4(react@19.2.8))(convex@1.48.0(react@19.2.8))':
     dependencies:
       '@tanstack/react-query': 5.101.4(react@19.2.8)
-      convex: 1.46.0(react@19.2.8)
+      convex: 1.48.0(react@19.2.8)
 
   '@csstools/color-helpers@5.1.0': {}
 
@@ -7890,10 +7829,6 @@ snapshots:
       '@chevrotain/types': 12.0.0
       '@chevrotain/utils': 12.0.0
 
-  chokidar@5.0.0:
-    dependencies:
-      readdirp: 5.0.0
-
   chrono-node@2.10.3: {}
 
   class-variance-authority@0.7.1:
@@ -7942,9 +7877,9 @@ snapshots:
 
   convert-source-map@2.0.0: {}
 
-  convex-helpers@0.1.120(@standard-schema/spec@1.1.0)(convex@1.46.0(react@19.2.8))(hono@4.13.11)(react@19.2.8)(typescript@6.0.3)(zod@4.6.7):
+  convex-helpers@0.1.120(@standard-schema/spec@1.1.0)(convex@1.48.0(react@19.2.8))(hono@4.13.11)(react@19.2.8)(typescript@6.0.3)(zod@4.6.7):
     dependencies:
-      convex: 1.46.0(react@19.2.8)
+      convex: 1.48.0(react@19.2.8)
     optionalDependencies:
       '@standard-schema/spec': 1.1.0
       hono: 4.13.11
@@ -7952,9 +7887,9 @@ snapshots:
       typescript: 6.0.3
       zod: 4.6.7
 
-  convex-helpers@0.1.122(@standard-schema/spec@1.1.0)(convex@1.46.0(react@19.2.8))(hono@4.13.11)(react@19.2.8)(typescript@6.0.3)(zod@4.6.7):
+  convex-helpers@0.1.122(@standard-schema/spec@1.1.0)(convex@1.48.0(react@19.2.8))(hono@4.13.11)(react@19.2.8)(typescript@6.0.3)(zod@4.6.7):
     dependencies:
-      convex: 1.46.0(react@19.2.8)
+      convex: 1.48.0(react@19.2.8)
     optionalDependencies:
       '@standard-schema/spec': 1.1.0
       hono: 4.13.11
@@ -7962,11 +7897,21 @@ snapshots:
       typescript: 6.0.3
       zod: 4.6.7
 
-  convex-test@0.0.55(convex@1.46.0(react@19.2.8)):
+  convex-helpers@0.1.129(@standard-schema/spec@1.1.0)(convex@1.48.0(react@19.2.8))(hono@4.13.11)(react@19.2.8)(typescript@6.0.3)(zod@4.6.7):
     dependencies:
-      convex: 1.46.0(react@19.2.8)
+      convex: 1.48.0(react@19.2.8)
+    optionalDependencies:
+      '@standard-schema/spec': 1.1.0
+      hono: 4.13.11
+      react: 19.2.8
+      typescript: 6.0.3
+      zod: 4.6.7
 
-  convex@1.46.0(react@19.2.8):
+  convex-test@0.0.55(convex@1.48.0(react@19.2.8)):
+    dependencies:
+      convex: 1.48.0(react@19.2.8)
+
+  convex@1.48.0(react@19.2.8):
     dependencies:
       esbuild: 0.28.1
       prettier: 3.9.6
@@ -8169,8 +8114,6 @@ snapshots:
   detect-libc@2.1.2: {}
 
   detect-node-es@1.1.0: {}
-
-  diff@8.0.4: {}
 
   dom-accessibility-api@0.5.16: {}
 
@@ -8405,21 +8348,6 @@ snapshots:
       signal-exit: 4.1.0
       strip-final-newline: 4.0.0
       which-command: 0.1.0
-      yoctocolors: 2.1.2
-
-  execa@9.6.1:
-    dependencies:
-      '@sindresorhus/merge-streams': 4.0.0
-      cross-spawn: 7.0.6
-      figures: 6.1.0
-      get-stream: 9.0.1
-      human-signals: 8.0.1
-      is-plain-obj: 4.1.0
-      is-stream: 4.0.1
-      npm-run-path: 6.0.0
-      pretty-ms: 9.3.0
-      signal-exit: 4.1.0
-      strip-final-newline: 4.0.0
       yoctocolors: 2.1.2
 
   expect-type@1.4.0: {}
@@ -8816,20 +8744,6 @@ snapshots:
 
   jose@6.2.3: {}
 
-  jotai-x@2.3.4(@types/react@19.2.18)(jotai@2.20.0(@babel/core@8.0.1)(@babel/template@8.0.0)(@types/react@19.2.18)(react@19.2.8))(react@19.2.8):
-    dependencies:
-      jotai: 2.20.0(@babel/core@8.0.1)(@babel/template@8.0.0)(@types/react@19.2.18)(react@19.2.8)
-    optionalDependencies:
-      '@types/react': 19.2.18
-      react: 19.2.8
-
-  jotai@2.20.0(@babel/core@8.0.1)(@babel/template@8.0.0)(@types/react@19.2.18)(react@19.2.8):
-    optionalDependencies:
-      '@babel/core': 8.0.1
-      '@babel/template': 8.0.0
-      '@types/react': 19.2.18
-      react: 19.2.8
-
   js-cookie@3.0.8: {}
 
   js-tokens@10.0.0: {}
@@ -8912,39 +8826,6 @@ snapshots:
   keyv@4.5.4:
     dependencies:
       json-buffer: 3.0.1
-
-  kitcn@0.33.11(@babel/core@8.0.1)(@babel/template@8.0.0)(@tanstack/query-core@5.101.4)(@tanstack/react-query@5.101.4(react@19.2.8))(@types/react@19.2.18)(better-auth@1.7.16(next@16.4.2(@babel/core@8.0.1)(@playwright/test@1.62.1)(@types/node@24.13.3)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(vitest@4.1.12))(convex@1.46.0(react@19.2.8))(hono@4.13.11)(next@16.4.2(@babel/core@8.0.1)(@playwright/test@1.62.1)(@types/node@24.13.3)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(react@19.2.8)(zod@4.6.7):
-    dependencies:
-      '@babel/parser': 7.29.8
-      '@better-fetch/fetch': 1.3.1
-      '@clack/prompts': 0.11.0
-      '@tanstack/query-core': 5.101.4
-      chokidar: 5.0.0
-      common-tags: 1.8.2
-      convex: 1.46.0(react@19.2.8)
-      diff: 8.0.4
-      dotenv: 17.4.2
-      esbuild: 0.28.1
-      execa: 9.6.1
-      jiti: 2.7.0
-      jose: 6.2.3
-      jotai: 2.20.0(@babel/core@8.0.1)(@babel/template@8.0.0)(@types/react@19.2.18)(react@19.2.8)
-      jotai-x: 2.3.4(@types/react@19.2.18)(jotai@2.20.0(@babel/core@8.0.1)(@babel/template@8.0.0)(@types/react@19.2.18)(react@19.2.8))(react@19.2.8)
-      picocolors: 1.1.1
-      remeda: 2.34.1
-      type-fest: 5.6.0
-      typescript: 5.9.3
-      zod: 4.6.7
-    optionalDependencies:
-      '@tanstack/react-query': 5.101.4(react@19.2.8)
-      better-auth: 1.7.16(next@16.4.2(@babel/core@8.0.1)(@playwright/test@1.62.1)(@types/node@24.13.3)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(vitest@4.1.12)
-      hono: 4.13.11
-      next: 16.4.2(@babel/core@8.0.1)(@playwright/test@1.62.1)(@types/node@24.13.3)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
-      react: 19.2.8
-    transitivePeerDependencies:
-      - '@babel/core'
-      - '@babel/template'
-      - '@types/react'
 
   kleur@3.0.3: {}
 
@@ -9564,16 +9445,12 @@ snapshots:
 
   react@19.2.8: {}
 
-  readdirp@5.0.0: {}
-
   real-require@1.0.0: {}
 
   redent@3.0.0:
     dependencies:
       indent-string: 4.0.0
       strip-indent: 3.0.0
-
-  remeda@2.34.1: {}
 
   require-from-string@2.0.2: {}
 
@@ -9936,7 +9813,7 @@ snapshots:
     dependencies:
       prelude-ls: 1.2.1
 
-  type-fest@5.6.0:
+  type-fest@5.10.0:
     dependencies:
       tagged-tag: 1.0.0
 
@@ -9956,8 +9833,6 @@ snapshots:
       typescript: 6.0.3
     transitivePeerDependencies:
       - supports-color
-
-  typescript@5.9.3: {}
 
   typescript@6.0.3: {}
 

@@ -1,8 +1,9 @@
 # Only resolve versions published at least this many minutes ago (7 days).
 minimumReleaseAge: 10080
-# Temporary: better-auth 1.7.16 (2026-11-03) is the release @convex-dev/better-auth 0.13 needs.
+# Temporary: @convex-dev/better-auth 0.13 (2026-11-04) is the first release for better-auth 1.7.
 # Remove once these releases are older than seven days (after 2026-11-11).
 minimumReleaseAgeExclude:
+    - '@convex-dev/better-auth'
     - better-auth
     - better-call
     - '@better-auth/*'
@@ -28,10 +29,6 @@ overrides:
     'nodemailer@<10.1.4': 10.1.4
     'picomatch@>=4.0.0 <5': 4.0.7
     '@maildev/mcp>zod': '>=4.6.6'
-
-peerDependencyRules:
-    allowedVersions:
-        'kitcn@0.33.11>hono': '>=4.13.11 <5'
 
 allowBuilds:
     '@parcel/watcher': true
