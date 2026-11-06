@@ -1,6 +1,5 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import { api, internal } from '../_generated/api';
-import type { Id } from '../_generated/dataModel';
 import { DAY_MS, startOfUtcDay } from '../features/objectives/rules';
 import { initConvexTest } from './test.helper';
 import {
@@ -15,7 +14,7 @@ const page = { numItems: 20, cursor: null };
 
 describe('notifications', () => {
     const t = initConvexTest();
-    let organizationId: Id<'organization'>;
+    let organizationId: string;
     let owner: TestUserData;
     let creator: TestUserData;
     let granted: TestUserData;

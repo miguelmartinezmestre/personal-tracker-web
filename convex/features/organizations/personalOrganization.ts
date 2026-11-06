@@ -1,9 +1,5 @@
 import type { Organization } from 'better-auth/plugins';
 import { z } from 'zod';
-import { ConvexError } from 'convex/values';
-import { ERROR_CODES } from '../../shared/errorCodes';
-import type { Id } from '../../_generated/dataModel';
-import type { MutationCtx } from '../../_generated/server';
 
 export const DEFAULT_ORGANIZATION_NAME = 'Personal Organization';
 
@@ -81,24 +77,4 @@ export function usesReservedPersonalOrganizationIdentity(
         organization.slug?.startsWith(`${DEFAULT_ORGANIZATION_SLUG_BASE}-`) === true ||
         personalOrganizationMetadataSchema.safeParse(organization.metadata).success
     );
-}
-
-export async function buildAvailablePersonalOrganizationSlug(ctx: MutationCtx, userId: Id<'user'>) {
-    const baseSlug = buildDefaultOrganizationSlug(userId);
-    let candidate = baseSlug;
-
-    for (let attempt = 0; attempt < 5; attempt++) {
-        const collision = await ctx.db
-            .query('organization')
-            .withIndex('slug', q => q.eq('slug', candidate))
-            .first();
-
-        if (!collision) {
-            return candidate;
-        }
-
-        candidate = `${baseSlug}-${Date.now().toString(36)}-${attempt + 1}`;
-    }
-
-    throw new ConvexError(ERROR_CODES.INTERNAL_ERROR);
 }

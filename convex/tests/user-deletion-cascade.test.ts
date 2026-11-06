@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import { internal } from '../_generated/api';
+import { runInAuth } from './authTesting';
 import { initConvexTest } from './test.helper';
 import { createTestMember, createTestOrganization, createTestUser } from './test.helpers';
 
@@ -86,10 +87,20 @@ describe('user deletion cascade', () => {
         await t.mutation(internal.cascades.cascadeUserDeletionInternal, { userId: deleted.docId });
         await t.finishAllScheduledFunctions(() => vi.runAllTimers());
 
-        await t.run(async ctx => {
+        await runInAuth(t, async ctx => {
             expect(await ctx.db.get('organization', personal)).toBeNull();
             expect(await ctx.db.get('organization', alone)).toBeNull();
             expect(await ctx.db.get('organization', shared)).not.toBeNull();
+            expect(
+                await ctx.db
+                    .query('member')
+                    .withIndex('userId', q => q.eq('userId', deleted.docId))
+                    .first()
+            ).toBeNull();
+            expect(await ctx.db.get('user', deleted.docId)).toMatchObject({ name: 'deleted' });
+        });
+
+        await t.run(async ctx => {
             expect(await ctx.db.get('objectives', sharedObjective)).toMatchObject({
                 createdBy: deleted.docId,
             });
@@ -99,13 +110,6 @@ describe('user deletion cascade', () => {
                     .withIndex('by_user_organization', q => q.eq('userId', deleted.docId))
                     .first()
             ).toBeNull();
-            expect(
-                await ctx.db
-                    .query('member')
-                    .withIndex('userId', q => q.eq('userId', deleted.docId))
-                    .first()
-            ).toBeNull();
-            expect(await ctx.db.get('user', deleted.docId)).toMatchObject({ name: 'deleted' });
         });
     });
 });

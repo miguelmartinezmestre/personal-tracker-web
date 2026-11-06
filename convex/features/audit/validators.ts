@@ -15,6 +15,6 @@ export const auditEntryValidator = v.object({
     severity: auditSeverityValidator,
     userName: v.union(v.string(), v.null()),
     actorName: v.union(v.string(), v.null()),
-    organizationId: v.union(v.id('organization'), v.null()),
+    organizationId: v.union(v.string(), v.null()),
     metadata: v.union(v.string(), v.null()),
 });

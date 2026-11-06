@@ -1,77 +1,44 @@
-import { isActiveAccount } from '../auth/users';
 import { ConvexError } from 'convex/values';
-import { getAuthUserIdentity, getSession } from 'kitcn/auth';
-import type { Id } from '../../_generated/dataModel';
-import type { MutationCtx, QueryCtx } from '../../_generated/server';
+import type { QueryCtx } from '../../_generated/server';
 import { ERROR_CODES } from '../../shared/errorCodes';
+import { getActiveUser, getMembershipRole, getSession } from '../auth/authRecords';
 
 export type AuthContext = {
-    userId: Id<'user'>;
-    // Null until verified: invitations are matched by email, so an unverified address proves nothing.
+    userId: string;
     email: string | null;
-    organizationId: Id<'organization'> | null;
+    organizationId: string | null;
     role: string;
     memberRole: string | null;
 };
 
-export async function resolveActiveMembership(
-    ctx: QueryCtx | MutationCtx,
-    userId: Id<'user'>,
-    organizationId: Id<'organization'> | null
-): Promise<{ role: string | null; organizationId: Id<'organization'> | null }> {
-    if (!organizationId || !(await ctx.db.get('organization', organizationId))) {
-        return { role: null, organizationId: null };
-    }
+/**
+ * The Better Auth session is checked on every call (not only the JWT), so revoking a session,
+ * banning or deleting an account takes effect immediately.
+ */
+export async function resolveAuthContext(ctx: QueryCtx): Promise<AuthContext> {
+    const identity = await ctx.auth.getUserIdentity();
+    const sessionId = typeof identity?.sessionId === 'string' ? identity.sessionId : null;
 
-    const membership = await ctx.db
-        .query('member')
-        .withIndex('by_organizationId_and_userId', q =>
-            q.eq('organizationId', organizationId).eq('userId', userId)
-        )
-        .first();
-
-    if (membership) {
-        return { role: membership.role, organizationId };
-    }
-
-    return { role: null, organizationId: null };
-}
-
-export async function resolveAuthContext(ctx: QueryCtx | MutationCtx): Promise<AuthContext> {
-    const identity = await getAuthUserIdentity(ctx);
-
-    if (!identity) {
+    if (!identity || !sessionId) {
         throw new ConvexError(ERROR_CODES.AUTH_REQUIRED);
     }
 
-    const currentUser = await ctx.db.get('user', identity.userId);
+    const [user, session] = await Promise.all([
+        getActiveUser(ctx, identity.subject),
+        getSession(ctx, sessionId),
+    ]);
 
-    if (!isActiveAccount(currentUser, Date.now()) || !currentUser) {
+    if (!user || !session || session.userId !== user._id || session.expiresAt < Date.now()) {
         throw new ConvexError(ERROR_CODES.AUTH_REQUIRED);
     }
 
-    const session = await getSession(ctx);
-
-    if (!session || session.expiresAt < Date.now()) {
-        throw new ConvexError(ERROR_CODES.AUTH_REQUIRED);
-    }
-
-    // Better Auth clears the active organization before a delete hook can refuse, with no rollback.
-    const activeOrganizationId = session.activeOrganizationId
-        ? ctx.db.normalizeId('organization', session.activeOrganizationId)
-        : null;
-
-    const { role: memberRole, organizationId } = await resolveActiveMembership(
-        ctx,
-        currentUser._id,
-        activeOrganizationId
-    );
+    const memberRole = await getMembershipRole(ctx, session.activeOrganizationId, user._id);
 
     return {
-        userId: currentUser._id,
-        email: currentUser.emailVerified ? currentUser.email : null,
-        organizationId,
-        role: currentUser.role ?? 'user',
+        userId: user._id,
+        email: user.emailVerified ? user.email : null,
+        organizationId: memberRole ? (session.activeOrganizationId ?? null) : null,
+        role: user.role ?? 'user',
         memberRole,
     };
 }

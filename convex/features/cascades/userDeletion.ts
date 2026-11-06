@@ -1,7 +1,8 @@
-import type { Id } from '../../_generated/dataModel';
 import type { MutationCtx } from '../../_generated/server';
 import { internal } from '../../_generated/api';
-import { isPersonalOrganizationForUser } from '../organizations/personalOrganization';
+import { deleteUserMembershipsBatch as deleteAuthMembershipsBatch } from '../organizations/memberships';
+import { removeSessionsForUserBatch } from '../auth/sessions';
+import { anonymizeAccount, deleteAccountsBatch } from '../auth/accountDeletion';
 
 export const USER_DELETION_BATCH_SIZE = 50;
 
@@ -18,63 +19,26 @@ export type UserDeletionResult = {
     phase: UserDeletionPhase;
 };
 
-export async function anonymizeUser(ctx: MutationCtx, userId: Id<'user'>) {
-    const user = await ctx.db.get('user', userId);
+export async function anonymizeUser(ctx: MutationCtx, userId: string) {
+    await anonymizeAccount(ctx, userId);
+}
 
-    if (!user || user.deletedAt !== undefined) {
-        return;
-    }
-
-    const now = Date.now();
-    await ctx.db.patch('user', userId, {
-        email: `deleted-${String(userId)}@deleted.invalid`,
-        emailVerified: false,
-        image: null,
-        userId: null,
-        role: null,
-        banned: true,
-        banReason: 'Account deleted',
-        banExpires: null,
-        deletedAt: now,
-        updatedAt: now,
+export async function deleteUserSessionsBatch(ctx: MutationCtx, userId: string): Promise<number> {
+    const { deleted } = await removeSessionsForUserBatch(ctx, {
+        userId,
+        batchSize: USER_DELETION_BATCH_SIZE,
     });
+
+    return deleted;
 }
 
-export async function deleteUserSessionsBatch(
-    ctx: MutationCtx,
-    userId: Id<'user'>
-): Promise<number> {
-    const rows = await ctx.db
-        .query('session')
-        .withIndex('userId', q => q.eq('userId', userId))
-        .take(USER_DELETION_BATCH_SIZE);
-
-    for (const row of rows) {
-        await ctx.db.delete('session', row._id);
-    }
-
-    return rows.length;
-}
-
-export async function deleteUserAccountsBatch(
-    ctx: MutationCtx,
-    userId: Id<'user'>
-): Promise<number> {
-    const rows = await ctx.db
-        .query('account')
-        .withIndex('userId', q => q.eq('userId', userId))
-        .take(USER_DELETION_BATCH_SIZE);
-
-    for (const row of rows) {
-        await ctx.db.delete('account', row._id);
-    }
-
-    return rows.length;
+export async function deleteUserAccountsBatch(ctx: MutationCtx, userId: string): Promise<number> {
+    return await deleteAccountsBatch(ctx, userId, USER_DELETION_BATCH_SIZE);
 }
 
 export async function deleteUserNotificationsBatch(
     ctx: MutationCtx,
-    userId: Id<'user'>
+    userId: string
 ): Promise<number> {
     const rows = await ctx.db
         .query('notifications')
@@ -101,7 +65,7 @@ export async function deleteUserNotificationsBatch(
 
 export async function deleteUserAchievementsBatch(
     ctx: MutationCtx,
-    userId: Id<'user'>
+    userId: string
 ): Promise<number> {
     const rows = await ctx.db
         .query('obtainedAchievements')
@@ -117,7 +81,7 @@ export async function deleteUserAchievementsBatch(
 
 export async function deleteUserObjectivePermissionsBatch(
     ctx: MutationCtx,
-    userId: Id<'user'>
+    userId: string
 ): Promise<number> {
     const rows = await ctx.db
         .query('objectivePermissions')
@@ -133,44 +97,20 @@ export async function deleteUserObjectivePermissionsBatch(
 
 export async function deleteUserMembershipsBatch(
     ctx: MutationCtx,
-    userId: Id<'user'>
+    userId: string
 ): Promise<number> {
-    const memberships = await ctx.db
-        .query('member')
-        .withIndex('userId', q => q.eq('userId', userId))
-        .take(USER_DELETION_BATCH_SIZE);
+    const { deleted, deletedOrganizationIds } = await deleteAuthMembershipsBatch(
+        ctx,
+        userId,
+        USER_DELETION_BATCH_SIZE
+    );
 
-    for (const membership of memberships) {
-        await deleteMembership(ctx, membership, userId);
-    }
-
-    return memberships.length;
-}
-
-async function deleteMembership(
-    ctx: MutationCtx,
-    membership: { _id: Id<'member'>; organizationId: Id<'organization'> },
-    userId: Id<'user'>
-) {
-    const organization = await ctx.db.get('organization', membership.organizationId);
-
-    const members = await ctx.db
-        .query('member')
-        .withIndex('organizationId', q => q.eq('organizationId', membership.organizationId))
-        .take(2);
-
-    const isLastMember = members.every(member => member.userId === userId);
-
-    if (
-        organization &&
-        (isLastMember || isPersonalOrganizationForUser({ metadata: organization.metadata, userId }))
-    ) {
-        await ctx.db.delete('organization', organization._id);
+    for (const organizationId of deletedOrganizationIds) {
         await ctx.scheduler.runAfter(0, internal.cascades.continueOrganizationDeletionCascade, {
-            organizationId: organization._id,
+            organizationId,
             phase: 'progressUpdates',
         });
     }
 
-    await ctx.db.delete('member', membership._id);
+    return deleted;
 }

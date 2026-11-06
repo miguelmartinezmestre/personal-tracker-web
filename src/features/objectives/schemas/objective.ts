@@ -1,6 +1,5 @@
 import { z } from 'zod';
 import { isTargetReached } from '@/convex/features/objectives/rules';
-import type { Id } from '@/convex/_generated/dataModel';
 import { dateInputToUtcTimestamp, todayDateInput } from '@/features/objectives/lib/dates';
 
 export const NONE_CATEGORY = 'none';
@@ -26,7 +25,7 @@ export const accessSchema = z.object({
     memberAccess: z.enum(['none', 'view', 'edit']),
     users: z.array(
         z.object({
-            userId: z.custom<Id<'user'>>(value => typeof value === 'string'),
+            userId: z.custom<string>(value => typeof value === 'string'),
             name: z.string(),
             access: z.enum(['view', 'edit']),
         })

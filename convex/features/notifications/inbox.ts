@@ -1,12 +1,7 @@
-import type { Id } from '../../_generated/dataModel';
 import type { MutationCtx } from '../../_generated/server';
 import { NOTIFICATION_BATCH_SIZE } from './constants';
 
-export async function markReadBatch(
-    db: MutationCtx['db'],
-    userId: Id<'user'>,
-    organizationId: Id<'organization'>
-) {
+export async function markReadBatch(db: MutationCtx['db'], userId: string, organizationId: string) {
     const unread = await db
         .query('notifications')
         .withIndex('by_user_organization_read', q =>

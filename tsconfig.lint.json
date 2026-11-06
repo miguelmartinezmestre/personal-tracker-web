@@ -12,5 +12,5 @@
         "tests/**/*.ts",
         "next.config.ts"
     ],
-    "exclude": ["node_modules", "convex/_generated", "convex/generated"]
+    "exclude": ["node_modules", "convex/_generated", "convex/betterAuth/_generated"]
 }

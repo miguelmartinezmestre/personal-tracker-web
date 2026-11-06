@@ -2,6 +2,7 @@ import { describe, expect, test } from 'vitest';
 import { internal } from '../_generated/api';
 import { initConvexTest } from './test.helper';
 import { createTestOrganization, createTestUser } from './test.helpers';
+import { runInAuth } from './authTesting';
 
 describe('backend registration policy', () => {
     test('requires the exact active invitation for the same email @REQ-AUTENTICACION-001 @INH-AUT-03', async () => {
@@ -19,14 +20,16 @@ describe('backend registration policy', () => {
             slug: 'invitation-organization',
         });
 
-        const invitationIds = await t.run(async ctx => {
+        await t.run(async ctx => {
             await ctx.db.insert('platformSettings', {
                 platformName: 'Private platform',
                 defaultLanguage: 'en',
                 registrationPolicy: 'invitation-only',
                 setupCompletedBy: inviter.docId,
             });
+        });
 
+        const invitationIds = await runInAuth(t, async ctx => {
             const active = await ctx.db.insert('invitation', {
                 organizationId,
                 email: 'invited@example.com',

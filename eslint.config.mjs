@@ -4,7 +4,7 @@ import tseslint from 'typescript-eslint';
 // Oxlint JS plugins lack the parserServices that @convex-dev/eslint-plugin needs.
 export default [
     {
-        ignores: ['convex/_generated/**', 'convex/generated/**'],
+        ignores: ['convex/_generated/**', 'convex/betterAuth/_generated/**'],
     },
     {
         files: ['convex/**/*.ts'],

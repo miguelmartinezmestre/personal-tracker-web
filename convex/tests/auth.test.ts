@@ -1,9 +1,14 @@
 import { beforeEach, describe, expect, test } from 'vitest';
-import { internal } from '../_generated/api';
+import { createFunctionHandle } from 'convex/server';
+import { components, internal } from '../_generated/api';
 import { initConvexTest } from './test.helper';
 import { createTestUser, createTestOrganization, createTestMember } from './test.helpers';
-import type { Id } from '../_generated/dataModel';
 import { z } from 'zod';
+import { runInAuth } from './authTesting';
+import {
+    isDefaultOrganization,
+    userHasOrganizationNamed,
+} from '../features/organizations/memberships';
 
 const sessionCreateResultSchema = z.object({
     _id: z.string().optional(),
@@ -12,8 +17,8 @@ const sessionCreateResultSchema = z.object({
 
 describe('convex auth', () => {
     const t = initConvexTest();
-    let userId: Id<'user'>;
-    let _organizationId: Id<'organization'>;
+    let userId: string;
+    let _organizationId: string;
 
     beforeEach(async () => {
         const randomSuffix = Math.random().toString(36).substring(2, 15);
@@ -51,17 +56,22 @@ describe('convex auth', () => {
             updatedAt: Date.now(),
             ipAddress: '127.0.0.1',
             userAgent: 'Vitest',
-            userId: String(userId),
+            userId,
             impersonatedBy: null,
-            activeOrganizationId: String(_organizationId),
+            activeOrganizationId: _organizationId,
         };
 
         const parsedSession = sessionCreateResultSchema.safeParse(
-            await t.mutation(internal.generated.auth.create, {
-                input: {
-                    model: 'session',
-                    data: sessionDoc,
-                },
+            await t.run(async ctx => {
+                const created: unknown = await ctx.runMutation(
+                    components.betterAuth.adapter.create,
+                    {
+                        input: { model: 'session', data: sessionDoc },
+                        onCreateHandle: await createFunctionHandle(internal.auth.onCreate),
+                    }
+                );
+
+                return created;
             })
         );
 
@@ -75,11 +85,14 @@ describe('convex auth', () => {
             throw new Error('Expected session id');
         }
 
-        await t.mutation(internal.generated.auth.deleteOne, {
-            input: {
-                model: 'session',
-                where: [{ field: 'token', operator: 'eq', value: sessionDoc.token }],
-            },
+        await t.run(async ctx => {
+            await ctx.runMutation(components.betterAuth.adapter.deleteOne, {
+                input: {
+                    model: 'session',
+                    where: [{ field: 'token', operator: 'eq', value: sessionDoc.token }],
+                },
+                onDeleteHandle: await createFunctionHandle(internal.auth.onDelete),
+            });
         });
 
         const adminLogs = await t.run(async ctx => {
@@ -126,24 +139,19 @@ describe('convex auth', () => {
             name: 'Default Org User',
         });
 
-        const organizationId = await t.mutation(internal.auth.ensureDefaultOrganizationForUser, {
-            userId: user.docId,
-        });
+        const ensureDefault = () =>
+            t.mutation(internal.auth.ensureDefaultOrganization, { userId: user.docId });
 
-        const isDefaultOrganization = await t.query(internal.auth.isDefaultOrganization, {
-            organizationId,
-        });
+        const isDefault = (organizationId: string) =>
+            t.run(ctx => isDefaultOrganization(ctx, organizationId));
 
-        expect(isDefaultOrganization).toBe(true);
-        expect(
-            await t.query(internal.auth.isDefaultOrganization, { organizationId: _organizationId })
-        ).toBe(false);
+        const organizationId = await ensureDefault();
 
-        await expect(
-            t.mutation(internal.auth.ensureDefaultOrganizationForUser, { userId: user.docId })
-        ).resolves.toBe(organizationId);
+        expect(await isDefault(organizationId)).toBe(true);
+        expect(await isDefault(_organizationId)).toBe(false);
+        await expect(ensureDefault()).resolves.toBe(organizationId);
 
-        const memberships = await t.run(ctx =>
+        const memberships = await runInAuth(t, ctx =>
             ctx.db
                 .query('member')
                 .withIndex('userId', q => q.eq('userId', user.docId))
@@ -170,11 +178,9 @@ describe('convex auth', () => {
         await createTestMember(t, { organizationId, userId: user.docId, role: 'owner' });
 
         const check = (name: string, excludeOrganizationId?: string) =>
-            t.query(internal.auth.userHasOrganizationNamed, {
-                userId: user.docId,
-                name,
-                excludeOrganizationId,
-            });
+            t.run(ctx =>
+                userHasOrganizationNamed(ctx, { userId: user.docId, name, excludeOrganizationId })
+            );
 
         expect(await check('  acme team ')).toBe(true);
         expect(await check('Other team')).toBe(false);

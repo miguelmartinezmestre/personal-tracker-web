@@ -45,7 +45,7 @@ export const objectiveSummaryValidator = v.object({
 });
 
 export const userGrantValidator = v.object({
-    userId: v.id('user'),
+    userId: v.string(),
     access: v.union(v.literal('view'), v.literal('edit')),
 });
 
@@ -53,7 +53,7 @@ export const objectiveAccessValidator = v.object({
     memberAccess: accessLevelValidator,
     users: v.array(
         v.object({
-            userId: v.id('user'),
+            userId: v.string(),
             name: v.string(),
             email: v.string(),
             access: v.union(v.literal('view'), v.literal('edit')),

@@ -3,7 +3,6 @@
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { usePaginatedList } from '@/components/data-table/hooks/use-paginated-list';
 import { api } from '@/convex/_generated/api';
-import type { Id } from '@/convex/_generated/dataModel';
 import { authClient } from '@/features/auth/client';
 import type { CreateOrganization } from '@/features/organizations/schemas/organization';
 import { convexQuery, useConvexMutation } from '@convex-dev/react-query';
@@ -56,7 +55,7 @@ export function useCreateOrganization() {
 
             if (result.data) {
                 await addChosenCategories({
-                    organizationId: result.data.id as Id<'organization'>,
+                    organizationId: result.data.id as string,
                     categories: values.categories,
                 });
             }

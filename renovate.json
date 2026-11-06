@@ -9,7 +9,7 @@
             "groupName": "React and Next.js"
         },
         {
-            "matchPackageNames": ["convex", "convex-helpers", "@convex-dev/**", "kitcn"],
+            "matchPackageNames": ["convex", "convex-helpers", "@convex-dev/**"],
             "groupName": "Convex"
         },
         { "matchPackageNames": ["better-auth"], "groupName": "Authentication" },

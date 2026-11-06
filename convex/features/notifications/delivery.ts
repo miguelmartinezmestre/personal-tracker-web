@@ -1,13 +1,13 @@
 import type { Change } from 'convex-helpers/server/triggers';
 import { internal } from '../../_generated/api';
-import type { DataModel, Id } from '../../_generated/dataModel';
+import type { DataModel } from '../../_generated/dataModel';
 import type { MutationCtx, QueryCtx } from '../../_generated/server';
 import { progressNotice } from './notices';
 import type { NotificationType } from './validators';
 
 export async function isNotificationEnabled(
     db: QueryCtx['db'],
-    userId: Id<'user'>,
+    userId: string,
     type: NotificationType
 ): Promise<boolean> {
     const preferences = await db

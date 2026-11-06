@@ -1,16 +1,19 @@
 import { ConvexError, v } from 'convex/values';
-import type { Doc, Id } from './_generated/dataModel';
 import { ERROR_CODES } from './shared/errorCodes';
 import { GLOBAL_ADMIN_ROLE } from './features/auth/roles';
 import { buildOrganizationSlug } from './features/organizations/slug';
 import { completeSetupArgsValidator } from './features/setup/validators';
-import { getAuthUserIdentity } from 'kitcn/auth';
-import { isFirstSetupUser, validateSetupArgs } from './features/setup/rules';
-import { isPersonalOrganizationForUser } from './features/organizations/personalOrganization';
+import { validateSetupArgs } from './features/setup/rules';
 import { insertAuditLog } from './features/audit/log';
 import { query } from './_generated/server';
 import { mutation } from './features/objectives/stats';
 import { normalizeCategory } from './features/categories/rules';
+import {
+    listMembershipsForUser,
+    upsertSetupOrganization,
+} from './features/organizations/memberships';
+import { activateOrganizationForUser } from './features/auth/sessions';
+import { grantPlatformRole, isFirstUser } from './features/auth/adminUsers';
 
 export const isPlatformSetUp = query({
     args: {},
@@ -50,11 +53,10 @@ export const getPublicPlatformSettings = query({
 export const completeSetup = mutation({
     args: completeSetupArgsValidator,
     returns: v.object({
-        organizationId: v.id('organization'),
+        organizationId: v.string(),
     }),
     handler: async (ctx, args) => {
-        const identity = await getAuthUserIdentity(ctx);
-        const userId = ctx.db.normalizeId('user', identity?.userId ?? '');
+        const userId = (await ctx.auth.getUserIdentity())?.subject;
 
         if (!userId) {
             throw new ConvexError(ERROR_CODES.SETUP_AUTH_REQUIRED);
@@ -72,11 +74,11 @@ export const completeSetup = mutation({
             args.categories.map(normalizeCategory).map(category => [category.name, category])
         );
 
-        if (!(await isFirstSetupUser(ctx, userId))) {
+        if (!(await isFirstUser(ctx, userId))) {
             throw new ConvexError(ERROR_CODES.SETUP_USER_MISMATCH);
         }
 
-        await ctx.db.patch('user', userId, { role: GLOBAL_ADMIN_ROLE });
+        await grantPlatformRole(ctx, userId, GLOBAL_ADMIN_ROLE);
         await insertAuditLog(ctx, {
             action: 'user.role_changed',
             resourceType: 'user',
@@ -86,81 +88,26 @@ export const completeSetup = mutation({
             metadata: { after: { role: GLOBAL_ADMIN_ROLE } },
         });
 
-        let reusableOrganizationId: Id<'organization'> | null = null;
-        const personalOrganizationIds = new Set<Id<'organization'>>();
+        const memberships = await listMembershipsForUser(ctx, userId);
 
-        for await (const membership of ctx.db
-            .query('member')
-            .withIndex('userId', q => q.eq('userId', userId))) {
-            const organization = await ctx.db.get('organization', membership.organizationId);
+        const personalOrganizationIds = memberships
+            .filter(membership => membership.isPersonal)
+            .map(membership => membership.organizationId);
 
-            if (!organization) {
-                continue;
-            }
+        const organizationId = await upsertSetupOrganization(ctx, {
+            userId,
+            reuseOrganizationId:
+                memberships.find(membership => !membership.isPersonal)?.organizationId ?? null,
+            name: args.organizationName,
+            slug: buildOrganizationSlug(args.organizationName),
+            logo: args.organizationLogo,
+        });
 
-            if (isPersonalOrganizationForUser({ metadata: organization.metadata, userId })) {
-                personalOrganizationIds.add(organization._id);
-            } else if (!reusableOrganizationId) {
-                reusableOrganizationId = organization._id;
-            }
-        }
-
-        let organizationId: Id<'organization'>;
-
-        if (reusableOrganizationId) {
-            organizationId = reusableOrganizationId;
-            const patch: Partial<Doc<'organization'>> = { name: args.organizationName };
-
-            // An undefined patch field would erase the logo the organization already has.
-            if (args.organizationLogo) {
-                patch.logo = args.organizationLogo;
-            }
-
-            await ctx.db.patch('organization', organizationId, patch);
-        } else {
-            const now = Date.now();
-            organizationId = await ctx.db.insert('organization', {
-                name: args.organizationName,
-                slug: buildOrganizationSlug(args.organizationName),
-                createdAt: now,
-                metadata: null,
-                logo: args.organizationLogo ?? null,
-            });
-            await ctx.db.insert('member', {
-                organizationId,
-                userId,
-                role: 'owner',
-                createdAt: now,
-            });
-        }
-
-        // Read every session before patching any, so the writes do not affect the iteration.
-        const sessions: Doc<'session'>[] = [];
-
-        for await (const session of ctx.db
-            .query('session')
-            .withIndex('userId', q => q.eq('userId', userId))) {
-            sessions.push(session);
-        }
-
-        for (const session of sessions) {
-            let currentOrganizationId = null;
-
-            if (session.activeOrganizationId) {
-                currentOrganizationId = ctx.db.normalizeId(
-                    'organization',
-                    session.activeOrganizationId
-                );
-            } else {
-                currentOrganizationId = null;
-            }
-
-            if (!currentOrganizationId || personalOrganizationIds.has(currentOrganizationId)) {
-                await ctx.db.patch('session', session._id, {
-                    activeOrganizationId: organizationId,
-                });
-            }
-        }
+        await activateOrganizationForUser(ctx, {
+            userId,
+            organizationId,
+            replaceOrganizationIds: personalOrganizationIds,
+        });
 
         const now = Date.now();
 

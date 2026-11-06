@@ -2,6 +2,7 @@ import { hashPassword } from 'better-auth/crypto';
 import { describe, expect, test } from 'vitest';
 import { initConvexTest } from './test.helper';
 import { createTestMember, createTestOrganization, createTestUser } from './test.helpers';
+import { runInAuth } from './authTesting';
 
 const ORIGIN = 'http://localhost:3000';
 const PASSWORD = 'ValidBoundaryPassword123';
@@ -43,7 +44,7 @@ describe('auth boundaries', () => {
 
         await createTestMember(t, { organizationId, userId: user.docId, role: 'owner' });
         const passwordHash = await hashPassword(PASSWORD);
-        await t.run(async ctx => {
+        await runInAuth(t, async ctx => {
             await ctx.db.insert('account', {
                 accountId: String(user.docId),
                 providerId: 'credential',
@@ -115,7 +116,7 @@ describe('auth boundaries', () => {
 
         expect(response.status, await response.clone().text()).toBe(200);
 
-        const invitation = await t.run(ctx =>
+        const invitation = await runInAuth(t, ctx =>
             ctx.db
                 .query('invitation')
                 .withIndex('by_email_status_expiresAt', q =>

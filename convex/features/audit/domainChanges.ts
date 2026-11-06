@@ -1,5 +1,5 @@
 import type { Change } from 'convex-helpers/server/triggers';
-import type { DataModel, Doc, Id } from '../../_generated/dataModel';
+import type { DataModel, Doc } from '../../_generated/dataModel';
 import type { MutationCtx } from '../../_generated/server';
 import { isResultingValueRecalculation } from '../objectives/progress';
 import { insertAuditLog, type AuditRecord } from './log';
@@ -10,7 +10,7 @@ async function recordChange(
     ctx: MutationCtx,
     change: { operation: keyof typeof VERBS; id: string },
     resourceType: string,
-    subject: { userId?: Id<'user'>; organizationId: Id<'organization'> },
+    subject: { userId?: string; organizationId: string },
     metadata: { before?: AuditRecord; after?: AuditRecord }
 ) {
     if (!subject.userId) {

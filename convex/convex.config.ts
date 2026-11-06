@@ -1,6 +1,7 @@
 import { defineApp } from 'convex/server';
 import { v } from 'convex/values';
 import aggregate from '@convex-dev/aggregate/convex.config.js';
+import betterAuth from './betterAuth/convex.config';
 
 const app = defineApp({
     env: {
@@ -17,6 +18,8 @@ const app = defineApp({
         SMTP_SECURE: v.optional(v.string()),
     },
 });
+
+app.use(betterAuth);
 
 app.use(aggregate, { name: 'objectiveStats' });
 

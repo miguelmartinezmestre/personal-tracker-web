@@ -18,7 +18,6 @@ import {
 } from '@/components/ui/select';
 import { usePaginatedList } from '@/components/data-table/hooks/use-paginated-list';
 import { api } from '@/convex/_generated/api';
-import type { Id } from '@/convex/_generated/dataModel';
 
 const MEMBER_ACCESS_LEVELS = ['none', 'view', 'edit'] as const;
 
@@ -26,7 +25,7 @@ const USER_ACCESS_LEVELS = ['view', 'edit'] as const;
 
 export type MemberAccess = (typeof MEMBER_ACCESS_LEVELS)[number];
 
-export type UserAccess = { userId: Id<'user'>; name: string; access: 'view' | 'edit' };
+export type UserAccess = { userId: string; name: string; access: 'view' | 'edit' };
 
 export function AccessEditor({
     memberAccess,
@@ -166,13 +165,7 @@ function LevelSelect({
     );
 }
 
-function AddUser({
-    excluded,
-    onAdd,
-}: {
-    excluded: Id<'user'>[];
-    onAdd: (user: UserAccess) => void;
-}) {
+function AddUser({ excluded, onAdd }: { excluded: string[]; onAdd: (user: UserAccess) => void }) {
     const t = useTranslations('Objectives.access');
     const common = useTranslations('Common');
     const session = useQuery(convexQuery(api.organizations.getCurrentSession, {}));

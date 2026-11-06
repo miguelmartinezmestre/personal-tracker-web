@@ -1,9 +1,8 @@
 import { APIError, createAuthMiddleware } from 'better-auth/api';
-import { convex, type BetterAuthOptionsWithoutDatabase } from 'kitcn/auth';
+import type { BetterAuthOptions } from 'better-auth/minimal';
+import { convex } from '@convex-dev/better-auth/plugins';
 import { admin, organization } from 'better-auth/plugins';
 import { api, internal } from '../../_generated/api';
-import type { Id } from '../../_generated/dataModel';
-import { authAuditTriggers } from '../audit/triggers';
 import authConfig from '../../auth.config';
 import { ERROR_CODES } from '../../shared/errorCodes';
 import { accountDeletionPlugin } from './accountDeletionPlugin';
@@ -17,17 +16,16 @@ import {
 } from '../email/templates';
 import { getInvitationIdFromCallbackPath } from './redirects';
 import { isOrganizationRoleValue } from '../organizations/roles';
-import { platformAdminRoles, platformRoles } from './roles';
+import { adminPluginOptions, organizationSchema, userAdditionalFields } from './schemaOptions';
 import { requireRunnableCtx, type GenericCtx } from '../../shared/ctx';
 import { usesReservedPersonalOrganizationIdentity } from '../organizations/personalOrganization';
 import { validatePasswordPolicy } from './passwordPolicy';
 import { z } from 'zod';
 import { getEnvs } from '../../shared/env';
 import { isSetupSecretValid, SETUP_SECRET_HEADER } from '../setup/secret';
+import { isDefaultOrganization, userHasOrganizationNamed } from '../organizations/memberships';
 
-export type AuthOptions = BetterAuthOptionsWithoutDatabase & {
-    triggers: typeof authAuditTriggers;
-};
+export type AuthOptions = Omit<BetterAuthOptions, 'database'>;
 
 const registrationRequestBodySchema = z.object({
     name: z.string().optional(),
@@ -64,21 +62,13 @@ async function isOrganizationNameAvailable(
     name: string,
     excludeOrganizationId?: string
 ): Promise<boolean> {
-    const taken = await requireRunnableCtx(ctx).runQuery(internal.auth.userHasOrganizationNamed, {
-        userId,
-        name,
-        excludeOrganizationId,
-    });
+    const taken = await userHasOrganizationNamed(ctx, { userId, name, excludeOrganizationId });
 
     return !taken;
 }
 
 async function isProtectedDefaultOrganization(ctx: GenericCtx, organizationId: string) {
-    const runnableCtx = requireRunnableCtx(ctx);
-
-    return await runnableCtx.runQuery(internal.auth.isDefaultOrganization, {
-        organizationId,
-    });
+    return await isDefaultOrganization(ctx, organizationId);
 }
 
 async function getEmailLocale(ctx: GenericCtx, request?: Request): Promise<EmailLocale> {
@@ -128,7 +118,7 @@ function createSessionCreateHook(ctx: GenericCtx) {
     return {
         before: async (session: { userId: string }) => {
             const activeOrganizationId = await requireRunnableCtx(ctx).runMutation(
-                internal.auth.ensureDefaultOrganizationForUser,
+                internal.auth.ensureDefaultOrganization,
                 { userId: session.userId }
             );
 
@@ -226,18 +216,7 @@ function createOrganizationPlugin(ctx: GenericCtx) {
         // Every invitation needs a verified email: otherwise anyone could sign up with the
         // invitee's address and join without owning that inbox.
         requireEmailVerificationOnInvitation: true,
-        schema: {
-            invitation: {
-                additionalFields: {
-                    requireEmailVerification: {
-                        type: 'boolean',
-                        required: false,
-                        defaultValue: true,
-                        input: false,
-                    },
-                },
-            },
-        },
+        schema: organizationSchema,
         invitationExpiresIn: 60 * 60 * 24 * 2,
         defaultRole: 'member',
         organizationHooks: {
@@ -263,18 +242,14 @@ function createOrganizationPlugin(ctx: GenericCtx) {
             },
             afterDeleteOrganization: async ({ organization, user }) => {
                 const runnableCtx = requireRunnableCtx(ctx);
-                await runnableCtx.runMutation(
-                    internal.auth.recoverSessionsAfterOrganizationDeletion,
-                    {
-                        organizationId: organization.id,
-                        actorUserId: user.id,
-                        phase: 'actor-null',
-                    }
-                );
+                await runnableCtx.runMutation(internal.sessions.recoverAfterOrganizationDeletion, {
+                    organizationId: organization.id,
+                    actorUserId: user.id,
+                });
                 await runnableCtx.runMutation(
                     internal.cascades.cascadeOrganizationDeletionInternal,
                     {
-                        organizationId: organization.id as Id<'organization'>,
+                        organizationId: organization.id,
                     }
                 );
             },
@@ -415,6 +390,7 @@ export function buildBetterAuthOptions(ctx: GenericCtx): AuthOptions {
             },
         },
         user: {
+            additionalFields: userAdditionalFields,
             deleteUser: {
                 enabled: false,
             },
@@ -446,12 +422,8 @@ export function buildBetterAuthOptions(ctx: GenericCtx): AuthOptions {
                 jwks: env.JWKS,
             }),
             accountDeletionPlugin(ctx),
-            admin({
-                adminRoles: platformAdminRoles,
-                roles: platformRoles,
-            }),
+            admin(adminPluginOptions),
             createOrganizationPlugin(ctx),
         ],
-        triggers: authAuditTriggers,
     };
 }

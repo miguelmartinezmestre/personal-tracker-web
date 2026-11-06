@@ -1,6 +1,5 @@
 import { beforeEach, describe, expect, test, vi } from 'vitest';
 import { api } from '../_generated/api';
-import type { Id } from '../_generated/dataModel';
 import { initConvexTest } from './test.helper';
 import {
     createTestMember,
@@ -14,7 +13,7 @@ const page = { numItems: 20, cursor: null };
 
 describe('trash', () => {
     const t = initConvexTest();
-    let organizationId: Id<'organization'>;
+    let organizationId: string;
     let owner: TestUserData;
     let creator: TestUserData;
     let member: TestUserData;

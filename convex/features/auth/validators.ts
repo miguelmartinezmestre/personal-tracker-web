@@ -2,7 +2,7 @@ import { v } from 'convex/values';
 import { GLOBAL_ADMIN_ROLE, USER_ROLE } from './roles';
 
 export const userDocumentValidator = v.object({
-    _id: v.id('user'),
+    _id: v.string(),
     _creationTime: v.number(),
     name: v.string(),
     email: v.string(),
@@ -15,11 +15,11 @@ export const userDocumentValidator = v.object({
     banned: v.optional(v.union(v.null(), v.boolean())),
     banReason: v.optional(v.union(v.null(), v.string())),
     banExpires: v.optional(v.union(v.null(), v.number())),
-    deletedAt: v.optional(v.number()),
+    deletedAt: v.optional(v.union(v.null(), v.number())),
 });
 
 export const sessionListItemValidator = v.object({
-    id: v.id('session'),
+    id: v.string(),
     createdAt: v.number(),
     updatedAt: v.number(),
     expiresAt: v.number(),
@@ -31,7 +31,7 @@ export const sessionListItemValidator = v.object({
 export const platformRoleValidator = v.union(v.literal(GLOBAL_ADMIN_ROLE), v.literal(USER_ROLE));
 
 export const adminUserValidator = v.object({
-    id: v.id('user'),
+    id: v.string(),
     name: v.string(),
     email: v.string(),
     role: platformRoleValidator,

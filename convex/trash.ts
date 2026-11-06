@@ -1,7 +1,6 @@
 import { v } from 'convex/values';
 import { paginationOptsValidator } from 'convex/server';
 import { internal } from './_generated/api';
-import type { Id } from './_generated/dataModel';
 import { withNextPageCheck, withPaginationLimits } from './shared/pagination';
 import { mutationWithRLS, queryWithRLS } from './features/authorization/wrappers';
 import { deleteObjectiveBatch, requireManagedTrashObjective } from './features/objectives/deletion';
@@ -25,7 +24,7 @@ export const listTrash = queryWithRLS({
             .order('desc')
             .paginate(withPaginationLimits(args.paginationOpts));
 
-        const isManaged = (doc: { createdBy: Id<'user'>; purgeToken?: string }) =>
+        const isManaged = (doc: { createdBy: string; purgeToken?: string }) =>
             (isManager || doc.createdBy === ctx.userId) && doc.purgeToken === undefined;
 
         return await withNextPageCheck(

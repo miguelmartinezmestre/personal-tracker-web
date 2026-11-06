@@ -1,9 +1,9 @@
 import { createAuthClient } from 'better-auth/react';
 import type { BetterAuthClientPlugin } from 'better-auth/client';
-import { convexClient } from 'kitcn/auth/client';
+import { convexClient } from '@convex-dev/better-auth/client/plugins';
 import { adminClient } from 'better-auth/client/plugins';
 import { organizationClient } from 'better-auth/client/plugins';
-import { createAuthMutations } from 'kitcn/react';
+import { mutationOptions, type UseMutationOptions } from '@tanstack/react-query';
 import { NEXT_PUBLIC_SITE_URL } from '@/lib/env';
 import { platformRoles } from '@/convex/features/auth/roles';
 
@@ -47,4 +47,17 @@ export const authClient = createAuthClient({
     ],
 });
 
-export const { useSignOutMutationOptions } = createAuthMutations(authClient);
+type SignOutMutationOptions = Omit<UseMutationOptions, 'mutationFn'>;
+
+export function useSignOutMutationOptions(options: SignOutMutationOptions = {}) {
+    return mutationOptions({
+        ...options,
+        mutationFn: async () => {
+            const result = await authClient.signOut();
+
+            if (result.error) {
+                throw new Error(result.error.message ?? 'Sign out failed');
+            }
+        },
+    });
+}

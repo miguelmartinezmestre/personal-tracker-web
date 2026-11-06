@@ -16,7 +16,7 @@ const page = { numItems: 20, cursor: null };
 describe('objectives', () => {
     const t = initConvexTest();
     let ownerIdentity: ReturnType<typeof t.withIdentity>;
-    let organizationId: Id<'organization'>;
+    let organizationId: string;
 
     function asUser(user: TestUserData) {
         return t.withIdentity(identityFor(user));

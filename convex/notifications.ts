@@ -21,6 +21,7 @@ import {
     notificationPreferencesValidator,
     notificationValidator,
 } from './features/notifications/validators';
+import { pageMembers } from './features/organizations/memberships';
 
 export const listNotifications = queryWithRLS({
     args: { paginationOpts: paginationOptsValidator },
@@ -113,7 +114,7 @@ export const markAllNotificationsRead = mutationWithRLS({
 });
 
 export const continueMarkAllRead = internalMutation({
-    args: { userId: v.id('user'), organizationId: v.id('organization') },
+    args: { userId: v.string(), organizationId: v.string() },
     returns: v.null(),
     handler: async (ctx, args) => {
         if (await markReadBatch(ctx.db, args.userId, args.organizationId)) {
@@ -178,7 +179,7 @@ export const updateNotificationPreferences = mutationWithRLS({
 
 export const notifyMembers = internalMutation({
     args: {
-        organizationId: v.id('organization'),
+        organizationId: v.string(),
         objectiveId: v.optional(v.id('objectives')),
         notice: noticeValidator,
         cursor: v.union(v.string(), v.null()),
@@ -193,10 +194,11 @@ export const notifyMembers = internalMutation({
             return null;
         }
 
-        const members = await ctx.db
-            .query('member')
-            .withIndex('organizationId', q => q.eq('organizationId', args.organizationId))
-            .paginate({ numItems: NOTIFICATION_BATCH_SIZE, cursor: args.cursor });
+        const members = await pageMembers(ctx, {
+            organizationId: args.organizationId,
+            numItems: NOTIFICATION_BATCH_SIZE,
+            cursor: args.cursor,
+        });
 
         const now = Date.now();
 

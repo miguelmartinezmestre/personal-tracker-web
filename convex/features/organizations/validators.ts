@@ -9,7 +9,7 @@ const organizationRoleValidator = v.union(
 );
 
 export const organizationSummaryValidator = v.object({
-    id: v.id('organization'),
+    id: v.string(),
     name: v.string(),
     slug: v.string(),
     logo: v.optional(v.union(v.null(), v.string())),
@@ -19,9 +19,9 @@ export const organizationSummaryValidator = v.object({
 });
 
 const organizationMemberValidator = v.object({
-    id: v.id('member'),
-    organizationId: v.id('organization'),
-    userId: v.id('user'),
+    id: v.string(),
+    organizationId: v.string(),
+    userId: v.string(),
     role: organizationRoleValidator,
     createdAt: v.number(),
     user: v.union(
@@ -39,26 +39,26 @@ export const paginatedOrganizationMembersValidator = paginationResultValidator(
 );
 
 export const userInvitationValidator = v.object({
-    id: v.id('invitation'),
+    id: v.string(),
     email: v.string(),
     role: v.string(),
-    organizationId: v.id('organization'),
+    organizationId: v.string(),
     organization: v.object({ name: v.string() }),
     inviter: v.optional(v.object({ name: v.string() })),
 });
 
 export const currentSessionValidator = v.object({
     session: v.object({
-        id: v.id('session'),
+        id: v.string(),
         userId: v.string(),
         expiresAt: v.number(),
-        activeOrganizationId: v.union(v.id('organization'), v.null()),
+        activeOrganizationId: v.union(v.string(), v.null()),
         createdAt: v.number(),
     }),
     user: v.union(
         v.null(),
         v.object({
-            id: v.id('user'),
+            id: v.string(),
             name: v.string(),
             email: v.string(),
             image: v.optional(v.union(v.null(), v.string())),

@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'vitest';
 import { initConvexTest } from './test.helper';
 import { createTestMember, createTestOrganization, createTestUser, TIME } from './test.helpers';
+import { runInAuth } from './authTesting';
 
 const ORIGIN = 'http://localhost:3000';
 
@@ -24,14 +25,16 @@ describe('signing up from an invitation link', () => {
 
         await createTestMember(t, { organizationId, userId: inviter.docId, role: 'owner' });
 
-        const invitationId = await t.run(async ctx => {
+        await t.run(async ctx => {
             await ctx.db.insert('platformSettings', {
                 platformName: 'Platform',
                 defaultLanguage: 'en',
                 registrationPolicy: 'open',
                 setupCompletedBy: inviter.docId,
             });
+        });
 
+        const invitationId = await runInAuth(t, async ctx => {
             return await ctx.db.insert('invitation', {
                 organizationId,
                 email,
@@ -71,7 +74,7 @@ describe('signing up from an invitation link', () => {
 
         expect(accept.status).toBe(403);
 
-        await t.run(async ctx => {
+        await runInAuth(t, async ctx => {
             const user = await ctx.db
                 .query('user')
                 .withIndex('email_name', q => q.eq('email', email))

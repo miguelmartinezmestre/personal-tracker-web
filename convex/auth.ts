@@ -1,30 +1,46 @@
+import { createClient, type AuthFunctions, type GenericCtx } from '@convex-dev/better-auth';
+import { betterAuth } from 'better-auth/minimal';
 import { ConvexError, v } from 'convex/values';
-import type { Id } from './_generated/dataModel';
-import {
-    DEFAULT_ORGANIZATION_NAME,
-    buildAvailablePersonalOrganizationSlug,
-    buildPersonalOrganizationMetadata,
-    getPersonalOrganizationOwnerUserId,
-    isPersonalOrganizationForUser,
-} from './features/organizations/personalOrganization';
-import { ERROR_CODES } from './shared/errorCodes';
-import type { GenericCtx } from './shared/ctx';
-import {
-    NEXT_SESSION_RECOVERY_PHASE,
-    SESSION_RECOVERY_BATCH_SIZE,
-    type SessionRecoveryResult,
-    actorPhaseOrganizationId,
-    repairSessionsAfterOrganizationDeletion,
-    scheduleSessionRecovery,
-} from './features/auth/sessionRecovery';
-import { buildBetterAuthOptions } from './features/auth/options';
-import { defineAuth } from './generated/auth';
+import { components, internal } from './_generated/api';
+import type { DataModel } from './_generated/dataModel';
 import { internalMutation, internalQuery } from './_generated/server';
-import { normalizeOrganizationName } from './features/organizations/slug';
-import { normalizeRegistrationEmail } from './features/auth/users';
-import { queryWithRLS } from './features/authorization/wrappers';
+import authSchema from './betterAuth/schema';
+import { authAuditTriggers } from './features/audit/triggers';
+import { getPasswordHash, organizationsNeedingNewOwner } from './features/auth/accountDeletion';
+import { getUser } from './features/auth/authRecords';
+import { buildBetterAuthOptions } from './features/auth/options';
 import { userDocumentValidator } from './features/auth/validators';
-import { organizationsNeedingNewOwner } from './features/auth/accountDeletion';
+import { queryWithRLS } from './features/authorization/wrappers';
+import { ERROR_CODES } from './shared/errorCodes';
+import { ensureDefaultOrganizationForUser } from './features/organizations/memberships';
+import { invitationAllowsRegistration } from './features/organizations/invitations';
+
+// Annotated to break the type cycle between these trigger functions and authComponent.
+const authFunctions: AuthFunctions = internal.auth;
+
+export const authComponent = createClient<DataModel, typeof authSchema>(components.betterAuth, {
+    local: { schema: authSchema },
+    authFunctions,
+    triggers: authAuditTriggers,
+});
+
+export const { onCreate, onUpdate, onDelete } = authComponent.triggersApi();
+
+export const createAuthOptions = (ctx: GenericCtx<DataModel>) => ({
+    ...buildBetterAuthOptions(ctx),
+    database: authComponent.adapter(ctx),
+});
+
+export const createAuth = (ctx: GenericCtx<DataModel>) => betterAuth(createAuthOptions(ctx));
+
+/** Called by the session create hook, which runs in an HTTP action: one transaction. */
+export const ensureDefaultOrganization = internalMutation({
+    args: { userId: v.string() },
+    returns: v.string(),
+    handler: async (ctx, args) => {
+        return await ensureDefaultOrganizationForUser(ctx, args.userId);
+    },
+});
 
 export const getEmailRegistrationAuthorization = internalQuery({
     args: {
@@ -44,244 +60,17 @@ export const getEmailRegistrationAuthorization = internalQuery({
             return 'allowed';
         }
 
-        const normalizedEmail = normalizeRegistrationEmail(args.email);
-
-        if (!normalizedEmail || !args.invitationId) {
+        if (!args.invitationId) {
             return 'denied';
         }
 
-        const invitationId = ctx.db.normalizeId('invitation', args.invitationId);
-
-        if (!invitationId) {
-            return 'denied';
-        }
-
-        const invitation = await ctx.db.get('invitation', invitationId);
-
-        if (
-            !invitation ||
-            invitation.status !== 'pending' ||
-            invitation.expiresAt <= args.now ||
-            normalizeRegistrationEmail(invitation.email) !== normalizedEmail
-        ) {
-            return 'denied';
-        }
-
-        const organization = await ctx.db.get('organization', invitation.organizationId);
-
-        return organization ? 'allowed' : 'denied';
-    },
-});
-
-export const ensureDefaultOrganizationForUser = internalMutation({
-    returns: v.id('organization'),
-    args: {
-        userId: v.string(),
-    },
-    handler: async (ctx, args) => {
-        const userId = ctx.db.normalizeId('user', args.userId);
-
-        if (!userId) {
-            throw new ConvexError(ERROR_CODES.INTERNAL_ERROR);
-        }
-
-        let firstOrganizationId: Id<'organization'> | null = null;
-
-        for await (const membership of ctx.db
-            .query('member')
-            .withIndex('userId', q => q.eq('userId', userId))) {
-            const organization = await ctx.db.get('organization', membership.organizationId);
-
-            if (!organization) {
-                continue;
-            }
-
-            if (isPersonalOrganizationForUser({ metadata: organization.metadata, userId })) {
-                return firstOrganizationId ?? organization._id;
-            }
-
-            firstOrganizationId ??= organization._id;
-        }
-
-        const now = Date.now();
-        const slug = await buildAvailablePersonalOrganizationSlug(ctx, userId);
-
-        const organizationId = await ctx.db.insert('organization', {
-            name: DEFAULT_ORGANIZATION_NAME,
-            slug,
-            createdAt: now,
-            metadata: buildPersonalOrganizationMetadata(userId),
-            logo: null,
+        const allowed = await invitationAllowsRegistration(ctx, {
+            email: args.email,
+            invitationId: args.invitationId,
+            now: args.now,
         });
 
-        await ctx.db.insert('member', {
-            organizationId,
-            userId,
-            role: 'owner',
-            createdAt: now,
-        });
-
-        return firstOrganizationId ?? organizationId;
-    },
-});
-
-export const recoverSessionsAfterOrganizationDeletion = internalMutation({
-    returns: v.object({
-        status: v.union(v.literal('in_progress'), v.literal('completed')),
-        phase: v.union(
-            v.literal('actor-null'),
-            v.literal('actor-unset'),
-            v.literal('actor-deleted')
-        ),
-    }),
-    args: {
-        organizationId: v.string(),
-        actorUserId: v.string(),
-        phase: v.optional(
-            v.union(v.literal('actor-null'), v.literal('actor-unset'), v.literal('actor-deleted'))
-        ),
-    },
-    handler: async (ctx, args) => {
-        const organizationId = ctx.db.normalizeId('organization', args.organizationId);
-        const actorUserId = ctx.db.normalizeId('user', args.actorUserId);
-
-        if (!organizationId || !actorUserId) {
-            throw new ConvexError(ERROR_CODES.INTERNAL_ERROR);
-        }
-
-        const phase = args.phase ?? 'actor-null';
-        const activeOrganizationId = actorPhaseOrganizationId(phase, organizationId);
-
-        const sessions = await ctx.db
-            .query('session')
-            .withIndex('by_userId_and_activeOrganizationId', q =>
-                q.eq('userId', actorUserId).eq('activeOrganizationId', activeOrganizationId)
-            )
-            .take(SESSION_RECOVERY_BATCH_SIZE);
-
-        await repairSessionsAfterOrganizationDeletion(ctx, sessions, organizationId);
-
-        if (sessions.length === SESSION_RECOVERY_BATCH_SIZE) {
-            await scheduleSessionRecovery(ctx, {
-                organizationId,
-                actorUserId,
-                phase,
-            });
-            const inProgress: SessionRecoveryResult = { status: 'in_progress', phase };
-
-            return inProgress;
-        }
-
-        const nextPhase = NEXT_SESSION_RECOVERY_PHASE[phase];
-
-        if (nextPhase) {
-            await scheduleSessionRecovery(ctx, {
-                organizationId,
-                actorUserId,
-                phase: nextPhase,
-            });
-            const inProgress: SessionRecoveryResult = { status: 'in_progress', phase: nextPhase };
-
-            return inProgress;
-        }
-
-        const completed: SessionRecoveryResult = { status: 'completed', phase };
-
-        return completed;
-    },
-});
-
-export const recoverAffectedOrganizationSessions = internalMutation({
-    args: { organizationId: v.id('organization') },
-    returns: v.object({ remaining: v.boolean() }),
-    handler: async (ctx, { organizationId }) => {
-        if (await ctx.db.get('organization', organizationId)) {
-            return { remaining: false };
-        }
-
-        const sessions = await ctx.db
-            .query('session')
-            .withIndex('activeOrganizationId', q => q.eq('activeOrganizationId', organizationId))
-            .take(SESSION_RECOVERY_BATCH_SIZE);
-
-        await repairSessionsAfterOrganizationDeletion(ctx, sessions, organizationId);
-
-        return { remaining: sessions.length === SESSION_RECOVERY_BATCH_SIZE };
-    },
-});
-
-export const userHasOrganizationNamed = internalQuery({
-    returns: v.boolean(),
-    args: {
-        userId: v.string(),
-        name: v.string(),
-        excludeOrganizationId: v.optional(v.string()),
-    },
-    handler: async (ctx, args) => {
-        const userId = ctx.db.normalizeId('user', args.userId);
-
-        if (!userId) {
-            return false;
-        }
-
-        const wanted = normalizeOrganizationName(args.name);
-
-        for await (const membership of ctx.db
-            .query('member')
-            .withIndex('userId', q => q.eq('userId', userId))) {
-            if (membership.organizationId === args.excludeOrganizationId) {
-                continue;
-            }
-
-            const organization = await ctx.db.get('organization', membership.organizationId);
-
-            if (organization && normalizeOrganizationName(organization.name) === wanted) {
-                return true;
-            }
-        }
-
-        return false;
-    },
-});
-
-export const isDefaultOrganization = internalQuery({
-    returns: v.boolean(),
-    args: {
-        organizationId: v.string(),
-    },
-    handler: async (ctx, args) => {
-        const organizationId = ctx.db.normalizeId('organization', args.organizationId);
-
-        if (!organizationId) {
-            return false;
-        }
-
-        const organization = await ctx.db.get('organization', organizationId);
-
-        if (!organization) {
-            return false;
-        }
-
-        const metadataOwnerUserId = getPersonalOrganizationOwnerUserId(organization.metadata);
-
-        if (metadataOwnerUserId) {
-            const ownerUserId = ctx.db.normalizeId('user', metadataOwnerUserId);
-
-            if (!ownerUserId) {
-                return false;
-            }
-
-            const ownerMembership = await ctx.db
-                .query('member')
-                .withIndex('by_organizationId_and_userId', q =>
-                    q.eq('organizationId', organizationId).eq('userId', ownerUserId)
-                )
-                .first();
-
-            return ownerMembership?.role === 'owner';
-        }
-
-        return false;
+        return allowed ? 'allowed' : 'denied';
     },
 });
 
@@ -289,7 +78,7 @@ export const getAccountDeletionTarget = internalQuery({
     args: { userId: v.string() },
     returns: v.union(
         v.object({
-            userId: v.id('user'),
+            userId: v.string(),
             isSetupUser: v.boolean(),
             passwordHash: v.union(v.string(), v.null()),
             organizationsNeedingNewOwner: v.array(v.string()),
@@ -297,31 +86,22 @@ export const getAccountDeletionTarget = internalQuery({
         v.null()
     ),
     handler: async (ctx, args) => {
-        const userId = ctx.db.normalizeId('user', args.userId);
+        const user = await getUser(ctx, args.userId);
 
-        if (!userId) {
+        if (!user) {
             return null;
         }
 
         const settings = await ctx.db.query('platformSettings').first();
 
-        const account = await ctx.db
-            .query('account')
-            .withIndex('providerId_userId', q =>
-                q.eq('providerId', 'credential').eq('userId', userId)
-            )
-            .unique();
-
         return {
-            userId,
-            isSetupUser: settings?.setupCompletedBy === userId,
-            passwordHash: account?.password ?? null,
-            organizationsNeedingNewOwner: await organizationsNeedingNewOwner(ctx.db, userId),
+            userId: user._id,
+            isSetupUser: settings?.setupCompletedBy === user._id,
+            passwordHash: await getPasswordHash(ctx, user._id),
+            organizationsNeedingNewOwner: await organizationsNeedingNewOwner(ctx, user._id),
         };
     },
 });
-
-export default defineAuth((ctx: GenericCtx) => buildBetterAuthOptions(ctx));
 
 export const getAccountDeletionStatus = queryWithRLS({
     args: {},
@@ -334,10 +114,7 @@ export const getAccountDeletionStatus = queryWithRLS({
 
         return {
             isSetupUser: settings?.setupCompletedBy === ctx.userId,
-            organizationsNeedingNewOwner: await organizationsNeedingNewOwner(
-                ctx.dbForIntegrityChecks,
-                ctx.userId
-            ),
+            organizationsNeedingNewOwner: await organizationsNeedingNewOwner(ctx, ctx.userId),
         };
     },
 });
@@ -346,7 +123,7 @@ export const getCurrentUser = queryWithRLS({
     args: {},
     returns: v.union(userDocumentValidator, v.null()),
     handler: async ctx => {
-        return await ctx.db.get('user', ctx.userId);
+        return await getUser(ctx, ctx.userId);
     },
 });
 
@@ -354,10 +131,10 @@ export const getDashboardContext = queryWithRLS({
     args: {},
     returns: v.object({
         user: userDocumentValidator,
-        organizationId: v.union(v.id('organization'), v.null()),
+        organizationId: v.union(v.string(), v.null()),
     }),
     handler: async ctx => {
-        const user = await ctx.db.get('user', ctx.userId);
+        const user = await getUser(ctx, ctx.userId);
 
         if (!user) {
             throw new ConvexError(ERROR_CODES.AUTH_REQUIRED);

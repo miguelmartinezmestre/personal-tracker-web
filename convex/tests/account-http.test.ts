@@ -2,6 +2,7 @@ import { hashPassword } from 'better-auth/crypto';
 import { describe, expect, test } from 'vitest';
 import { drainScheduledFunctions, initConvexTest } from './test.helper';
 import { createTestMember, createTestOrganization, createTestUser } from './test.helpers';
+import { runInAuth } from './authTesting';
 
 const ORIGIN = 'http://localhost:3000';
 const PASSWORD = 'ValidDeletionPassword123';
@@ -51,7 +52,7 @@ describe('account endpoints', () => {
         });
         const now = Date.now();
         const passwordHash = await hashPassword(PASSWORD);
-        await t.run(async ctx => {
+        await runInAuth(t, async ctx => {
             await ctx.db.insert('account', {
                 accountId: String(user.docId),
                 providerId: 'credential',
@@ -89,7 +90,7 @@ describe('account endpoints', () => {
         await expect(response.json()).resolves.toEqual({ success: true });
         expect(response.headers.get('set-cookie')).toContain('Max-Age=0');
 
-        const immediateUser = await t.run(ctx => ctx.db.get('user', user.docId));
+        const immediateUser = await runInAuth(t, ctx => ctx.db.get('user', user.docId));
         expect(immediateUser).toMatchObject({
             name: 'HTTP deletion user',
             banned: true,
@@ -102,7 +103,7 @@ describe('account endpoints', () => {
 
         await drainScheduledFunctions(t);
 
-        await t.run(async ctx => {
+        await runInAuth(t, async ctx => {
             const tombstone = await ctx.db.get('user', user.docId);
             expect(tombstone?.deletedAt).toBeDefined();
             expect(
@@ -130,7 +131,7 @@ describe('account endpoints', () => {
         );
 
         expect(response.status).toBe(400);
-        await t.run(async ctx => {
+        await runInAuth(t, async ctx => {
             const retainedUser = await ctx.db.get('user', user.docId);
             expect(retainedUser?.deletedAt).toBeUndefined();
             expect(
@@ -156,7 +157,9 @@ describe('account endpoints', () => {
             userId: leavingOwner.docId,
             role: 'owner',
         });
-        await t.run(ctx => ctx.db.patch('user', leavingOwner.docId, { deletedAt: Date.now() }));
+        await runInAuth(t, ctx =>
+            ctx.db.patch('user', leavingOwner.docId, { deletedAt: Date.now() })
+        );
 
         const teammate = await createTestUser(t, {
             userId: `teammate-${Math.random().toString(36).slice(2, 10)}`,
@@ -179,9 +182,11 @@ describe('account endpoints', () => {
 
         expect(blocked.status).toBe(403);
         expect(await blocked.text()).toContain('OWNER_SUCCESSOR_REQUIRED');
-        expect((await t.run(ctx => ctx.db.get('user', user.docId)))?.deletedAt).toBeUndefined();
+        expect(
+            (await runInAuth(t, ctx => ctx.db.get('user', user.docId)))?.deletedAt
+        ).toBeUndefined();
 
-        await t.run(ctx => ctx.db.patch('member', teammateMembership, { role: 'owner' }));
+        await runInAuth(t, ctx => ctx.db.patch('member', teammateMembership, { role: 'owner' }));
 
         const allowed = await t.fetch(
             '/api/auth/soft-delete-user',
@@ -190,7 +195,9 @@ describe('account endpoints', () => {
 
         expect(allowed.status).toBe(200);
         await drainScheduledFunctions(t);
-        expect(await t.run(ctx => ctx.db.get('organization', organizationId))).not.toBeNull();
+        expect(
+            await runInAuth(t, ctx => ctx.db.get('organization', organizationId))
+        ).not.toBeNull();
     });
 
     test('keeps names free but not blank when signing up or editing the profile @REQ-AUTENTICACION-004 @REQ-AUTENTICACION-001', async () => {

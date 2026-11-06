@@ -18,7 +18,6 @@ import { DataTable } from '@/components/data-table/components/table';
 import type { DataTableFeatures } from '@/components/data-table/data-table-features';
 import { usePaginatedList } from '@/components/data-table/hooks/use-paginated-list';
 import { api } from '@/convex/_generated/api';
-import type { Id } from '@/convex/_generated/dataModel';
 
 type AuditEntry = FunctionReturnType<typeof api.admin.listAuditLogs>['page'][number];
 
@@ -43,7 +42,7 @@ export default function AdminAudit() {
     const t = useTranslations('Admin.audit');
     const locale = useLocale();
     const [resourceType, setResourceType] = useState<(typeof RESOURCE_TYPES)[number]>('all');
-    const [organizationId, setOrganizationId] = useState<Id<'organization'> | null>(null);
+    const [organizationId, setOrganizationId] = useState<string | null>(null);
     const formatDate = new Intl.DateTimeFormat(locale, { dateStyle: 'short', timeStyle: 'medium' });
 
     const logs = usePaginatedList(api.admin.listAuditLogs, {

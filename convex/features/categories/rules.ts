@@ -1,5 +1,5 @@
 import { ConvexError } from 'convex/values';
-import type { Doc, Id } from '../../_generated/dataModel';
+import type { Doc } from '../../_generated/dataModel';
 import { ERROR_CODES } from '../../shared/errorCodes';
 import { isOrganizationAdminRole } from '../organizations/roles';
 import { CATEGORY_COLOR_PATTERN, CATEGORY_ICONS } from './constants';
@@ -21,7 +21,7 @@ export function normalizeCategory(category: { name: string; color: string; icon?
 }
 
 export function canManageCategory(
-    actor: { userId: Id<'user'>; memberRole: string | null },
+    actor: { userId: string; memberRole: string | null },
     category: Doc<'categories'>
 ) {
     return category.userId === actor.userId || isOrganizationAdminRole(actor.memberRole);

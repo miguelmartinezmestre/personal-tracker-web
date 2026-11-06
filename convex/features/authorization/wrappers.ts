@@ -11,7 +11,6 @@ import {
     type MutationCtx,
     type QueryCtx,
 } from '../../_generated/server';
-import type { Id } from '../../_generated/dataModel';
 import { resolveAuthContext } from './authContext';
 import { createRlsRules } from './policies';
 import { mutation } from '../objectives/stats';
@@ -21,9 +20,9 @@ const config: RLSConfig = { defaultPolicy: 'deny' };
 type QueryRlsCtx = {
     db: DatabaseReader;
     dbForIntegrityChecks: DatabaseReader;
-    userId: Id<'user'>;
+    userId: string;
     email: string | null;
-    organizationId: Id<'organization'> | null;
+    organizationId: string | null;
     role: string;
     memberRole: string | null;
 };
@@ -31,9 +30,9 @@ type QueryRlsCtx = {
 type MutationRlsCtx = {
     db: DatabaseWriter;
     dbForIntegrityChecks: DatabaseReader;
-    userId: Id<'user'>;
+    userId: string;
     email: string | null;
-    organizationId: Id<'organization'> | null;
+    organizationId: string | null;
     role: string;
     memberRole: string | null;
 };

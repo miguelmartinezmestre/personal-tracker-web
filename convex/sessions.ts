@@ -1,10 +1,16 @@
 import { ConvexError, v } from 'convex/values';
 import { paginationOptsValidator, paginationResultValidator } from 'convex/server';
 import { internalMutation } from './_generated/server';
+import { internal } from './_generated/api';
 import { ERROR_CODES } from './shared/errorCodes';
-import { withNextPageCheck, withPaginationLimits } from './shared/pagination';
 import { mutationWithRLS, queryWithRLS } from './features/authorization/wrappers';
-import { currentSessionId, revokeOtherSessionsBatch } from './features/auth/sessions';
+import {
+    currentSessionId,
+    listSessionsForUser,
+    recoverActorSessionsBatch,
+    removeSession,
+    revokeOtherSessionsBatch,
+} from './features/auth/sessions';
 import { sessionListItemValidator } from './features/auth/validators';
 import { insertAuditLog } from './features/audit/log';
 
@@ -12,55 +18,31 @@ export const listMySessions = queryWithRLS({
     args: { paginationOpts: paginationOptsValidator },
     returns: paginationResultValidator(sessionListItemValidator),
     handler: async (ctx, args) => {
-        const currentId = await currentSessionId(ctx);
-
-        const result = await ctx.db
-            .query('session')
-            .withIndex('userId', q => q.eq('userId', ctx.userId))
-            .order('desc')
-            .paginate(withPaginationLimits(args.paginationOpts));
-
-        return await withNextPageCheck(
-            ctx.db,
-            {
-                table: 'session',
-                index: 'userId',
-                prefix: [ctx.userId],
-                indexKey: doc => [doc.userId],
-                paginationOpts: args.paginationOpts,
-            },
-            result,
-            result.page.map(session => ({
-                id: session._id,
-                createdAt: session.createdAt,
-                updatedAt: session.updatedAt,
-                expiresAt: session.expiresAt,
-                ipAddress: session.ipAddress ?? null,
-                userAgent: session.userAgent ?? null,
-                isCurrent: session._id === currentId,
-            }))
-        );
+        return await listSessionsForUser(ctx, {
+            userId: ctx.userId,
+            currentSessionId: await currentSessionId(ctx),
+            paginationOpts: args.paginationOpts,
+        });
     },
 });
 
 export const revokeSession = mutationWithRLS({
-    args: { sessionId: v.id('session') },
+    args: { sessionId: v.string() },
     returns: v.null(),
     handler: async (ctx, args) => {
-        const session = await ctx.db.get('session', args.sessionId);
+        const revoked = await removeSession(ctx, args.sessionId, ctx.userId);
 
-        if (!session || session.userId !== ctx.userId) {
+        if (!revoked) {
             throw new ConvexError(ERROR_CODES.FORBIDDEN);
         }
 
         await insertAuditLog(ctx, {
             action: 'session.revoked',
             resourceType: 'session',
-            resourceId: session._id,
+            resourceId: revoked.id,
             userId: ctx.userId,
             severity: 'warning',
         });
-        await ctx.db.delete('session', args.sessionId);
 
         return null;
     },
@@ -90,10 +72,41 @@ export const revokeOtherSessions = mutationWithRLS({
 });
 
 export const continueSessionRevocation = internalMutation({
-    args: { userId: v.id('user'), keepSessionId: v.id('session') },
+    args: { userId: v.string(), keepSessionId: v.string() },
     returns: v.null(),
     handler: async (ctx, args) => {
         await revokeOtherSessionsBatch(ctx, args);
+
+        return null;
+    },
+});
+
+/**
+ * Runs from Better Auth's afterDeleteOrganization hook: moves the actor's sessions off the deleted
+ * organization in batches, scheduling itself until the walk is done.
+ */
+export const recoverAfterOrganizationDeletion = internalMutation({
+    args: {
+        organizationId: v.string(),
+        actorUserId: v.string(),
+        phase: v.optional(v.union(v.literal('actor-cleared'), v.literal('actor-deleted'))),
+        cursor: v.optional(v.union(v.string(), v.null())),
+    },
+    returns: v.null(),
+    handler: async (ctx, args) => {
+        const next = await recoverActorSessionsBatch(ctx, {
+            organizationId: args.organizationId,
+            actorUserId: args.actorUserId,
+            step: { phase: args.phase ?? 'actor-cleared', cursor: args.cursor ?? null },
+        });
+
+        if (next) {
+            await ctx.scheduler.runAfter(0, internal.sessions.recoverAfterOrganizationDeletion, {
+                organizationId: args.organizationId,
+                actorUserId: args.actorUserId,
+                ...next,
+            });
+        }
 
         return null;
     },

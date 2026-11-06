@@ -14,7 +14,7 @@ import { identityFor } from './test.identities';
 describe('dashboard stats', () => {
     const t = initConvexTest();
     let owner: TestUserData;
-    let organizationId: Id<'organization'>;
+    let organizationId: string;
 
     function asUser(user: TestUserData) {
         return t.withIdentity(identityFor(user));
