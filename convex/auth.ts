@@ -3,7 +3,7 @@ import { betterAuth } from 'better-auth/minimal';
 import { ConvexError, v } from 'convex/values';
 import { components, internal } from './_generated/api';
 import type { DataModel } from './_generated/dataModel';
-import { internalMutation, internalQuery } from './_generated/server';
+import { internalAction, internalMutation, internalQuery } from './_generated/server';
 import authSchema from './betterAuth/schema';
 import { authAuditTriggers } from './features/audit/triggers';
 import { getPasswordHash, organizationsNeedingNewOwner } from './features/auth/accountDeletion';
@@ -32,6 +32,20 @@ export const createAuthOptions = (ctx: GenericCtx<DataModel>) => ({
 });
 
 export const createAuth = (ctx: GenericCtx<DataModel>) => betterAuth(createAuthOptions(ctx));
+
+type ConvexPluginApi = { getLatestJwks: () => Promise<unknown> };
+
+/** Used by `pnpm generate-jwks` to store the signing keys in the JWKS variable. */
+export const getLatestJwks = internalAction({
+    args: {},
+    returns: v.string(),
+    handler: async ctx => {
+        // AuthOptions is annotated to break a type cycle, so plugin endpoints are not typed.
+        const api = createAuth(ctx).api as unknown as ConvexPluginApi;
+
+        return JSON.stringify(await api.getLatestJwks());
+    },
+});
 
 /** Called by the session create hook, which runs in an HTTP action: one transaction. */
 export const ensureDefaultOrganization = internalMutation({
