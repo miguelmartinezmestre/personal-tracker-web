@@ -8,6 +8,7 @@ import { isNotificationEnabled } from './features/notifications/delivery';
 import { achievementNotice } from './features/notifications/notices';
 import { requireOrganizationId } from './features/objectives/records';
 import { achievementValidator } from './features/achievements/validators';
+import { getOrganization, getUser } from './features/auth/authRecords';
 
 export const getAchievements = queryWithRLS({
     args: {},
@@ -78,13 +79,9 @@ export const evaluateAchievements = internalMutation({
     },
     returns: v.null(),
     handler: async (ctx, args) => {
-        const user = await ctx.db.get('user', args.userId);
+        const user = await getUser(ctx, args.userId);
 
-        if (
-            !user ||
-            user.deletedAt !== undefined ||
-            !(await ctx.db.get('organization', args.organizationId))
-        ) {
+        if (!user || user.deletedAt != null || !(await getOrganization(ctx, args.organizationId))) {
             return null;
         }
 

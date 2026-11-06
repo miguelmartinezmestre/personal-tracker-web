@@ -22,6 +22,7 @@ import { defineAuth } from './generated/auth';
 import { internalMutation, internalQuery } from './_generated/server';
 import { normalizeOrganizationName } from './features/organizations/slug';
 import { normalizeRegistrationEmail } from './features/auth/users';
+import { getUser } from './features/auth/authRecords';
 import { queryWithRLS } from './features/authorization/wrappers';
 import { userDocumentValidator } from './features/auth/validators';
 import { organizationsNeedingNewOwner } from './features/auth/accountDeletion';
@@ -346,7 +347,7 @@ export const getCurrentUser = queryWithRLS({
     args: {},
     returns: v.union(userDocumentValidator, v.null()),
     handler: async ctx => {
-        return await ctx.db.get('user', ctx.userId);
+        return await getUser(ctx, ctx.userId);
     },
 });
 
@@ -357,7 +358,7 @@ export const getDashboardContext = queryWithRLS({
         organizationId: v.union(v.id('organization'), v.null()),
     }),
     handler: async ctx => {
-        const user = await ctx.db.get('user', ctx.userId);
+        const user = await getUser(ctx, ctx.userId);
 
         if (!user) {
             throw new ConvexError(ERROR_CODES.AUTH_REQUIRED);

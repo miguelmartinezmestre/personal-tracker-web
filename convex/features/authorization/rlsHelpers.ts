@@ -1,6 +1,7 @@
 import type { Doc, Id } from '../../_generated/dataModel';
 import type { QueryCtx } from '../../_generated/server';
 import { isGlobalAdminRole } from '../auth/roles';
+import { getMembershipRole } from '../auth/authRecords';
 
 export type RlsInsertDoc<
     Table extends
@@ -132,19 +133,7 @@ export function createRlsHelpers(args: CreateRlsRulesArgs): RlsHelpers {
         if (!organizationRoleCache.has(normalizedOrganizationId)) {
             organizationRoleCache.set(
                 normalizedOrganizationId,
-                (async () => {
-                    if (!(await ctx.db.get('organization', normalizedOrganizationId))) {
-                        return null;
-                    }
-
-                    return await ctx.db
-                        .query('member')
-                        .withIndex('by_organizationId_and_userId', q =>
-                            q.eq('organizationId', normalizedOrganizationId).eq('userId', userId)
-                        )
-                        .first()
-                        .then(member => member?.role ?? null);
-                })()
+                getMembershipRole(ctx, normalizedOrganizationId, userId)
             );
         }
 

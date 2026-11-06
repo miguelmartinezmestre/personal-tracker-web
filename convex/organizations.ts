@@ -18,7 +18,7 @@ import { isOrganizationAdminRole, normalizeOrganizationRole } from './features/o
 import { paginationOptsValidator, paginationResultValidator } from 'convex/server';
 import { query } from './_generated/server';
 import { queryWithRLS } from './features/authorization/wrappers';
-import { resolveActiveMembership } from './features/authorization/authContext';
+import { getMembership, getOrganization, getUser } from './features/auth/authRecords';
 import { withNextPageCheck, withPaginationLimits } from './shared/pagination';
 
 export const getPublicInvitationStatus = query({
@@ -66,8 +66,7 @@ export const getCurrentSession = query({
             return null;
         }
 
-        const userId = ctx.db.normalizeId('user', currentSession.userId);
-        const user = userId ? await ctx.db.get('user', userId) : null;
+        const user = await getUser(ctx, currentSession.userId);
 
         if (!isActiveAccount(user, Date.now())) {
             return null;
@@ -75,14 +74,12 @@ export const getCurrentSession = query({
 
         let activeOrganizationId = null;
 
-        if (userId && currentSession.activeOrganizationId) {
-            activeOrganizationId = (
-                await resolveActiveMembership(
-                    ctx,
-                    userId,
-                    ctx.db.normalizeId('organization', currentSession.activeOrganizationId)
-                )
-            ).organizationId;
+        const organization = user
+            ? await getOrganization(ctx, currentSession.activeOrganizationId)
+            : null;
+
+        if (user && organization && (await getMembership(ctx, organization._id, user._id))) {
+            activeOrganizationId = organization._id;
         }
 
         let userSummary = null;

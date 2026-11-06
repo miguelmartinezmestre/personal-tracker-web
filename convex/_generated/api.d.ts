@@ -28,6 +28,7 @@ import type * as features_audit_triggers from "../features/audit/triggers.js";
 import type * as features_audit_validators from "../features/audit/validators.js";
 import type * as features_auth_accountDeletion from "../features/auth/accountDeletion.js";
 import type * as features_auth_accountDeletionPlugin from "../features/auth/accountDeletionPlugin.js";
+import type * as features_auth_authRecords from "../features/auth/authRecords.js";
 import type * as features_auth_authSchema from "../features/auth/authSchema.js";
 import type * as features_auth_options from "../features/auth/options.js";
 import type * as features_auth_passwordPolicy from "../features/auth/passwordPolicy.js";
@@ -124,6 +125,7 @@ declare const fullApi: ApiFromModules<{
   "features/audit/validators": typeof features_audit_validators;
   "features/auth/accountDeletion": typeof features_auth_accountDeletion;
   "features/auth/accountDeletionPlugin": typeof features_auth_accountDeletionPlugin;
+  "features/auth/authRecords": typeof features_auth_authRecords;
   "features/auth/authSchema": typeof features_auth_authSchema;
   "features/auth/options": typeof features_auth_options;
   "features/auth/passwordPolicy": typeof features_auth_passwordPolicy;

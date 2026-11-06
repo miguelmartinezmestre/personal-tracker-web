@@ -32,6 +32,7 @@ import {
 } from './features/objectives/rules';
 import { paginateObjectives, searchObjectives } from './features/objectives/listing';
 import { recalculateResultingValues } from './features/objectives/progress';
+import { getOrganization } from './features/auth/authRecords';
 
 export const listObjectives = queryWithRLS({
     args: {
@@ -128,7 +129,7 @@ export const createObjective = mutationWithRLS({
     handler: async (ctx, args) => {
         const organizationId = requireOrganizationId(ctx.organizationId);
 
-        if (!(await ctx.db.get('organization', organizationId))) {
+        if (!(await getOrganization(ctx, organizationId))) {
             throw new ConvexError(ERROR_CODES.NO_ACTIVE_ORG);
         }
 

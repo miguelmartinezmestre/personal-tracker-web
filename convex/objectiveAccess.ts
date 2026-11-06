@@ -16,6 +16,7 @@ import {
     userGrantValidator,
 } from './features/objectives/validators';
 import { insertAuditLog } from './features/audit/log';
+import { getUserSummaries } from './features/auth/authRecords';
 
 export const getObjectiveAccess = queryWithRLS({
     args: { objectiveId: v.id('objectives') },
@@ -33,19 +34,24 @@ export const getObjectiveAccess = queryWithRLS({
             .withIndex('by_objective_user', q => q.eq('objectiveId', objective._id))
             .take(MAX_OBJECTIVE_GRANTS);
 
-        const users = await Promise.all(
-            grants.map(async grant => {
-                const user = await ctx.db.get('user', grant.userId);
-                const level: 'view' | 'edit' = grant.canEdit ? 'edit' : 'view';
-
-                return {
-                    userId: grant.userId,
-                    name: user?.name ?? '',
-                    email: user?.email ?? '',
-                    access: level,
-                };
-            })
+        const summaries = await getUserSummaries(
+            ctx,
+            grants.map(grant => grant.userId)
         );
+
+        const usersById = new Map(summaries.map(user => [user.id, user]));
+
+        const users = grants.map(grant => {
+            const user = usersById.get(grant.userId);
+            const level: 'view' | 'edit' = grant.canEdit ? 'edit' : 'view';
+
+            return {
+                userId: grant.userId,
+                name: user?.name ?? '',
+                email: user?.email ?? '',
+                access: level,
+            };
+        });
 
         return { memberAccess: memberAccessLevel(objective), users };
     },
