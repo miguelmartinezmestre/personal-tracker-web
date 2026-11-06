@@ -1,50 +1,44 @@
 import { ConvexError } from 'convex/values';
-import { getAuthUserIdentity, getSession } from 'kitcn/auth';
-import type { MutationCtx, QueryCtx } from '../../_generated/server';
+import type { QueryCtx } from '../../_generated/server';
 import { ERROR_CODES } from '../../shared/errorCodes';
-import { getActiveUser, getMembershipRole } from '../auth/authRecords';
+import { getActiveUser, getMembershipRole, getSession } from '../auth/authRecords';
 
 export type AuthContext = {
     userId: string;
-    // Null until verified: invitations are matched by email, so an unverified address proves nothing.
     email: string | null;
     organizationId: string | null;
     role: string;
     memberRole: string | null;
 };
 
-export async function resolveAuthContext(ctx: QueryCtx | MutationCtx): Promise<AuthContext> {
-    const identity = await getAuthUserIdentity(ctx);
+/**
+ * The Better Auth session is checked on every call (not only the JWT), so revoking a session,
+ * banning or deleting an account takes effect immediately.
+ */
+export async function resolveAuthContext(ctx: QueryCtx): Promise<AuthContext> {
+    const identity = await ctx.auth.getUserIdentity();
+    const sessionId = typeof identity?.sessionId === 'string' ? identity.sessionId : null;
 
-    if (!identity) {
+    if (!identity || !sessionId) {
         throw new ConvexError(ERROR_CODES.AUTH_REQUIRED);
     }
 
-    const currentUser = await getActiveUser(ctx, identity.userId);
+    const [user, session] = await Promise.all([
+        getActiveUser(ctx, identity.subject),
+        getSession(ctx, sessionId),
+    ]);
 
-    if (!currentUser) {
+    if (!user || !session || session.userId !== user._id || session.expiresAt < Date.now()) {
         throw new ConvexError(ERROR_CODES.AUTH_REQUIRED);
     }
 
-    const session = await getSession(ctx);
-
-    if (!session || session.expiresAt < Date.now()) {
-        throw new ConvexError(ERROR_CODES.AUTH_REQUIRED);
-    }
-
-    // Better Auth clears the active organization before a delete hook can refuse, with no rollback.
-    const activeOrganizationId = session.activeOrganizationId
-        ? ctx.db.normalizeId('organization', session.activeOrganizationId)
-        : null;
-
-    const memberRole = await getMembershipRole(ctx, activeOrganizationId, currentUser._id);
-    const organizationId = memberRole ? activeOrganizationId : null;
+    const memberRole = await getMembershipRole(ctx, session.activeOrganizationId, user._id);
 
     return {
-        userId: currentUser._id,
-        email: currentUser.emailVerified ? currentUser.email : null,
-        organizationId,
-        role: currentUser.role ?? 'user',
+        userId: user._id,
+        email: user.emailVerified ? user.email : null,
+        organizationId: memberRole ? (session.activeOrganizationId ?? null) : null,
+        role: user.role ?? 'user',
         memberRole,
     };
 }
