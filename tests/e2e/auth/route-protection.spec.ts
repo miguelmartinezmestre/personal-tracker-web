@@ -41,6 +41,9 @@ test.describe('Route Protection', () => {
                 await expect(page).toHaveURL(new RegExp(`${route}(\\?|$)`));
             }
 
+            await page.goto('/dashboard', { waitUntil: 'domcontentloaded' });
+            await expect(page).toHaveURL(/\/dashboard\/home(\?|$)/);
+
             await logoutUser(page);
             await page.goto('/dashboard/home', { waitUntil: 'domcontentloaded' });
             await expectOnLogin(page);
