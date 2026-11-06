@@ -106,7 +106,9 @@ describe('notifications', () => {
         await as(creator).mutation(api.trash.purgeObjective, { id: objectiveId });
         await runScheduled();
 
-        expect(await keysOf(creator)).toEqual([]);
+        for (const member of [creator, granted, owner]) {
+            expect(await keysOf(member)).toEqual([]);
+        }
     });
 
     test('the daily task tells each deadline stage once per objective and day @REQ-NOTIFICACIONES-001 @INH-NOT-02 @INH-OBJ-19', async () => {

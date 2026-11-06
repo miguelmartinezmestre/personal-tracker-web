@@ -66,12 +66,12 @@ export const purgeObjective = mutationWithRLS({
         const purgeToken = crypto.randomUUID();
         await ctx.db.patch('objectives', args.id, { purgeToken, purgeStartedAt: Date.now() });
 
-        if (!(await deleteObjectiveBatch(ctx.db, args.id))) {
-            await ctx.scheduler.runAfter(0, internal.trash.continuePurgeObjective, {
-                objectiveId: args.id,
-                purgeToken,
-            });
-        }
+        // The cascade runs without row-level security: the RLS reader hides other members'
+        // notifications, which would otherwise survive the purge.
+        await ctx.scheduler.runAfter(0, internal.trash.continuePurgeObjective, {
+            objectiveId: args.id,
+            purgeToken,
+        });
 
         return null;
     },
