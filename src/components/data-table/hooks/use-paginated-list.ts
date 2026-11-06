@@ -2,6 +2,8 @@
 
 import { useState } from 'react';
 import type { PaginatedQueryArgs, PaginatedQueryReference } from 'convex/react';
+// Drop-in for Convex's hook that also pages queries built on convex-helpers streams, such as
+// the Better Auth component's adapter.
 import { usePaginatedQuery } from 'convex-helpers/react';
 
 const PAGE_SIZE = 20;

@@ -1,25 +1,15 @@
 import { extractErrorCode } from '@/lib/error-messages';
-import { api } from '@/convex/_generated/api';
-import { convexBetterAuth } from 'kitcn/auth/nextjs';
+import { convexBetterAuthNextJs } from '@convex-dev/better-auth/nextjs';
 import { fetchQuery, type NextjsOptions } from 'convex/nextjs';
 import type { ArgsAndOptions, FunctionReference, FunctionReturnType } from 'convex/server';
-import { headers } from 'next/headers';
-import { cache } from 'react';
 import { NEXT_PUBLIC_CONVEX_SITE_URL, NEXT_PUBLIC_CONVEX_URL } from '@/lib/env';
 
-const { createContext, createCaller, handler } = convexBetterAuth({
-    api,
+const auth = convexBetterAuthNextJs({
     convexSiteUrl: NEXT_PUBLIC_CONVEX_SITE_URL,
     convexUrl: NEXT_PUBLIC_CONVEX_URL,
 });
 
-const createRSCContext = cache(async () =>
-    createContext({
-        headers: await headers(),
-    })
-);
-
-const caller = createCaller(createRSCContext);
+const { handler } = auth;
 const AUTH_REQUIRED_ERROR = 'AUTH_REQUIRED';
 
 export function isAuthRequiredError(error: unknown): boolean {
@@ -50,7 +40,7 @@ async function withAuthOptions<Func extends FunctionReference<'query' | 'mutatio
     return nextArgs;
 }
 
-export const getToken = () => caller.getToken();
+export const getToken = () => auth.getToken();
 
 export async function fetchAuthQuery<Query extends FunctionReference<'query'>>(
     query: Query,
