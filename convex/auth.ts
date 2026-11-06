@@ -1,5 +1,6 @@
 import { ConvexError, v } from 'convex/values';
 import * as memberships from './features/organizations/memberships';
+import { invitationAllowsRegistration } from './features/organizations/invitations';
 import { ERROR_CODES } from './shared/errorCodes';
 import type { GenericCtx } from './shared/ctx';
 import {
@@ -13,7 +14,6 @@ import {
 import { buildBetterAuthOptions } from './features/auth/options';
 import { defineAuth } from './generated/auth';
 import { internalMutation, internalQuery } from './_generated/server';
-import { normalizeRegistrationEmail } from './features/auth/users';
 import { getUser } from './features/auth/authRecords';
 import { queryWithRLS } from './features/authorization/wrappers';
 import { userDocumentValidator } from './features/auth/validators';
@@ -37,32 +37,15 @@ export const getEmailRegistrationAuthorization = internalQuery({
             return 'allowed';
         }
 
-        const normalizedEmail = normalizeRegistrationEmail(args.email);
+        const allowed =
+            args.invitationId !== null &&
+            (await invitationAllowsRegistration(ctx, {
+                email: args.email,
+                invitationId: args.invitationId,
+                now: args.now,
+            }));
 
-        if (!normalizedEmail || !args.invitationId) {
-            return 'denied';
-        }
-
-        const invitationId = ctx.db.normalizeId('invitation', args.invitationId);
-
-        if (!invitationId) {
-            return 'denied';
-        }
-
-        const invitation = await ctx.db.get('invitation', invitationId);
-
-        if (
-            !invitation ||
-            invitation.status !== 'pending' ||
-            invitation.expiresAt <= args.now ||
-            normalizeRegistrationEmail(invitation.email) !== normalizedEmail
-        ) {
-            return 'denied';
-        }
-
-        const organization = await ctx.db.get('organization', invitation.organizationId);
-
-        return organization ? 'allowed' : 'denied';
+        return allowed ? 'allowed' : 'denied';
     },
 });
 

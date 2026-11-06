@@ -72,6 +72,7 @@ import type * as features_objectives_records from "../features/objectives/record
 import type * as features_objectives_rules from "../features/objectives/rules.js";
 import type * as features_objectives_stats from "../features/objectives/stats.js";
 import type * as features_objectives_validators from "../features/objectives/validators.js";
+import type * as features_organizations_invitations from "../features/organizations/invitations.js";
 import type * as features_organizations_memberships from "../features/organizations/memberships.js";
 import type * as features_organizations_personalOrganization from "../features/organizations/personalOrganization.js";
 import type * as features_organizations_roles from "../features/organizations/roles.js";
@@ -169,6 +170,7 @@ declare const fullApi: ApiFromModules<{
   "features/objectives/rules": typeof features_objectives_rules;
   "features/objectives/stats": typeof features_objectives_stats;
   "features/objectives/validators": typeof features_objectives_validators;
+  "features/organizations/invitations": typeof features_organizations_invitations;
   "features/organizations/memberships": typeof features_organizations_memberships;
   "features/organizations/personalOrganization": typeof features_organizations_personalOrganization;
   "features/organizations/roles": typeof features_organizations_roles;

@@ -1,6 +1,10 @@
 import type { Id } from '../../_generated/dataModel';
 import type { MutationCtx } from '../../_generated/server';
 import { deleteMembersBatch, hasMembers } from '../organizations/memberships';
+import {
+    deleteInvitationsForOrganizationBatch,
+    hasInvitations,
+} from '../organizations/invitations';
 
 export const ORGANIZATION_DELETION_BATCH_SIZE = 50;
 
@@ -123,16 +127,11 @@ export async function deleteOrganizationInvitationsBatch(
     ctx: MutationCtx,
     organizationId: Id<'organization'>
 ): Promise<number> {
-    const rows = await ctx.db
-        .query('invitation')
-        .withIndex('organizationId', q => q.eq('organizationId', organizationId))
-        .take(ORGANIZATION_DELETION_BATCH_SIZE);
-
-    for (const row of rows) {
-        await ctx.db.delete('invitation', row._id);
-    }
-
-    return rows.length;
+    return await deleteInvitationsForOrganizationBatch(
+        ctx,
+        organizationId,
+        ORGANIZATION_DELETION_BATCH_SIZE
+    );
 }
 
 export async function deleteOrganizationMembershipsBatch(
@@ -177,10 +176,7 @@ export async function findOrganizationResiduePhase(
             .query('categories')
             .withIndex('by_organization', q => q.eq('organizationId', organizationId))
             .first(),
-        ctx.db
-            .query('invitation')
-            .withIndex('organizationId', q => q.eq('organizationId', organizationId))
-            .first(),
+        hasInvitations(ctx, organizationId),
         hasMembers(ctx, organizationId),
     ]);
 

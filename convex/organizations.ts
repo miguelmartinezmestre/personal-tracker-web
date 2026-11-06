@@ -1,5 +1,4 @@
 import { v } from 'convex/values';
-import type { Doc } from './_generated/dataModel';
 import {
     currentSessionValidator,
     organizationSummaryValidator,
@@ -12,14 +11,17 @@ import {
     listOrganizationMembers,
     listOrganizationsForUser,
 } from './features/organizations/memberships';
+import {
+    getInvitationPublicStatus,
+    listInvitationsForUser,
+    listPendingInvitationsForOrganization,
+} from './features/organizations/invitations';
 import { getSession } from 'kitcn/auth';
 import { isActiveAccount } from './features/auth/users';
-import { isOrganizationAdminRole } from './features/organizations/roles';
 import { paginationOptsValidator, paginationResultValidator } from 'convex/server';
 import { query } from './_generated/server';
 import { queryWithRLS } from './features/authorization/wrappers';
 import { getMembership, getOrganization, getUser } from './features/auth/authRecords';
-import { withNextPageCheck, withPaginationLimits } from './shared/pagination';
 
 export const getPublicInvitationStatus = query({
     args: {
@@ -30,29 +32,7 @@ export const getPublicInvitationStatus = query({
         organizationName: v.optional(v.string()),
     }),
     handler: async (ctx, args) => {
-        const serverNow = Date.now();
-        const invitationId = ctx.db.normalizeId('invitation', args.invitationId);
-
-        if (!invitationId) {
-            return { isValid: false };
-        }
-
-        const invitation = await ctx.db.get('invitation', invitationId);
-
-        if (!invitation || invitation.status !== 'pending' || invitation.expiresAt <= serverNow) {
-            return { isValid: false };
-        }
-
-        const organization = await ctx.db.get('organization', invitation.organizationId);
-
-        if (!organization) {
-            return { isValid: false };
-        }
-
-        return {
-            isValid: true,
-            organizationName: organization.name,
-        };
+        return await getInvitationPublicStatus(ctx, args.invitationId);
     },
 });
 
@@ -143,68 +123,9 @@ export const getUserInvitations = queryWithRLS({
     args: { paginationOpts: paginationOptsValidator },
     returns: paginationResultValidator(userInvitationValidator),
     handler: async (ctx, args) => {
-        const user = await ctx.dbForIntegrityChecks.get('user', ctx.userId);
+        const integrity = { db: ctx.dbForIntegrityChecks };
 
-        if (!user?.emailVerified) {
-            return { page: [], isDone: true, continueCursor: '' };
-        }
-
-        const email = user.email;
-
-        const result = await ctx.dbForIntegrityChecks
-            .query('invitation')
-            // Date.now() stays out of the index range: a moving bound invalidates the cursor.
-            .withIndex('by_email_status_expiresAt', q =>
-                q.eq('email', email).eq('status', 'pending')
-            )
-            .order('desc')
-            .paginate(withPaginationLimits(args.paginationOpts));
-
-        const now = Date.now();
-
-        const isListed = (invitation: Doc<'invitation'>) => invitation.expiresAt > now;
-
-        const live = result.page.filter(isListed);
-
-        const page = await Promise.all(
-            live.map(async invitation => {
-                const [organization, inviter] = await Promise.all([
-                    ctx.dbForIntegrityChecks.get('organization', invitation.organizationId),
-                    ctx.dbForIntegrityChecks.get('user', invitation.inviterId),
-                ]);
-
-                if (!organization) {
-                    return null;
-                }
-
-                return {
-                    id: invitation._id,
-                    email: invitation.email,
-                    role: invitation.role || 'member',
-                    organizationId: invitation.organizationId,
-                    organization: { name: organization.name },
-                    inviter: inviter ? { name: inviter.name } : undefined,
-                };
-            })
-        );
-
-        return await withNextPageCheck(
-            ctx.dbForIntegrityChecks,
-            {
-                table: 'invitation',
-                index: 'by_email_status_expiresAt',
-                prefix: [email, 'pending'],
-                indexKey: doc => [doc.email, doc.status, doc.expiresAt],
-                paginationOpts: args.paginationOpts,
-                isLive: isListed,
-            },
-            {
-                ...result,
-                isDone:
-                    result.isDone || result.page.some(invitation => invitation.expiresAt <= now),
-            },
-            page.filter(invitation => invitation !== null)
-        );
+        return await listInvitationsForUser(integrity, ctx.userId, args.paginationOpts);
     },
 });
 
@@ -237,46 +158,13 @@ export const getOrganizationPendingInvitations = queryWithRLS({
         })
     ),
     handler: async (ctx, args) => {
-        const membership = await ctx.db
-            .query('member')
-            .withIndex('by_organizationId_and_userId', q =>
-                q.eq('organizationId', args.organizationId).eq('userId', ctx.userId)
-            )
-            .first();
-
-        if (!membership || !isOrganizationAdminRole(membership.role)) {
-            return { page: [], isDone: true, continueCursor: '' };
-        }
-
-        const result = await ctx.db
-            .query('invitation')
-            // Date.now() stays out of the index range: a moving bound invalidates the cursor.
-            .withIndex('by_organizationId_status_expiresAt', q =>
-                q.eq('organizationId', args.organizationId).eq('status', 'pending')
-            )
-            .order('desc')
-            .paginate(withPaginationLimits(args.paginationOpts));
-
-        const now = Date.now();
-        const live = result.page.filter(invitation => invitation.expiresAt > now);
-
-        return await withNextPageCheck(
-            ctx.db,
+        return await listPendingInvitationsForOrganization(
+            { db: ctx.dbForIntegrityChecks },
             {
-                table: 'invitation',
-                index: 'by_organizationId_status_expiresAt',
-                prefix: [args.organizationId, 'pending'],
-                indexKey: doc => [doc.organizationId, doc.status, doc.expiresAt],
+                organizationId: args.organizationId,
+                requesterId: ctx.userId,
                 paginationOpts: args.paginationOpts,
-                isLive: doc => doc.expiresAt > now,
-            },
-            { ...result, isDone: result.isDone || live.length < result.page.length },
-            live.map(invitation => ({
-                id: invitation._id,
-                email: invitation.email,
-                role: invitation.role || 'member',
-                expiresAt: invitation.expiresAt,
-            }))
+            }
         );
     },
 });
