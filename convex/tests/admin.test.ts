@@ -1,3 +1,4 @@
+import type { FunctionReturnType } from 'convex/server';
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import { api, internal } from '../_generated/api';
 import { GLOBAL_ADMIN_ROLE } from '../features/auth/roles';
@@ -13,6 +14,8 @@ import { identityFor } from './test.identities';
 import { runInAuth } from './authTesting';
 
 const page = { numItems: 20, cursor: null };
+
+type AuditPage = FunctionReturnType<typeof api.admin.listAuditLogs>;
 
 describe('global administration', () => {
     const t = initConvexTest();
@@ -189,5 +192,54 @@ describe('global administration', () => {
         );
 
         expect(kept.length).toBeGreaterThan(0);
+    });
+
+    test('filtering the audit log by organization and type returns full pages of matching entries @REQ-ADMIN-005 @INH-ADM-06', async () => {
+        const otherOrganizationId = await createTestOrganization(t, {
+            name: 'Other audit organization',
+            slug: `other-audit-${Math.random().toString(36).slice(2, 10)}`,
+        });
+
+        await t.run(async ctx => {
+            for (let index = 0; index < 5; index += 1) {
+                for (const [organization, resourceType] of [
+                    [organizationId, 'objective'],
+                    [otherOrganizationId, 'objective'],
+                    [organizationId, 'category'],
+                ]) {
+                    await ctx.db.insert('auditLogs', {
+                        userId: user.docId,
+                        organizationId: organization,
+                        action: `${resourceType}.created`,
+                        resourceType,
+                        severity: 'info',
+                        createdAt: Date.now() + index,
+                    });
+                }
+            }
+        });
+
+        const pages: AuditPage['page'][] = [];
+        let cursor: string | null = null;
+
+        for (;;) {
+            const result: AuditPage = await as(admin).query(api.admin.listAuditLogs, {
+                organizationId,
+                resourceType: 'objective',
+                paginationOpts: { numItems: 2, cursor },
+            });
+
+            pages.push(result.page);
+
+            if (result.isDone) {
+                break;
+            }
+
+            cursor = result.continueCursor;
+        }
+
+        expect(pages.map(entries => entries.length)).toEqual([2, 2, 1]);
+        expect(pages.flat().every(entry => entry.organizationId === organizationId)).toBe(true);
+        expect(pages.flat().every(entry => entry.resourceType === 'objective')).toBe(true);
     });
 });

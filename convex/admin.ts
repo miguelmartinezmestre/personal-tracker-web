@@ -193,15 +193,18 @@ export const listAuditLogs = queryWithRLS({
         }
 
         const logs = ctx.dbForIntegrityChecks.query('auditLogs');
+        const { organizationId, resourceType } = args;
         let query;
 
-        if (args.resourceType) {
-            const resourceType = args.resourceType;
+        if (organizationId && resourceType) {
+            query = logs.withIndex('by_organization_resourceType_createdAt', q =>
+                q.eq('organizationId', organizationId).eq('resourceType', resourceType)
+            );
+        } else if (resourceType) {
             query = logs.withIndex('by_resourceType_createdAt', q =>
                 q.eq('resourceType', resourceType)
             );
-        } else if (args.organizationId) {
-            const organizationId = args.organizationId;
+        } else if (organizationId) {
             query = logs.withIndex('by_organization_createdAt', q =>
                 q.eq('organizationId', organizationId)
             );
@@ -213,9 +216,7 @@ export const listAuditLogs = queryWithRLS({
             .order('desc')
             .paginate(withPaginationLimits(args.paginationOpts));
 
-        const entries = result.page.filter(
-            entry => !args.organizationId || entry.organizationId === args.organizationId
-        );
+        const entries = result.page;
 
         const users = await getUserSummaries(
             ctx,

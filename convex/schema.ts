@@ -38,6 +38,11 @@ export default defineSchema({
     })
         .index('by_createdAt', ['createdAt'])
         .index('by_organization_createdAt', ['organizationId', 'createdAt'])
+        .index('by_organization_resourceType_createdAt', [
+            'organizationId',
+            'resourceType',
+            'createdAt',
+        ])
         .index('by_resourceType_createdAt', ['resourceType', 'createdAt']),
 
     categories: defineTable({
