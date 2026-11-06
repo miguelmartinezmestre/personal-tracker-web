@@ -29,6 +29,7 @@ import { v } from 'convex/values';
 import { insertAuditLog } from './features/audit/log';
 import { findAccountDeletionBlocker } from './features/auth/accountDeletion';
 import { removeOrganization } from './features/organizations/memberships';
+import { recoverSessionsForDeletedOrganization } from './features/auth/sessions';
 
 export const cascadeUserDeletionInternal = internalMutation({
     args: {
@@ -190,10 +191,7 @@ export const continueOrganizationDeletionCascade = internalMutation({
 
             nextPhase = residuePhase;
         } else if (phase === 'sessions') {
-            const { remaining } = await ctx.runMutation(
-                internal.auth.recoverAffectedOrganizationSessions,
-                { organizationId }
-            );
+            const { remaining } = await recoverSessionsForDeletedOrganization(ctx, organizationId);
 
             nextPhase = remaining ? phase : 'finalize';
         } else {

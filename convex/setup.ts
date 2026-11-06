@@ -1,5 +1,4 @@
 import { ConvexError, v } from 'convex/values';
-import type { Doc } from './_generated/dataModel';
 import { ERROR_CODES } from './shared/errorCodes';
 import { GLOBAL_ADMIN_ROLE } from './features/auth/roles';
 import { buildOrganizationSlug } from './features/organizations/slug';
@@ -10,6 +9,7 @@ import {
     listMembershipsForUser,
     upsertSetupOrganization,
 } from './features/organizations/memberships';
+import { activateOrganizationForUser } from './features/auth/sessions';
 import { insertAuditLog } from './features/audit/log';
 import { query } from './_generated/server';
 import { mutation } from './features/objectives/stats';
@@ -106,33 +106,11 @@ export const completeSetup = mutation({
             logo: args.organizationLogo,
         });
 
-        // Read every session before patching any, so the writes do not affect the iteration.
-        const sessions: Doc<'session'>[] = [];
-
-        for await (const session of ctx.db
-            .query('session')
-            .withIndex('userId', q => q.eq('userId', userId))) {
-            sessions.push(session);
-        }
-
-        for (const session of sessions) {
-            let currentOrganizationId = null;
-
-            if (session.activeOrganizationId) {
-                currentOrganizationId = ctx.db.normalizeId(
-                    'organization',
-                    session.activeOrganizationId
-                );
-            } else {
-                currentOrganizationId = null;
-            }
-
-            if (!currentOrganizationId || personalOrganizationIds.has(currentOrganizationId)) {
-                await ctx.db.patch('session', session._id, {
-                    activeOrganizationId: organizationId,
-                });
-            }
-        }
+        await activateOrganizationForUser(ctx, {
+            userId,
+            organizationId,
+            replaceOrganizationIds: [...personalOrganizationIds],
+        });
 
         const now = Date.now();
 

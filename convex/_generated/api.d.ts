@@ -34,7 +34,6 @@ import type * as features_auth_options from "../features/auth/options.js";
 import type * as features_auth_passwordPolicy from "../features/auth/passwordPolicy.js";
 import type * as features_auth_redirects from "../features/auth/redirects.js";
 import type * as features_auth_roles from "../features/auth/roles.js";
-import type * as features_auth_sessionRecovery from "../features/auth/sessionRecovery.js";
 import type * as features_auth_sessions from "../features/auth/sessions.js";
 import type * as features_auth_users from "../features/auth/users.js";
 import type * as features_auth_validators from "../features/auth/validators.js";
@@ -132,7 +131,6 @@ declare const fullApi: ApiFromModules<{
   "features/auth/passwordPolicy": typeof features_auth_passwordPolicy;
   "features/auth/redirects": typeof features_auth_redirects;
   "features/auth/roles": typeof features_auth_roles;
-  "features/auth/sessionRecovery": typeof features_auth_sessionRecovery;
   "features/auth/sessions": typeof features_auth_sessions;
   "features/auth/users": typeof features_auth_users;
   "features/auth/validators": typeof features_auth_validators;

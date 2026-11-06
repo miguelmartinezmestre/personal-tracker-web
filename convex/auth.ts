@@ -3,20 +3,17 @@ import * as memberships from './features/organizations/memberships';
 import { invitationAllowsRegistration } from './features/organizations/invitations';
 import { ERROR_CODES } from './shared/errorCodes';
 import type { GenericCtx } from './shared/ctx';
-import {
-    NEXT_SESSION_RECOVERY_PHASE,
-    SESSION_RECOVERY_BATCH_SIZE,
-    type SessionRecoveryResult,
-    actorPhaseOrganizationId,
-    repairSessionsAfterOrganizationDeletion,
-    scheduleSessionRecovery,
-} from './features/auth/sessionRecovery';
+import { recoverActorSessionsBatch } from './features/auth/sessions';
 import { buildBetterAuthOptions } from './features/auth/options';
 import { defineAuth } from './generated/auth';
 import { internalMutation, internalQuery } from './_generated/server';
+import { internal } from './_generated/api';
 import { getUser } from './features/auth/authRecords';
 import { queryWithRLS } from './features/authorization/wrappers';
-import { userDocumentValidator } from './features/auth/validators';
+import {
+    actorSessionRecoveryPhaseValidator,
+    userDocumentValidator,
+} from './features/auth/validators';
 import { organizationsNeedingNewOwner } from './features/auth/accountDeletion';
 
 export const getEmailRegistrationAuthorization = internalQuery({
@@ -62,85 +59,28 @@ export const ensureDefaultOrganizationForUser = internalMutation({
 export const recoverSessionsAfterOrganizationDeletion = internalMutation({
     returns: v.object({
         status: v.union(v.literal('in_progress'), v.literal('completed')),
-        phase: v.union(
-            v.literal('actor-null'),
-            v.literal('actor-unset'),
-            v.literal('actor-deleted')
-        ),
+        phase: actorSessionRecoveryPhaseValidator,
     }),
     args: {
         organizationId: v.string(),
         actorUserId: v.string(),
-        phase: v.optional(
-            v.union(v.literal('actor-null'), v.literal('actor-unset'), v.literal('actor-deleted'))
-        ),
+        phase: v.optional(actorSessionRecoveryPhaseValidator),
     },
     handler: async (ctx, args) => {
-        const organizationId = ctx.db.normalizeId('organization', args.organizationId);
-        const actorUserId = ctx.db.normalizeId('user', args.actorUserId);
-
-        if (!organizationId || !actorUserId) {
-            throw new ConvexError(ERROR_CODES.INTERNAL_ERROR);
-        }
-
         const phase = args.phase ?? 'actor-null';
-        const activeOrganizationId = actorPhaseOrganizationId(phase, organizationId);
+        const nextPhase = await recoverActorSessionsBatch(ctx, { ...args, phase });
 
-        const sessions = await ctx.db
-            .query('session')
-            .withIndex('by_userId_and_activeOrganizationId', q =>
-                q.eq('userId', actorUserId).eq('activeOrganizationId', activeOrganizationId)
-            )
-            .take(SESSION_RECOVERY_BATCH_SIZE);
-
-        await repairSessionsAfterOrganizationDeletion(ctx, sessions, organizationId);
-
-        if (sessions.length === SESSION_RECOVERY_BATCH_SIZE) {
-            await scheduleSessionRecovery(ctx, {
-                organizationId,
-                actorUserId,
-                phase,
-            });
-            const inProgress: SessionRecoveryResult = { status: 'in_progress', phase };
-
-            return inProgress;
+        if (!nextPhase) {
+            return { status: 'completed' as const, phase };
         }
 
-        const nextPhase = NEXT_SESSION_RECOVERY_PHASE[phase];
+        await ctx.scheduler.runAfter(0, internal.auth.recoverSessionsAfterOrganizationDeletion, {
+            organizationId: args.organizationId,
+            actorUserId: args.actorUserId,
+            phase: nextPhase,
+        });
 
-        if (nextPhase) {
-            await scheduleSessionRecovery(ctx, {
-                organizationId,
-                actorUserId,
-                phase: nextPhase,
-            });
-            const inProgress: SessionRecoveryResult = { status: 'in_progress', phase: nextPhase };
-
-            return inProgress;
-        }
-
-        const completed: SessionRecoveryResult = { status: 'completed', phase };
-
-        return completed;
-    },
-});
-
-export const recoverAffectedOrganizationSessions = internalMutation({
-    args: { organizationId: v.id('organization') },
-    returns: v.object({ remaining: v.boolean() }),
-    handler: async (ctx, { organizationId }) => {
-        if (await ctx.db.get('organization', organizationId)) {
-            return { remaining: false };
-        }
-
-        const sessions = await ctx.db
-            .query('session')
-            .withIndex('activeOrganizationId', q => q.eq('activeOrganizationId', organizationId))
-            .take(SESSION_RECOVERY_BATCH_SIZE);
-
-        await repairSessionsAfterOrganizationDeletion(ctx, sessions, organizationId);
-
-        return { remaining: sessions.length === SESSION_RECOVERY_BATCH_SIZE };
+        return { status: 'in_progress' as const, phase: nextPhase };
     },
 });
 

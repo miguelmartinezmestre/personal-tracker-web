@@ -3,10 +3,14 @@ import { paginationOptsValidator, paginationResultValidator } from 'convex/serve
 import type { Id } from './_generated/dataModel';
 import { internalMutation } from './_generated/server';
 import { ERROR_CODES } from './shared/errorCodes';
-import { withNextPageCheck, withPaginationLimits } from './shared/pagination';
+import { withPaginationLimits } from './shared/pagination';
 import { mutationWithRLS, queryWithRLS } from './features/authorization/wrappers';
 import { USER_ROLE, isGlobalAdminRole } from './features/auth/roles';
-import { revokeBannedUserSessionsBatch } from './features/auth/sessions';
+import {
+    listSessionsForUser,
+    removeSession,
+    revokeBannedUserSessionsBatch,
+} from './features/auth/sessions';
 import { requireOtherUser, toAdminUser } from './features/auth/users';
 import {
     adminUserValidator,
@@ -152,32 +156,11 @@ export const listUserSessions = queryWithRLS({
             throw new ConvexError(ERROR_CODES.FORBIDDEN);
         }
 
-        const result = await ctx.db
-            .query('session')
-            .withIndex('userId', q => q.eq('userId', args.userId))
-            .order('desc')
-            .paginate(withPaginationLimits(args.paginationOpts));
-
-        return await withNextPageCheck(
-            ctx.db,
-            {
-                table: 'session',
-                index: 'userId',
-                prefix: [args.userId],
-                indexKey: doc => [doc.userId],
-                paginationOpts: args.paginationOpts,
-            },
-            result,
-            result.page.map(session => ({
-                id: session._id,
-                createdAt: session.createdAt,
-                updatedAt: session.updatedAt,
-                expiresAt: session.expiresAt,
-                ipAddress: session.ipAddress ?? null,
-                userAgent: session.userAgent ?? null,
-                isCurrent: false,
-            }))
-        );
+        return await listSessionsForUser(ctx, {
+            userId: args.userId,
+            currentSessionId: null,
+            paginationOpts: args.paginationOpts,
+        });
     },
 });
 
@@ -189,25 +172,23 @@ export const revokeUserSession = mutationWithRLS({
             throw new ConvexError(ERROR_CODES.FORBIDDEN);
         }
 
-        const session = await ctx.db.get('session', args.sessionId);
+        const removed = await removeSession(ctx, args.sessionId);
 
-        if (!session) {
+        if (!removed) {
             throw new ConvexError(ERROR_CODES.FORBIDDEN);
         }
 
-        const sessionUserId = ctx.db.normalizeId('user', session.userId);
+        const sessionUserId = ctx.db.normalizeId('user', removed.userId);
 
         if (sessionUserId) {
             await insertAuditLog(ctx, {
                 action: 'session.revoked_by_admin',
                 resourceType: 'session',
-                resourceId: session._id,
+                resourceId: removed.id,
                 userId: sessionUserId,
                 severity: 'warning',
             });
         }
-
-        await ctx.db.delete('session', session._id);
 
         return null;
     },

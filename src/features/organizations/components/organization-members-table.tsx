@@ -41,7 +41,7 @@ export default function OrganizationMembersTable({
     const locale = useLocale();
     const deleteOrganizationMember = useDeleteOrganizationMember();
     const session = useQuery(convexQuery(api.organizations.getCurrentSession, {}));
-    const currentUserId = session.data?.user?.id;
+    const currentUserId = session.data?.user.id;
     const canManageMembers = isOrganizationAdminRole(actorRole);
     const canManageOwners = isOrganizationOwnerRole(actorRole);
 

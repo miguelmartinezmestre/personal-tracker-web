@@ -2,6 +2,7 @@ import type { Id } from '../../_generated/dataModel';
 import type { MutationCtx } from '../../_generated/server';
 import { internal } from '../../_generated/api';
 import { deleteUserMembershipsBatch as deleteAuthMembershipsBatch } from '../organizations/memberships';
+import { removeSessionsForUserBatch } from '../auth/sessions';
 
 export const USER_DELETION_BATCH_SIZE = 50;
 
@@ -44,16 +45,12 @@ export async function deleteUserSessionsBatch(
     ctx: MutationCtx,
     userId: Id<'user'>
 ): Promise<number> {
-    const rows = await ctx.db
-        .query('session')
-        .withIndex('userId', q => q.eq('userId', userId))
-        .take(USER_DELETION_BATCH_SIZE);
+    const { deleted } = await removeSessionsForUserBatch(ctx, {
+        userId,
+        batchSize: USER_DELETION_BATCH_SIZE,
+    });
 
-    for (const row of rows) {
-        await ctx.db.delete('session', row._id);
-    }
-
-    return rows.length;
+    return deleted;
 }
 
 export async function deleteUserAccountsBatch(

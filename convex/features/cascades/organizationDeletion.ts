@@ -1,6 +1,7 @@
 import type { Id } from '../../_generated/dataModel';
 import type { MutationCtx } from '../../_generated/server';
 import { deleteMembersBatch, hasMembers } from '../organizations/memberships';
+import { hasSessionsInOrganization } from '../auth/sessions';
 import {
     deleteInvitationsForOrganizationBatch,
     hasInvitations,
@@ -146,10 +147,7 @@ export async function findOrganizationResiduePhase(
     organizationId: Id<'organization'>
 ): Promise<OrganizationDeletionPhase | null> {
     const remaining = await Promise.all([
-        ctx.db
-            .query('session')
-            .withIndex('activeOrganizationId', q => q.eq('activeOrganizationId', organizationId))
-            .first(),
+        hasSessionsInOrganization(ctx, organizationId),
         ctx.db
             .query('progressUpdates')
             .withIndex('by_organization_date', q => q.eq('organizationId', organizationId))
