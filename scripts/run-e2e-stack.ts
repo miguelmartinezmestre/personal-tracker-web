@@ -102,7 +102,7 @@ const NO_DOCKER = flags['no-docker'] === true;
 delete process.env.CONVEX_DEPLOY_KEY;
 
 const E2E_CONVEX_BACKEND_VERSION =
-    process.env.E2E_CONVEX_BACKEND_VERSION ?? 'precompiled-2026-10-06-a3538c6';
+    process.env.E2E_CONVEX_BACKEND_VERSION ?? 'precompiled-2026-10-22-1447815';
 
 const SHOULD_FORCE_REBUILD = flags.rebuild === true || process.env.E2E_FORCE_BUILD === 'true';
 const COMPOSE_FILE = 'infrastructure/docker-compose.e2e.yml';

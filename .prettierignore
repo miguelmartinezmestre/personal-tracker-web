@@ -15,3 +15,4 @@ convex/_generated/
 infrastructure/data/
 infrastructure/mysql-data/
 tools/oxlint/vendor/
+secret/

@@ -37,8 +37,8 @@ services:
 
     backend:
         container_name: convex-backend-metricas
-        # Release a3538c6, the same as E2E_CONVEX_BACKEND_VERSION in scripts/run-e2e-stack.ts.
-        image: ghcr.io/convex/convex-backend@sha256:d3338c4a78b622aa4d8b8ed6cdb114d8f7610efc91cdf61769c39314b79bb881
+        # Release 1447815, the same as E2E_CONVEX_BACKEND_VERSION in scripts/run-e2e-stack.ts.
+        image: ghcr.io/convex/convex-backend@sha256:d52c213b4c24b49f5b60bd2ca4eec66f164e137e37c5237e924da2489ce357a1
         depends_on:
             mysql:
                 condition: service_healthy
