@@ -38,7 +38,8 @@ export async function withNextPageCheck<Table extends TableNames, Item>(
             order: options.order ?? 'desc',
             startIndexKey: [...options.indexKey(last), last._creationTime, last._id],
             endIndexKey: options.prefix,
-            targetMaxRows: 1,
+            // getPage ignores targetMaxRows once endIndexKey is set, so cap the probe explicitly.
+            absoluteMaxRows: 1,
         }
     );
 
