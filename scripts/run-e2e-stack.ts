@@ -54,7 +54,6 @@ const BUILD_FINGERPRINT_ENV_KEYS = [
     'CONVEX_SELF_HOSTED_URL',
     'NEXT_PUBLIC_CONVEX_SITE_URL',
     'NEXT_PUBLIC_CONVEX_URL',
-    'NEXT_PUBLIC_E2E_ALLOW_LOCAL_HTTP',
     'NEXT_PUBLIC_SITE_URL',
     'SITE_URL',
     'EMAIL_FROM',
@@ -550,7 +549,6 @@ async function main(): Promise<void> {
         convexSiteUrl: CONVEX_SITE_URL,
         siteUrl,
         smtp: NO_DOCKER ? { host: '127.0.0.1', port: E2E_MAILDEV_SMTP_PORT } : undefined,
-        allowLocalHttp: true,
         extra: {
             SETUP_SECRET: setupSecret,
             BASE_URL: baseUrl,

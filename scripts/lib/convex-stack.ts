@@ -267,7 +267,6 @@ export function buildConvexCommandEnv(params: {
     convexSiteUrl: string;
     siteUrl: string;
     smtp?: SmtpCapture;
-    allowLocalHttp?: boolean;
     extra?: NodeJS.ProcessEnv;
 }): NodeJS.ProcessEnv {
     return overlayEnv({
@@ -278,7 +277,6 @@ export function buildConvexCommandEnv(params: {
         JWKS: params.jwks,
         NEXT_PUBLIC_CONVEX_SITE_URL: params.convexSiteUrl,
         NEXT_PUBLIC_CONVEX_URL: params.convexUrl,
-        NEXT_PUBLIC_E2E_ALLOW_LOCAL_HTTP: params.allowLocalHttp ? 'true' : undefined,
         NEXT_PUBLIC_SITE_URL: params.siteUrl,
         SITE_URL: params.siteUrl,
         ...smtpCaptureEnv(params.smtp ?? DOCKER_MAILDEV_SMTP),

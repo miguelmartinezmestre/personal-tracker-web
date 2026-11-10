@@ -1,7 +1,6 @@
 import { z } from 'zod';
 
 const isProduction = process.env.NODE_ENV === 'production';
-const allowHttpLocalhost = !isProduction || process.env.NEXT_PUBLIC_E2E_ALLOW_LOCAL_HTTP === 'true';
 const LOCAL_HOSTNAMES = new Set(['localhost', '127.0.0.1', '[::1]', '::1']);
 
 function validateUrl(name: string, value: string | undefined, fallback: string): string {
@@ -21,10 +20,9 @@ function validateUrl(name: string, value: string | undefined, fallback: string):
         throw new Error(`${name} must be a valid http(s) URL`);
     }
 
+    // Same rule as convex/shared/env.ts: local production builds talk to loopback over HTTP.
     const permittedLocalHttp =
-        allowHttpLocalhost &&
-        parsed.protocol === 'http:' &&
-        LOCAL_HOSTNAMES.has(parsed.hostname.toLowerCase());
+        parsed.protocol === 'http:' && LOCAL_HOSTNAMES.has(parsed.hostname.toLowerCase());
 
     if (isProduction && parsed.protocol !== 'https:' && !permittedLocalHttp) {
         throw new Error(`${name} must use HTTPS in production`);
