@@ -52,10 +52,10 @@ export default function ForgetPasswordForm() {
 
         const redirectTo = `${window.location.origin}/reset-password`;
 
-        const { error } = await authClient.requestPasswordReset({
-            email: values.email,
-            redirectTo,
-        });
+        // A failed fetch rejects instead of returning { error }.
+        const { error } = await authClient
+            .requestPasswordReset({ email: values.email, redirectTo })
+            .catch((networkError: unknown) => ({ error: networkError }));
 
         if (error) {
             setLoginError(resolveErrorMessage(error, locale, tCommon('genericErrorDescription')));

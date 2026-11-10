@@ -65,25 +65,31 @@ export default function LoginForm({
     });
 
     async function handleSignIn(values: LoginFormValues) {
-        if (session.data?.user) {
-            await signOutMutation.mutateAsync();
-        }
-
         setLoginError('');
-        await authClient.signIn.email(
-            {
-                email: values.email,
-                password: values.password,
-            },
-            {
-                onSuccess: () => {
-                    router.push(getSafeCallbackPath(callbackUrl) as Route);
-                },
-                onError: ctx => {
-                    setLoginError(resolveErrorMessage(ctx.error, locale));
-                },
+
+        try {
+            if (session.data?.user) {
+                await signOutMutation.mutateAsync();
             }
-        );
+
+            await authClient.signIn.email(
+                {
+                    email: values.email,
+                    password: values.password,
+                },
+                {
+                    onSuccess: () => {
+                        router.push(getSafeCallbackPath(callbackUrl) as Route);
+                    },
+                    onError: ctx => {
+                        setLoginError(resolveErrorMessage(ctx.error, locale));
+                    },
+                }
+            );
+        } catch (error) {
+            // A failed fetch rejects instead of reaching onError.
+            setLoginError(resolveErrorMessage(error, locale));
+        }
     }
 
     const { submit: onSubmit, isSubmitting } = useFormSubmit(handleSignIn);

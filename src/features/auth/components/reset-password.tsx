@@ -66,10 +66,10 @@ export default function ResetPassword({ resetPasswordKey }: ResetPasswordProps) 
 
         const token = values.resetPasswordKey;
 
-        const { error } = await authClient.resetPassword({
-            newPassword: values.password,
-            token,
-        });
+        // A failed fetch rejects instead of returning { error }.
+        const { error } = await authClient
+            .resetPassword({ newPassword: values.password, token })
+            .catch((networkError: unknown) => ({ error: networkError }));
 
         if (error) {
             const code = extractErrorCode(error);
