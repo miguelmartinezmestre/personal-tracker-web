@@ -117,6 +117,40 @@ describe('trash', () => {
         ).toHaveLength(1);
     });
 
+    test('the trash keeps paging past objectives the user sees but cannot manage @INH-PAP-02', async () => {
+        const create = (user: TestUserData, title: string) =>
+            as(user).mutation(api.objectives.createObjective, {
+                title,
+                startValue: 0,
+                targetValue: 10,
+                memberAccess: 'view',
+            });
+
+        const older = await create(creator, 'Older own goal');
+        const others = await create(owner, 'Owner goal');
+        const newer = await create(creator, 'Newer own goal');
+
+        for (const [index, id] of [older, others, newer].entries()) {
+            await as(owner).mutation(api.objectives.deleteObjective, { id });
+            await t.run(ctx => ctx.db.patch('objectives', id, { deletedAt: index + 1 }));
+        }
+
+        const listPage = (cursor: string | null) =>
+            as(creator).query(api.trash.listTrash, { paginationOpts: { numItems: 1, cursor } });
+
+        const seen: string[] = [];
+        let result = await listPage(null);
+
+        seen.push(...result.page.map(objective => objective.id));
+
+        while (!result.isDone) {
+            result = await listPage(result.continueCursor);
+            seen.push(...result.page.map(objective => objective.id));
+        }
+
+        expect(seen).toEqual([newer, older]);
+    });
+
     test('only objectives in the trash can be restored or purged @INH-PAP-03', async () => {
         const objectiveId = await createWithProgress();
 

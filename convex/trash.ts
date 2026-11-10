@@ -35,7 +35,9 @@ export const listTrash = queryWithRLS({
                 prefix: [organizationId],
                 indexKey: doc => [doc.organizationId, doc.deletedAt, doc.createdAt],
                 paginationOpts: args.paginationOpts,
-                isLive: doc => doc.deletedAt !== undefined && isManaged(doc),
+                // Only checks the trash range: a visible row the user cannot manage may be
+                // followed by rows they can, so it must not end the list.
+                isLive: doc => doc.deletedAt !== undefined,
             },
             result,
             await toObjectiveSummaries(ctx.db, ctx, result.page.filter(isManaged))
