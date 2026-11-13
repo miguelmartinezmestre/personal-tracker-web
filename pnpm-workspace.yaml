@@ -1,12 +1,5 @@
 # Only resolve versions published at least this many minutes ago (7 days).
 minimumReleaseAge: 10080
-# Temporary: @convex-dev/better-auth 0.13 (2026-11-04) is the first release for better-auth 1.7.
-# Remove once these releases are older than seven days (after 2026-11-11).
-minimumReleaseAgeExclude:
-    - '@convex-dev/better-auth'
-    - better-auth
-    - better-call
-    - '@better-auth/*'
 
 overrides:
     lodash: 4.18.1
