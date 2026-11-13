@@ -3,7 +3,7 @@ import { objectiveFormSchema } from './objective';
 
 const message = <TKey extends string>(key: TKey) => key;
 
-test('requires the target ahead of the start in the chosen direction @INH-OBJ-03 @REQ-NF-005', () => {
+test('requires the target ahead of the start in the chosen direction @REQ-NF-005', () => {
     const errors = (direction: 'increase' | 'decrease', startValue: number, targetValue: number) =>
         objectiveFormSchema(message)
             .safeParse({

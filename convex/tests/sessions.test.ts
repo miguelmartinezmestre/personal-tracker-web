@@ -71,7 +71,7 @@ describe('own sessions', () => {
                 ).length
         );
 
-    test('lists the own sessions with their device data and marks the current one @REQ-AUTENTICACION-006 @REQ-AUTENTICACION-007 @INH-AUT-09', async () => {
+    test('lists the own sessions with their device data and marks the current one @REQ-AUTENTICACION-006 @REQ-AUTENTICACION-007', async () => {
         await addSessions(user, 2);
 
         const { page } = await t
@@ -102,7 +102,7 @@ describe('own sessions', () => {
         expect(await sessionCount(other)).toBe(2);
     });
 
-    test('closes every other session in batches of 100, keeping the current one @REQ-AUTENTICACION-008 @INH-AUT-10', async () => {
+    test('closes every other session in batches of 100, keeping the current one @REQ-AUTENTICACION-008', async () => {
         await addSessions(user, 250);
         await addSessions(other, 3);
 

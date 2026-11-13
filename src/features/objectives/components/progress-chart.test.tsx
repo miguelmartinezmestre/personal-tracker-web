@@ -55,7 +55,7 @@ function renderWithHistory(
     );
 }
 
-test('renders the cumulative progress chart with target and pace legend @REQ-PROGRESO-004 @INH-PRO-05', () => {
+test('renders the cumulative progress chart with target and pace legend @REQ-PROGRESO-004', () => {
     renderWithHistory([
         { updateDate: Date.UTC(2026, 0, 5), value: 3, delta: 3, comment: 'Buen día' },
         { updateDate: Date.UTC(2026, 0, 12), value: 7, delta: 4 },

@@ -5,7 +5,7 @@ import { NextIntlClientProvider } from 'next-intl';
 import es from '../translations/es.json';
 import { QueryErrorBoundary } from './query-error-boundary';
 
-test('a failed list shows an error with a retry while the rest of the page stays @INH-UI-05', async () => {
+test('a failed list shows an error with a retry while the rest of the page stays @REQ-NF-010', async () => {
     vi.spyOn(console, 'error').mockImplementation(() => {});
     let failing = true;
 

@@ -15,7 +15,7 @@ const routes = [
 for (const theme of ['light', 'dark'] as const) {
     test(
         `the main routes have no serious or critical accessibility violations in ${theme}`,
-        { tag: ['@accessibility', '@INH-ACC-01', '@REQ-NF-009', '@mobile-critical'] },
+        { tag: ['@accessibility', '@REQ-NF-009', '@mobile-critical'] },
         async ({ page }, testInfo) => {
             await page.addInitScript(
                 selectedTheme => localStorage.setItem('theme', selectedTheme),
@@ -57,14 +57,7 @@ for (const theme of ['light', 'dark'] as const) {
 test(
     'keyboard skip link focuses the main content',
     {
-        tag: [
-            '@accessibility',
-            '@INH-ACC-02',
-            '@INH-COM-01',
-            '@REQ-NF-006',
-            '@cross-browser-critical',
-            '@mobile-critical',
-        ],
+        tag: ['@accessibility', '@REQ-NF-006', '@cross-browser-critical', '@mobile-critical'],
     },
     async ({ page, browserName }) => {
         // Safari on macOS reaches buttons with Option+Tab, as its users do.

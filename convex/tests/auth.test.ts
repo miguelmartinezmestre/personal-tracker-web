@@ -48,7 +48,7 @@ describe('convex auth', () => {
         _organizationId = orgId;
     });
 
-    test('auth triggersApi writes audit logs for session create and delete @REQ-NF-004 @INH-ADM-05', async () => {
+    test('auth triggersApi writes audit logs for session create and delete @REQ-NF-004', async () => {
         const sessionDoc = {
             expiresAt: Date.now() + 60_000,
             token: 'session-trigger-token',
@@ -130,7 +130,7 @@ describe('convex auth', () => {
         }
     });
 
-    test('default organization created for a user is protected @INH-ORG-01 @INH-ORG-02', async () => {
+    test('default organization created for a user is protected @REQ-EQUIPOS-008', async () => {
         const randomSuffix = Math.random().toString(36).substring(2, 15);
 
         const user = await createTestUser(t, {

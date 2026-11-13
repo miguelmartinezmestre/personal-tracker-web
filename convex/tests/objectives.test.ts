@@ -77,7 +77,7 @@ describe('objectives', () => {
         ownerIdentity = asUser(created.user);
     });
 
-    test('creates an increasing objective by default and lists it as active @REQ-OBJETIVOS-001 @REQ-OBJETIVOS-002 @INH-OBJ-02', async () => {
+    test('creates an increasing objective by default and lists it as active @REQ-OBJETIVOS-001 @REQ-OBJETIVOS-002', async () => {
         const objectiveId = await ownerIdentity.mutation(api.objectives.createObjective, {
             title: 'Run',
             startValue: 0,
@@ -107,7 +107,7 @@ describe('objectives', () => {
         ['increase', 10, -5],
         ['decrease', -5, 3],
     ] as const)(
-        'rejects a target that does not %s from %d to %d on create and update @INH-OBJ-03',
+        'rejects a target that does not %s from %d to %d on create and update @REQ-OBJETIVOS-001 @REQ-OBJETIVOS-003',
         async (direction, startValue, targetValue) => {
             const objectiveId = await create('Valid range', { startValue: 2, targetValue: 8 });
             const before = await get(objectiveId);
@@ -133,7 +133,7 @@ describe('objectives', () => {
         }
     );
 
-    test('completes an objective whose new target or direction is already reached @REQ-OBJETIVOS-003 @INH-OBJ-08', async () => {
+    test('completes an objective whose new target or direction is already reached @REQ-OBJETIVOS-003', async () => {
         const objectiveId = await create('Adjustable', { startValue: 2, targetValue: 10 });
 
         await ownerIdentity.mutation(api.progress.createProgress, {
@@ -173,7 +173,7 @@ describe('objectives', () => {
         ).toMatchObject({ direction: 'decrease', currentValue: 6, status: 'active' });
     });
 
-    test('a completed objective is closed to edits @REQ-OBJETIVOS-003 @INH-OBJ-07', async () => {
+    test('a completed objective is closed to edits @REQ-OBJETIVOS-003', async () => {
         const objectiveId = await create('Finished', { targetValue: 1 });
 
         await ownerIdentity.mutation(api.progress.createProgress, {
@@ -200,7 +200,7 @@ describe('objectives', () => {
         expect(await get(objectiveId)).toEqual(completed);
     });
 
-    test('moves the recorded progress with a new starting value @INH-OBJ-09', async () => {
+    test('moves the recorded progress with a new starting value @REQ-OBJETIVOS-003', async () => {
         const objectiveId = await create('Changing baseline', { startValue: 2, targetValue: 10 });
 
         await ownerIdentity.mutation(api.progress.createProgress, {
@@ -224,7 +224,7 @@ describe('objectives', () => {
         ).toMatchObject({ currentValue: 10, status: 'completed' });
     });
 
-    test('accepts a deadline from the earliest current day on Earth and keeps one already passed @REQ-OBJETIVOS-005 @INH-OBJ-10', async () => {
+    test('accepts a deadline from the earliest current day on Earth and keeps one already passed @REQ-OBJETIVOS-005', async () => {
         const today = Date.UTC(2026, 0, 10);
         const yesterday = today - TIME.DAY_MS;
         vi.useFakeTimers({ toFake: ['Date'] });
@@ -284,7 +284,7 @@ describe('objectives', () => {
         }
     });
 
-    test('keeps a due-soon warning of at least one day only while there is a deadline @INH-OBJ-19', async () => {
+    test('keeps a due-soon warning of at least one day only while there is a deadline @REQ-OBJETIVOS-005', async () => {
         const deadline = Date.UTC(2099, 0, 1);
 
         const objectiveId = await ownerIdentity.mutation(api.objectives.createObjective, {
@@ -321,7 +321,7 @@ describe('objectives', () => {
         expect(cleared.dueSoonDays).toBeUndefined();
     });
 
-    test('paginates objectives within the active organization and status filter @REQ-NF-008 @INH-REN-02', async () => {
+    test('paginates objectives within the active organization and status filter @REQ-NF-008', async () => {
         const first = await create('First');
         const second = await create('Second');
         const completed = await create('Completed');
@@ -431,7 +431,7 @@ describe('objectives', () => {
         expect(await list({ categoryId: 'not-an-id' })).toEqual([]);
     });
 
-    test("filters by deadline relative to the user's day, soonest first @REQ-OBJETIVOS-009 @INH-OBJ-15", async () => {
+    test("filters by deadline relative to the user's day, soonest first @REQ-OBJETIVOS-009", async () => {
         const today = Date.UTC(2026, 0, 10);
         vi.useFakeTimers({ toFake: ['Date'] });
         vi.setSystemTime(today - 12 * 60 * 60 * 1000);
@@ -535,7 +535,7 @@ describe('objectives', () => {
         expect(cleared.categoryName).toBeUndefined();
     });
 
-    test('hides objectives from another organization @REQ-NF-003 @INH-ORG-04 @INH-OBJ-14', async () => {
+    test('hides objectives from another organization @REQ-NF-003', async () => {
         const outsider = await createUserInNewOrganization('objective-outsider');
         const objectiveId = await create('Private to org', { targetValue: 3 });
 

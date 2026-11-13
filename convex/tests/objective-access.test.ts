@@ -77,7 +77,7 @@ describe('objective permissions', () => {
             updateDate: Date.UTC(2026, 0, 2),
         });
 
-    test('members create objectives that every member can see but not edit by default @REQ-COLABORACION-001 @REQ-COLABORACION-003 @INH-OBJ-05 @INH-OBJ-06', async () => {
+    test('members create objectives that every member can see but not edit by default @REQ-COLABORACION-001 @REQ-COLABORACION-003', async () => {
         const objectiveId = await createObjective();
 
         expect(
@@ -115,7 +115,7 @@ describe('objective permissions', () => {
         );
     });
 
-    test("the member role with edit can log and correct anyone's progress but not manage access @REQ-COLABORACION-005 @INH-PER-07", async () => {
+    test("the member role with edit can log and correct anyone's progress but not manage access @REQ-COLABORACION-005", async () => {
         const objectiveId = await createObjective({ memberAccess: 'edit' });
         const ownersEntry = await logProgress(owner, objectiveId);
 
@@ -145,7 +145,7 @@ describe('objective permissions', () => {
         ).rejects.toThrow('NOT_AUTHORIZED_OBJECTIVE');
     });
 
-    test('a private objective is seen only by its creator, the owner, the admins and individual grants @REQ-COLABORACION-004 @INH-PER-03 @REQ-NF-003', async () => {
+    test('a private objective is seen only by its creator, the owner, the admins and individual grants @REQ-COLABORACION-004 @REQ-NF-003', async () => {
         const objectiveId = await createObjective({
             memberAccess: 'none',
             users: [{ userId: teammate.docId, access: 'view' }],
@@ -173,7 +173,7 @@ describe('objective permissions', () => {
         await expect(logProgress(teammate, objectiveId)).rejects.toThrow('NOT_AUTHORIZED_PROGRESS');
     });
 
-    test('granting edit lets a user edit, and taking view away takes edit with it @REQ-COLABORACION-005 @INH-PER-01 @INH-PER-07', async () => {
+    test('granting edit lets a user edit, and taking view away takes edit with it @REQ-COLABORACION-005', async () => {
         const objectiveId = await createObjective({ memberAccess: 'none' });
 
         await as(creator).mutation(api.objectiveAccess.updateObjectiveAccess, {
@@ -198,7 +198,7 @@ describe('objective permissions', () => {
         await expect(logProgress(member, objectiveId)).rejects.toThrow('OBJECTIVE_NOT_FOUND');
     });
 
-    test('only members of the organization can receive individual permissions @INH-PER-01', async () => {
+    test('only members of the organization can receive individual permissions @REQ-COLABORACION-005', async () => {
         const objectiveId = await createObjective();
 
         const outsider = await createTestUser(t, {
@@ -264,7 +264,7 @@ describe('objective permissions', () => {
         ).not.toBeNull();
     });
 
-    test('the dashboard counts shared objectives plus the private ones each user can see @INH-DAS-04', async () => {
+    test('the dashboard counts shared objectives plus the private ones each user can see @REQ-DASHBOARD-001', async () => {
         await createObjective();
         await createObjective({ memberAccess: 'none' });
         await createObjective({

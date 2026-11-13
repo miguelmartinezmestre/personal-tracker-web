@@ -57,10 +57,8 @@ Install Playwright browsers only when you need E2E tests: `pnpm run playwright:i
 
 ## Documentation
 
-- [`AGENTS.md`](./AGENTS.md) — project structure, coding style, and the full command reference.
 - [`self-host.md`](./self-host.md) — local Docker stack (Convex self-hosted, MySQL, MailDev) and
   environment variables.
-- `convex/_generated/ai/guidelines.md` — Convex conventions (read before editing backend code).
 
 ## Deployment design (Convex Cloud + Vercel)
 

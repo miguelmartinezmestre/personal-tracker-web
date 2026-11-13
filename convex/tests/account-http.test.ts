@@ -77,7 +77,7 @@ describe('account endpoints', () => {
         return extractCookie(response);
     }
 
-    test('verifies the password, returns success, keeps the name and cleans auth rows @REQ-AUTENTICACION-009 @INH-AUT-12 @INH-AUT-15', async () => {
+    test('verifies the password, returns success, keeps the name and cleans auth rows @REQ-AUTENTICACION-009', async () => {
         const { user } = await createCredentialUser();
         const cookie = await signIn(user.email);
 
@@ -121,7 +121,7 @@ describe('account endpoints', () => {
         });
     });
 
-    test('rejects an incorrect password without mutating the account @REQ-AUTENTICACION-009 @INH-AUT-12', async () => {
+    test('rejects an incorrect password without mutating the account @REQ-AUTENTICACION-009', async () => {
         const { user } = await createCredentialUser();
         const cookie = await signIn(user.email);
 
@@ -143,7 +143,7 @@ describe('account endpoints', () => {
         });
     });
 
-    test('waits until shared organizations have another owner who is not leaving too @REQ-AUTENTICACION-009 @INH-AUT-14', async () => {
+    test('waits until shared organizations have another owner who is not leaving too @REQ-AUTENTICACION-009', async () => {
         const { user, organizationId } = await createCredentialUser();
 
         const leavingOwner = await createTestUser(t, {

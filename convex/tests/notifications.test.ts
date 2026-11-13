@@ -61,7 +61,7 @@ describe('notifications', () => {
         vi.useRealTimers();
     });
 
-    test('milestones and completion reach everyone who can see the objective, as they choose @REQ-NOTIFICACIONES-001 @INH-NOT-01 @INH-NOT-03 @INH-NOT-04 @INH-NOT-08', async () => {
+    test('milestones and completion reach everyone who can see the objective, as they choose @REQ-NOTIFICACIONES-001', async () => {
         await as(owner).mutation(api.notifications.updateNotificationPreferences, {
             deadline: true,
             progress: false,
@@ -111,7 +111,7 @@ describe('notifications', () => {
         }
     });
 
-    test('the daily task tells each deadline stage once per objective and day @REQ-NOTIFICACIONES-001 @INH-NOT-02 @INH-OBJ-19', async () => {
+    test('the daily task tells each deadline stage once per objective and day @REQ-NOTIFICACIONES-001', async () => {
         const today = startOfUtcDay(Date.now());
 
         const create = (title: string, days: number, dueSoonDays?: number) =>
@@ -138,7 +138,7 @@ describe('notifications', () => {
         expect(keys[1]).toMatch(/^deadlineUpcoming:Objective "Soon" is due in 3 days/);
     });
 
-    test('users read, mark and delete only their own notifications in the active organization @REQ-NOTIFICACIONES-002 @REQ-NOTIFICACIONES-003 @REQ-NOTIFICACIONES-004 @INH-NOT-06 @INH-NOT-07 @REQ-NF-008', async () => {
+    test('users read, mark and delete only their own notifications in the active organization @REQ-NOTIFICACIONES-002 @REQ-NOTIFICACIONES-003 @REQ-NOTIFICACIONES-004 @REQ-NF-008', async () => {
         const otherOrganizationId = await createTestOrganization(t, {
             name: 'Elsewhere',
             slug: `elsewhere-${Math.random().toString(36).slice(2, 10)}`,

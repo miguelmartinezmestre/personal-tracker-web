@@ -2,7 +2,7 @@ import { act, renderHook } from '@testing-library/react';
 import { expect, test, vi } from 'vitest';
 import { useFormSubmit } from './use-form-submit';
 
-test('coalesces repeated submissions while pending and releases the lock after failure @INH-UI-05 @INH-AUT-07', async () => {
+test('coalesces repeated submissions while pending and releases the lock after failure @REQ-NF-010', async () => {
     let rejectRequest: (error: Error) => void = () => undefined;
 
     const operation = vi.fn(

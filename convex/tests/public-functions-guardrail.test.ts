@@ -18,7 +18,7 @@ const ALLOWED_RAW_PUBLIC_FUNCTIONS = new Set([
 ]);
 
 describe('public Convex function guardrail', () => {
-    test('business functions at every directory depth require RLS or an explicit exception @INH-PER-06 @REQ-NF-003', () => {
+    test('business functions at every directory depth require RLS or an explicit exception @REQ-NF-003', () => {
         const root = fileURLToPath(new URL('../..', import.meta.url));
 
         // Functions of the betterAuth component cannot be called from the internet, only by the
@@ -35,7 +35,7 @@ describe('public Convex function guardrail', () => {
         expect(unexpected).toEqual([]);
     });
 
-    test('registered functions declare args, returns and handler @INH-SEG-01 @REQ-NF-005', () => {
+    test('registered functions declare args, returns and handler @REQ-NF-005', () => {
         const root = fileURLToPath(new URL('../..', import.meta.url));
 
         const missing = listConvexSources(join(root, 'convex')).flatMap(file =>

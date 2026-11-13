@@ -6,7 +6,7 @@ const translate = (key: string, params: Record<string, string | number>) =>
 
 const achievementName = (code: string) => (code === 'early_bird' ? 'Madrugador' : undefined);
 
-describe('notification text @INH-NOT-05 @REQ-NF-007', () => {
+describe('notification text @REQ-NF-007', () => {
     test('translates the key with its parameters and the deadline as a date', () => {
         expect(
             notificationText(

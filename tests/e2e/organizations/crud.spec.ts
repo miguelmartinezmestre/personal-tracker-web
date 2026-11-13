@@ -83,7 +83,7 @@ test.describe('Organizations CRUD', () => {
 
     test(
         'the only owner cannot leave and stays on the organization',
-        { tag: ['@REQ-EQUIPOS-003', '@INH-ORG-06'] },
+        { tag: ['@REQ-EQUIPOS-003'] },
         async ({ page }) => {
             const organization = await createOrganization(page, {
                 name: `Sole Owner Org ${randomUUID().substring(0, 8)}`,

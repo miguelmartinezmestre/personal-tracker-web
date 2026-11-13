@@ -14,7 +14,7 @@ describe('user deletion cascade', () => {
         vi.useRealTimers();
     });
 
-    test('deletes the personal organization and those left empty, and keeps shared work @REQ-AUTENTICACION-009 @INH-AUT-13 @INH-AUT-14', async () => {
+    test('deletes the personal organization and those left empty, and keeps shared work @REQ-AUTENTICACION-009', async () => {
         const suffix = Math.random().toString(36).slice(2, 10);
 
         const createUser = (label: string) =>

@@ -13,13 +13,13 @@ beforeEach(() => {
     signIn.mockReset();
 });
 
-test('creates the account without signing in again @INH-SET-01', async () => {
+test('creates the account without signing in again @REQ-ADMIN-006', async () => {
     signUp.mockResolvedValue({ data: {}, error: null });
     await expect(createOrResumeSetupAccount(client, admin, undefined)).resolves.toBeNull();
     expect(signIn).not.toHaveBeenCalled();
 });
 
-test('signs into the account an earlier failed attempt created @INH-SET-01', async () => {
+test('signs into the account an earlier failed attempt created @REQ-ADMIN-006', async () => {
     signUp.mockResolvedValue({
         data: null,
         error: { code: 'USER_ALREADY_EXISTS_USE_ANOTHER_EMAIL', message: 'exists' },

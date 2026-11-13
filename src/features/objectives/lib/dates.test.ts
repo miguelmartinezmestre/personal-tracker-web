@@ -14,7 +14,7 @@ test('uses the local calendar day when it differs from the UTC day @REQ-PROGRESO
     expect(todayDateInput()).toBe('2026-10-06');
 });
 
-test('flags active objectives only once their deadline day has passed @INH-OBJ-15', () => {
+test('flags active objectives only once their deadline day has passed @REQ-OBJETIVOS-010', () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date('2026-10-06T12:00:00Z'));
     const today = Date.UTC(2026, 9, 6);

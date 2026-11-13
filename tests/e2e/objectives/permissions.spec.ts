@@ -19,12 +19,7 @@ test.describe('Objective permissions', () => {
     test(
         'members only see what the member role or their own permission allows, and edit only with edit',
         {
-            tag: [
-                '@REQ-COLABORACION-003',
-                '@REQ-COLABORACION-004',
-                '@REQ-COLABORACION-005',
-                '@INH-PER-05',
-            ],
+            tag: ['@REQ-COLABORACION-003', '@REQ-COLABORACION-004', '@REQ-COLABORACION-005'],
         },
         async ({ browser, page }) => {
             const collaborator = await setupCollaboratorInOrganization(browser, page);

@@ -66,7 +66,7 @@ describe('categories', () => {
         member = await joinAs('member', 'member');
     });
 
-    test('any member creates categories; only their creator, the owner and admins change them @REQ-CATEGORIAS-001 @REQ-CATEGORIAS-003 @INH-CAT-01 @INH-CAT-02', async () => {
+    test('any member creates categories; only their creator, the owner and admins change them @REQ-CATEGORIAS-001 @REQ-CATEGORIAS-003', async () => {
         const id = await as(creator).mutation(api.categories.createCategory, { category: health });
 
         await expect(
@@ -146,7 +146,7 @@ describe('categories', () => {
         ).rejects.toThrow('CATEGORY_IN_USE');
     });
 
-    test('organizations start without categories and keep a copy of what the owner chose @REQ-CATEGORIAS-002 @INH-ADM-07', async () => {
+    test('organizations start without categories and keep a copy of what the owner chose @REQ-CATEGORIAS-002', async () => {
         const admin = await joinAs('member', 'platform-admin', 'globalAdmin');
         const user = await joinAs('member', 'new-user', 'user', await createOrganization());
 

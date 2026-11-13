@@ -50,7 +50,7 @@ flows in `tests/e2e/**/*.spec.ts`. Add or update tests alongside behavior change
 for backend work and `pnpm test:e2e` for user-facing flows. Husky runs `format:check` and `lint`
 before commit.
 
-Tag each test with the `@REQ-…`/`@INH-…` identifiers it covers (`{ tag: [...] }` in Playwright, the
+Tag each test with the `@REQ-…` identifiers it covers (`{ tag: [...] }` in Playwright, the
 test name in Vitest).
 
 A test exists only to verify one of those requirements through a realistic scenario on the public

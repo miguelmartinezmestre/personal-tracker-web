@@ -11,7 +11,7 @@ test.describe('Route Protection', () => {
 
     test(
         'anonymous users are redirected from protected dashboard routes',
-        { tag: ['@REQ-NF-003', '@INH-AUT-06', '@cross-browser-critical', '@mobile-critical'] },
+        { tag: ['@REQ-NF-003', '@cross-browser-critical', '@mobile-critical'] },
         async ({ page, context }) => {
             await context.clearCookies();
 
@@ -25,12 +25,7 @@ test.describe('Route Protection', () => {
     test(
         'authenticated users can use dashboard routes and are sent back to login after logout',
         {
-            tag: [
-                '@REQ-AUTENTICACION-005',
-                '@INH-AUT-06',
-                '@cross-browser-critical',
-                '@mobile-critical',
-            ],
+            tag: ['@REQ-AUTENTICACION-005', '@cross-browser-critical', '@mobile-critical'],
         },
         async ({ page }) => {
             await createTestUser(page);

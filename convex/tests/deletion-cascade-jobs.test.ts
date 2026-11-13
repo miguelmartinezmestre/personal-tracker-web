@@ -19,7 +19,7 @@ describe('organization deletion cascade', () => {
         vi.useRealTimers();
     });
 
-    test('removes categories, objectives, permissions and memberships owned by the organization @REQ-EQUIPOS-008 @INH-ORG-05 @INH-PAP-06', async () => {
+    test('removes categories, objectives, permissions and memberships owned by the organization @REQ-EQUIPOS-008', async () => {
         const suffix = Math.random().toString(36).slice(2, 10);
 
         const user = await createTestUser(t, {
@@ -104,7 +104,7 @@ describe('organization deletion cascade', () => {
         });
     });
 
-    test('gives the deleting user back an active organization after Better Auth clears it @INH-ORG-05', async () => {
+    test('gives the deleting user back an active organization after Better Auth clears it @REQ-EQUIPOS-008', async () => {
         const suffix = Math.random().toString(36).slice(2, 10);
 
         const actor = await createTestUser(t, {

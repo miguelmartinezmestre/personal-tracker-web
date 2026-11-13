@@ -5,12 +5,7 @@ test.describe('Notifications', () => {
     test(
         'notifies a completed objective as chosen, then marks and deletes notifications',
         {
-            tag: [
-                '@REQ-NOTIFICACIONES-001',
-                '@REQ-NOTIFICACIONES-002',
-                '@INH-NOT-04',
-                '@INH-NOT-07',
-            ],
+            tag: ['@REQ-NOTIFICACIONES-001', '@REQ-NOTIFICACIONES-002'],
         },
         async ({ page }) => {
             const title = `Swim ${randomUUID().substring(0, 8)}`;

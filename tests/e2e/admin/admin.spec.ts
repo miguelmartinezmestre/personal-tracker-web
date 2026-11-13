@@ -12,7 +12,6 @@ test.describe('Administration', () => {
                 '@REQ-ADMIN-002',
                 '@REQ-ADMIN-004',
                 '@REQ-ADMIN-005',
-                '@INH-ADM-01',
             ],
         },
         async ({ browser, page }) => {
@@ -63,7 +62,7 @@ test.describe('Administration', () => {
 
     test(
         'edits the platform category catalog',
-        { tag: ['@INH-ADM-07', '@REQ-CATEGORIAS-002'] },
+        { tag: ['@REQ-CATEGORIAS-002'] },
         async ({ page }) => {
             const name = `Zeta ${randomUUID().substring(0, 8)}`;
             const renamed = `${name} renamed`;

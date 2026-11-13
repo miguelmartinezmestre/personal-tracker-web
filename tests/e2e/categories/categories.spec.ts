@@ -7,13 +7,7 @@ test.describe('Categories', () => {
     test(
         'members create and edit categories, which can not be deleted while an objective uses them',
         {
-            tag: [
-                '@REQ-CATEGORIAS-001',
-                '@REQ-CATEGORIAS-003',
-                '@REQ-OBJETIVOS-004',
-                '@INH-CAT-01',
-                '@INH-CAT-02',
-            ],
+            tag: ['@REQ-CATEGORIAS-001', '@REQ-CATEGORIAS-003', '@REQ-OBJETIVOS-004'],
         },
         async ({ page }) => {
             const suffix = randomUUID().substring(0, 8);

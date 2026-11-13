@@ -68,7 +68,7 @@ describe('trash', () => {
             objective => objective.id
         );
 
-    test('deleting moves the objective to the trash and hides it everywhere else @REQ-COLABORACION-002 @INH-PAP-01', async () => {
+    test('deleting moves the objective to the trash and hides it everywhere else @REQ-COLABORACION-002', async () => {
         const objectiveId = await createWithProgress();
         await as(creator).mutation(api.objectives.deleteObjective, { id: objectiveId });
 
@@ -92,7 +92,7 @@ describe('trash', () => {
         });
     });
 
-    test('the creator, the owner and the admins see the trash and restore with its history @INH-PAP-02', async () => {
+    test('the creator, the owner and the admins see the trash and restore with its history @REQ-COLABORACION-002', async () => {
         const objectiveId = await createWithProgress();
         await as(owner).mutation(api.objectives.deleteObjective, { id: objectiveId });
 
@@ -117,7 +117,7 @@ describe('trash', () => {
         ).toHaveLength(1);
     });
 
-    test('the trash keeps paging past objectives the user sees but cannot manage @INH-PAP-02', async () => {
+    test('the trash keeps paging past objectives the user sees but cannot manage @REQ-COLABORACION-002', async () => {
         const create = (user: TestUserData, title: string) =>
             as(user).mutation(api.objectives.createObjective, {
                 title,
@@ -151,7 +151,7 @@ describe('trash', () => {
         expect(seen).toEqual([newer, older]);
     });
 
-    test('only objectives in the trash can be restored or purged @INH-PAP-03', async () => {
+    test('only objectives in the trash can be restored or purged @REQ-COLABORACION-002', async () => {
         const objectiveId = await createWithProgress();
 
         for (const mutation of [api.trash.restoreObjective, api.trash.purgeObjective]) {
@@ -161,7 +161,7 @@ describe('trash', () => {
         }
     });
 
-    test('purging deletes the objective, its progress and permissions in batches, and cannot be undone @INH-PAP-03 @INH-PAP-05 @REQ-NF-011', async () => {
+    test('purging deletes the objective, its progress and permissions in batches, and cannot be undone @REQ-NF-011', async () => {
         const objectiveId = await createWithProgress();
 
         await t.run(async ctx => {

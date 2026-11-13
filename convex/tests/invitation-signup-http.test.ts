@@ -8,7 +8,7 @@ const ORIGIN = 'http://localhost:3000';
 describe('signing up from an invitation link', () => {
     const t = initConvexTest();
 
-    test('does not join until the email is verified and the invitation accepted @REQ-EQUIPOS-006 @INH-AUT-04', async () => {
+    test('does not join until the email is verified and the invitation accepted @REQ-EQUIPOS-006', async () => {
         const suffix = Math.random().toString(36).slice(2, 10);
         const email = `invited-${suffix}@example.com`;
 

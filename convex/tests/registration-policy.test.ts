@@ -5,7 +5,7 @@ import { createTestOrganization, createTestUser } from './test.helpers';
 import { runInAuth } from './authTesting';
 
 describe('backend registration policy', () => {
-    test('requires the exact active invitation for the same email @REQ-AUTENTICACION-001 @INH-AUT-03', async () => {
+    test('requires the exact active invitation for the same email @REQ-AUTENTICACION-001', async () => {
         const t = initConvexTest();
         const now = Date.now();
 

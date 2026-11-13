@@ -80,7 +80,7 @@ describe('achievements', () => {
         vi.useRealTimers();
     });
 
-    test('creating and completing objectives award each achievement once, with points and notices @REQ-LOGROS-001 @REQ-LOGROS-002 @REQ-LOGROS-003 @REQ-LOGROS-004 @REQ-LOGROS-005 @REQ-LOGROS-006 @REQ-LOGROS-007 @INH-LOG-01 @INH-LOG-03 @INH-LOG-04 @INH-OBJ-13 @INH-OBJ-11', async () => {
+    test('creating and completing objectives award each achievement once, with points and notices @REQ-LOGROS-001 @REQ-LOGROS-002 @REQ-LOGROS-003 @REQ-LOGROS-004 @REQ-LOGROS-005 @REQ-LOGROS-006 @REQ-LOGROS-007', async () => {
         const objectiveId = await createObjective(creator, 'Early goal');
         await createObjective(creator, 'Second goal');
         await runScheduled();
@@ -131,7 +131,7 @@ describe('achievements', () => {
         ]);
     });
 
-    test('streaks count consecutive UTC days of progress and restart after a missed day @REQ-LOGROS-008 @INH-LOG-06 @INH-PRO-06', async () => {
+    test('streaks count consecutive UTC days of progress and restart after a missed day @REQ-LOGROS-008', async () => {
         const today = startOfUtcDay(Date.now());
         const objectiveId = await createObjective(creator, 'Daily');
 
@@ -163,7 +163,7 @@ describe('achievements', () => {
         expect(memberAchievements.byCode.get('streak_3')?.progress).toBe(0);
     });
 
-    test('organization achievements stay in their organization @INH-LOG-08', async () => {
+    test('organization achievements stay in their organization @REQ-LOGROS-003', async () => {
         await createObjective(creator, 'Team goal');
         await runScheduled();
 

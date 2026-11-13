@@ -46,7 +46,7 @@ describe('progress', () => {
 
     const get = (id: Id<'objectives'>) => ownerIdentity.query(api.objectives.getObjective, { id });
 
-    test('a decreasing objective with negative values reaches its target and closes @REQ-PROGRESO-001 @REQ-PROGRESO-005 @INH-OBJ-01 @INH-OBJ-07 @INH-OBJ-17 @INH-PRO-03', async () => {
+    test('a decreasing objective with negative values reaches its target and closes @REQ-PROGRESO-001 @REQ-PROGRESO-005', async () => {
         const objectiveId = await createObjective({
             direction: 'decrease',
             startValue: 5,
@@ -91,7 +91,7 @@ describe('progress', () => {
         expect(entries.page.map(entry => entry.canEdit)).toEqual([false, false, false]);
     });
 
-    test('correcting or deleting an old entry adjusts the current value and the values stored after it @REQ-PROGRESO-003 @INH-PRO-01 @INH-PRO-04', async () => {
+    test('correcting or deleting an old entry adjusts the current value and the values stored after it @REQ-PROGRESO-003', async () => {
         const objectiveId = await createObjective({ startValue: 10, targetValue: 100 });
         const oldest = await log(objectiveId, 5, 1);
         const middle = await log(objectiveId, -2, 2);
@@ -115,7 +115,7 @@ describe('progress', () => {
         ]);
     });
 
-    test('changing the start value moves every stored value @INH-PRO-01', async () => {
+    test('changing the start value moves every stored value @REQ-PROGRESO-005', async () => {
         const objectiveId = await createObjective({ startValue: 10, targetValue: 100 });
         await log(objectiveId, 5, 1);
         await log(objectiveId, 2, 2);
@@ -158,7 +158,7 @@ describe('progress', () => {
         expect(await get(decreasing)).toMatchObject({ currentValue: 5, status: 'completed' });
     });
 
-    test('keeps decimal totals free of floating-point drift @REQ-PROGRESO-005 @INH-PRO-03', async () => {
+    test('keeps decimal totals free of floating-point drift @REQ-PROGRESO-005', async () => {
         const objectiveId = await createObjective({ startValue: 0, targetValue: 100 });
         const first = await log(objectiveId, 0.1);
         await log(objectiveId, 0.2);
@@ -172,7 +172,7 @@ describe('progress', () => {
         expect(await get(objectiveId)).toMatchObject({ currentValue: 0.9 });
     });
 
-    test('rejects a zero difference without changing entries or totals @INH-PRO-02', async () => {
+    test('rejects a zero difference without changing entries or totals @REQ-PROGRESO-001', async () => {
         const objectiveId = await createObjective();
         const entry = await log(objectiveId, 1);
         const before = await get(objectiveId);
@@ -221,7 +221,7 @@ describe('progress', () => {
         }
     });
 
-    test('returns the cumulative history in chronological order, also for backdated entries @REQ-OBJETIVOS-007 @REQ-PROGRESO-004 @INH-PRO-01 @INH-PRO-05', async () => {
+    test('returns the cumulative history in chronological order, also for backdated entries @REQ-OBJETIVOS-007 @REQ-PROGRESO-004', async () => {
         const objectiveId = await createObjective({ startValue: 5, targetValue: 50 });
 
         for (const [day, difference, comment] of [

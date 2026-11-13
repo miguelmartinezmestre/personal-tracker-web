@@ -50,7 +50,7 @@ describe('dashboard stats', () => {
         await createTestMember(t, { organizationId, userId: owner.docId, role: 'owner' });
     });
 
-    test('aggregates status, progress and categories for the active organization @REQ-DASHBOARD-001 @INH-DAS-02', async () => {
+    test('aggregates status, progress and categories for the active organization @REQ-DASHBOARD-001', async () => {
         const ownerIdentity = asUser(owner);
         const health = await createCategory('Health', '#EF4444');
         const career = await createCategory('Career', '#3B82F6');
@@ -158,7 +158,7 @@ describe('dashboard stats', () => {
         expect(stats.total).toBe(0);
     });
 
-    test('keeps stats in sync when an objective is deleted @REQ-DASHBOARD-001 @INH-PAP-01', async () => {
+    test('keeps stats in sync when an objective is deleted @REQ-DASHBOARD-001', async () => {
         const ownerIdentity = asUser(owner);
         await ownerIdentity.mutation(api.objectives.createObjective, {
             title: 'Kept',
@@ -198,7 +198,7 @@ describe('dashboard stats', () => {
             updateDate,
         });
 
-    test('ranks the visible objectives by progress and validates the limit @REQ-DASHBOARD-002 @INH-DAS-05', async () => {
+    test('ranks the visible objectives by progress and validates the limit @REQ-DASHBOARD-002', async () => {
         const low = await create('Low');
         const high = await create('High');
         const trashed = await create('Trashed');

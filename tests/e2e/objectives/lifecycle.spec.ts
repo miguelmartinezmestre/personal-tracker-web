@@ -129,14 +129,7 @@ test.describe('Objectives', () => {
     test(
         'a decreasing objective with negative values reaches its target as a new value and closes',
         {
-            tag: [
-                '@REQ-OBJETIVOS-006',
-                '@REQ-PROGRESO-001',
-                '@REQ-PROGRESO-005',
-                '@INH-OBJ-01',
-                '@INH-OBJ-07',
-                '@INH-PRO-05',
-            ],
+            tag: ['@REQ-OBJETIVOS-006', '@REQ-PROGRESO-001', '@REQ-PROGRESO-005'],
         },
         async ({ page }) => {
             const title = `Cut debt ${randomUUID().substring(0, 8)}`;
@@ -175,13 +168,7 @@ test.describe('Objectives', () => {
     test(
         'reads a typed deadline, shows the pace, filters by it and keeps the filter on the detail link',
         {
-            tag: [
-                '@REQ-OBJETIVOS-005',
-                '@REQ-OBJETIVOS-009',
-                '@REQ-OBJETIVOS-010',
-                '@INH-OBJ-15',
-                '@INH-OBJ-18',
-            ],
+            tag: ['@REQ-OBJETIVOS-005', '@REQ-OBJETIVOS-009', '@REQ-OBJETIVOS-010'],
         },
         async ({ page }) => {
             const suffix = randomUUID().substring(0, 8);

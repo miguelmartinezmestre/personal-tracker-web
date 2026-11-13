@@ -57,7 +57,7 @@ describe('global administration', () => {
         vi.useRealTimers();
     });
 
-    test('only the global admin reaches the admin functions @REQ-ROLES-001 @REQ-ROLES-002 @INH-PER-04', async () => {
+    test('only the global admin reaches the admin functions @REQ-ROLES-001 @REQ-ROLES-002', async () => {
         await expect(as(user).query(api.admin.listUsers, { paginationOpts: page })).rejects.toThrow(
             'FORBIDDEN'
         );
@@ -89,7 +89,7 @@ describe('global administration', () => {
         ).rejects.toThrow('FORBIDDEN');
     });
 
-    test('a ban blocks at once, revokes sessions in batches and an unban clears it @REQ-ADMIN-002 @INH-ADM-03 @INH-ADM-04', async () => {
+    test('a ban blocks at once, revokes sessions in batches and an unban clears it @REQ-ADMIN-002', async () => {
         await Promise.all(
             Array.from({ length: 150 }, (_, index) =>
                 createTestSession(t, {
@@ -129,7 +129,7 @@ describe('global administration', () => {
         });
     });
 
-    test('lists and revokes the sessions of any user @REQ-ADMIN-004 @INH-ADM-02', async () => {
+    test('lists and revokes the sessions of any user @REQ-ADMIN-004', async () => {
         const sessions = await as(admin).query(api.admin.listUserSessions, {
             userId: user.docId,
             paginationOpts: page,
@@ -151,7 +151,7 @@ describe('global administration', () => {
         ).toEqual([]);
     });
 
-    test('records platform and organization actions, filtered by type and organization, and never deletes them @REQ-ADMIN-005 @REQ-NF-004 @INH-ADM-05 @INH-ADM-06', async () => {
+    test('records platform and organization actions, filtered by type and organization, and never deletes them @REQ-ADMIN-005 @REQ-NF-004', async () => {
         await as(admin).mutation(api.admin.banUser, { userId: user.docId });
 
         const objectiveId = await as(admin).mutation(api.objectives.createObjective, {
@@ -196,7 +196,7 @@ describe('global administration', () => {
         expect(kept.length).toBeGreaterThan(0);
     });
 
-    test('filtering the audit log by organization and type returns full pages of matching entries @REQ-ADMIN-005 @INH-ADM-06', async () => {
+    test('filtering the audit log by organization and type returns full pages of matching entries @REQ-ADMIN-005', async () => {
         const otherOrganizationId = await createTestOrganization(t, {
             name: 'Other audit organization',
             slug: `other-audit-${Math.random().toString(36).slice(2, 10)}`,
@@ -245,7 +245,7 @@ describe('global administration', () => {
         expect(pages.flat().every(entry => entry.resourceType === 'objective')).toBe(true);
     });
 
-    test('the user list pages through live accounts only @REQ-ADMIN-001 @INH-ADM-01', async () => {
+    test('the user list pages through live accounts only @REQ-ADMIN-001', async () => {
         const suffix = Math.random().toString(36).slice(2, 10);
         const live: string[] = [];
 

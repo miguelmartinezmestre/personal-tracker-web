@@ -40,7 +40,7 @@ test.describe('Account settings', () => {
 
     test(
         'deletes the account after confirming the email and password',
-        { tag: ['@REQ-AUTENTICACION-009', '@INH-AUT-16'] },
+        { tag: ['@REQ-AUTENTICACION-009'] },
         async ({ page, testUser }) => {
             await page.goto('/dashboard/settings', { waitUntil: 'domcontentloaded' });
             const button = page.getByTestId('delete-account-button');

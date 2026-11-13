@@ -14,6 +14,9 @@ test.each([
         'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36 Edg/130.0',
         { device: 'desktop', browser: 'Edge', system: 'Windows' },
     ],
-])('reads the device, browser and system of a session @INH-AUT-09', (userAgent, expected) => {
-    expect(describeUserAgent(userAgent)).toEqual(expected);
-});
+])(
+    'reads the device, browser and system of a session @REQ-AUTENTICACION-006',
+    (userAgent, expected) => {
+        expect(describeUserAgent(userAgent)).toEqual(expected);
+    }
+);

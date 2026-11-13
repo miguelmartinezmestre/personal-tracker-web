@@ -3,7 +3,7 @@ import { test, expect } from '../../fixtures/test-base';
 test.describe('Command Palette', () => {
     test(
         'Cmd+K opens the palette, the filter narrows it and choosing with the keyboard navigates',
-        { tag: ['@REQ-NF-012', '@INH-ACC-03'] },
+        { tag: ['@REQ-NF-012'] },
         async ({ page }) => {
             await page.goto('/dashboard/home', { waitUntil: 'domcontentloaded' });
             await expect(page.getByTestId('command-menu-ready')).toBeAttached({ timeout: 10000 });

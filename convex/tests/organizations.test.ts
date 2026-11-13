@@ -52,7 +52,7 @@ describe('convex organizations', () => {
             banned: false,
         });
     });
-    test('getOrganizationMembers returns paginated members for authorized user @REQ-EQUIPOS-004 @INH-ORG-09', async () => {
+    test('getOrganizationMembers returns paginated members for authorized user @REQ-EQUIPOS-004', async () => {
         const result = await userIdentity.query(api.organizations.getOrganizationMembers, {
             organizationId,
             paginationOpts: { numItems: 20, cursor: null },
@@ -62,7 +62,7 @@ describe('convex organizations', () => {
         expect(result.page[0]?.userId).toBe(memberUserId);
         expect(result.isDone).toBe(true);
     });
-    test('getOrganizationPendingInvitations lists only live invitations, and only to admins @REQ-EQUIPOS-002 @INH-ORG-07', async () => {
+    test('getOrganizationPendingInvitations lists only live invitations, and only to admins @REQ-EQUIPOS-002', async () => {
         const now = Date.now();
 
         const insertInvitation = (email: string, status: string, expiresAt: number) =>

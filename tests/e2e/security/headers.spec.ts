@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 
 test(
     'production responses apply nonce CSP and defensive headers',
-    { tag: ['@REQ-NF-003', '@INH-SEG-02', '@security'] },
+    { tag: ['@REQ-NF-003', '@security'] },
     async ({ page }) => {
         const response = await page.goto('/login');
         expect(response).not.toBeNull();

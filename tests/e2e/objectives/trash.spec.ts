@@ -5,13 +5,7 @@ test.describe('Objectives trash', () => {
     test(
         'a deleted objective goes to the trash, comes back, and is purged after confirming',
         {
-            tag: [
-                '@REQ-COLABORACION-002',
-                '@REQ-NF-011',
-                '@INH-PAP-01',
-                '@INH-PAP-02',
-                '@INH-PAP-03',
-            ],
+            tag: ['@REQ-COLABORACION-002', '@REQ-NF-011'],
         },
         async ({ page }) => {
             const title = `Trashed ${randomUUID().substring(0, 8)}`;

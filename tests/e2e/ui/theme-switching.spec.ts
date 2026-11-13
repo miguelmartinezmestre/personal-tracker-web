@@ -10,7 +10,7 @@ async function selectTheme(page: Page, theme: 'light' | 'dark'): Promise<void> {
 
 test(
     'theme preference changes and persists after reload',
-    { tag: ['@REQ-NF-009', '@INH-UI-03'] },
+    { tag: ['@REQ-NF-009'] },
     async ({ page }) => {
         await page.goto('/dashboard/home');
         await selectTheme(page, 'dark');

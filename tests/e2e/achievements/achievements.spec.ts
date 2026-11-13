@@ -5,13 +5,7 @@ test.describe('Achievements', () => {
     test(
         'a first objective unlocks achievements, shown in the gallery, the dashboard and a notification',
         {
-            tag: [
-                '@REQ-LOGROS-001',
-                '@REQ-LOGROS-005',
-                '@REQ-LOGROS-006',
-                '@REQ-LOGROS-007',
-                '@INH-DAS-06',
-            ],
+            tag: ['@REQ-LOGROS-001', '@REQ-LOGROS-005', '@REQ-LOGROS-006', '@REQ-LOGROS-007'],
         },
         async ({ page }) => {
             await page.goto('/dashboard/objectives', { waitUntil: 'domcontentloaded' });

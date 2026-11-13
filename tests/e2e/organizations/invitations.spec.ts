@@ -80,7 +80,7 @@ test.describe('Organization Invitations', () => {
     });
     test(
         'an invitation waits until the invitee verifies their email',
-        { tag: ['@REQ-EQUIPOS-002', '@REQ-EQUIPOS-006', '@INH-ORG-08', '@INH-AUT-05'] },
+        { tag: ['@REQ-EQUIPOS-002', '@REQ-EQUIPOS-006'] },
         async ({ page, browser }) => {
             const inviteeContext = await browser.newContext();
 
@@ -123,7 +123,7 @@ test.describe('Organization Invitations', () => {
 
     test(
         'signing up from an invitation link joins once the email is verified and the invitation accepted',
-        { tag: ['@REQ-EQUIPOS-006', '@INH-AUT-04', '@INH-ORG-01'] },
+        { tag: ['@REQ-EQUIPOS-006'] },
         async ({ page, browser }) => {
             const organization = await createOrganization(page, {
                 name: `Sign Up Invite Org ${randomUUID().substring(0, 8)}`,

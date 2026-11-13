@@ -14,7 +14,7 @@ import type { Id } from '../betterAuth/_generated/dataModel';
 
 describe('convex setup', () => {
     describe('getPublicPlatformSettings', () => {
-        test('returns only public fields when settings exist @INH-SET-05', async () => {
+        test('returns only public fields when settings exist @REQ-ADMIN-006', async () => {
             const t = initConvexTest();
 
             const userId = await runInAuth(t, async ctx => {
@@ -52,7 +52,7 @@ describe('convex setup', () => {
     });
 
     describe('completeSetup', () => {
-        test('fails when platform is already configured @REQ-ADMIN-006 @INH-SET-03', async () => {
+        test('fails when platform is already configured @REQ-ADMIN-006', async () => {
             const t = initConvexTest();
 
             const userId = await runInAuth(t, async ctx => {
@@ -112,7 +112,7 @@ describe('convex setup', () => {
             ).rejects.toThrow(ERROR_CODES.PLATFORM_ALREADY_CONFIGURED);
         });
 
-        test('requires a live session of an active account @REQ-ADMIN-006 @INH-SET-01', async () => {
+        test('requires a live session of an active account @REQ-ADMIN-006', async () => {
             const t = initConvexTest();
 
             const user = await createTestUser(t, {
@@ -149,7 +149,7 @@ describe('convex setup', () => {
             expect(await t.query(api.setup.isPlatformSetUp, {})).toBe(false);
         });
 
-        test('succeeds with exactly one user and no existing settings @REQ-ADMIN-006 @INH-SET-01 @REQ-CATEGORIAS-002', async () => {
+        test('succeeds with exactly one user and no existing settings @REQ-ADMIN-006 @REQ-CATEGORIAS-002', async () => {
             const t = initConvexTest();
 
             const user = await createTestUser(t, {
@@ -230,7 +230,7 @@ describe('convex setup', () => {
             expect(settings?.setupCompletedBy).toBe(user.docId);
         });
 
-        test('creates a team organization without converting the protected personal one @REQ-ADMIN-006 @INH-SET-01 @INH-ORG-02', async () => {
+        test('creates a team organization without converting the protected personal one @REQ-ADMIN-006', async () => {
             const t = initConvexTest();
 
             const user = await createTestUser(t, {
